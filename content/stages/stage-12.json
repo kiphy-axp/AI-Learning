@@ -1,0 +1,922 @@
+{
+  "stage": 12,
+  "stageSlug": "advanced-math",
+  "stageTitle": "数学进阶",
+  "stageEmoji": "📐",
+  "stageDesc": "看懂论文与推导的地基：矩阵分解、信息论、凸优化与梯度下降族的数学本质",
+  "category": "算法岗核心",
+  "lessons": [
+    {
+      "slug": "matrix-decomposition",
+      "title": "矩阵分解：LU 与 QR",
+      "order": 1,
+      "module": "线性代数进阶",
+      "difficulty": "进阶",
+      "estimatedMinutes": 45,
+      "summary": "把矩阵拆成三角矩阵与正交矩阵的乘积，让解方程、最小二乘和求行列式都变成可复用、可稳定的分步计算。",
+      "intuition": "直接求逆像用蛮力解方程组：算得慢，误差还会被放大。矩阵分解是「把复杂问题拆成几个简单步骤」：LU 像高斯消元留下的记账单，一次分解后前代、回代两步就能解出 x，换一个右端项 b 也不用重算；QR 把矩阵的列变成一组互相垂直的单位向量，于是最小二乘的投影变成解一个上三角方程，数值上比正规方程稳得多。生活中的类比是把一个缠在一起的大任务拆成有依赖顺序的小任务：每一步都容易做，中间结果还能复用。判断一个数值库「会不会算」，看它解线性系统时用哪条路径就够了。",
+      "formal": "LU 分解：若方阵 A 的顺序主子式全非零，则存在唯一的单位下三角 L 与上三角 U 使 A = LU；需要行交换时写成 PA = LU，P 为置换矩阵。复杂度约 2n³/3，一次分解后可服务多个右端项：前代解 Ly = b、回代解 Ux = y，各 O(n²)。推导思路：高斯消元第 k 步用初等矩阵 M_k 消去第 k 列下方元素，于是 M_{n-1}…M_1 A = U，移项得 A = M_1^{-1}…M_{n-1}^{-1} U，而消元乘子恰好拼成 L 的下三角元素。QR 分解：A = QR，Q 的列标准正交（Q^T Q = I），R 上三角，可由 Gram–Schmidt 或更稳定的 Householder 反射构造。关键性质：A^T A = R^T R，最小二乘解由 Rx = Q^T b 回代得到，误差放大倍数从 κ(A)² 降到 κ(A)。边界条件：A 奇异或接近奇异时必须选列主元；超定问题（m > n）用 QR，欠定问题需加正则或用 LQ。",
+      "formula": "\\mathbf{P}\\mathbf{A} = \\mathbf{L}\\mathbf{U}, \\qquad \\mathbf{A} = \\mathbf{Q}\\mathbf{R}, \\qquad \\hat{\\mathbf{x}} = \\mathbf{R}^{-1}\\mathbf{Q}^\\top \\mathbf{b}",
+      "aiConnection": "训练代码里几乎不该出现显式求逆：numpy.linalg.solve、torch.linalg.solve 内部就是 LU（一般矩阵）或 Cholesky（对称正定）。二阶优化（牛顿法、K-FAC、高斯过程回归）每步都要解线性系统，一次分解复用多个右端项比反复求逆快一个量级。QR 出现在最小二乘拟合（标定、校准曲线）、正交权重初始化、Stiefel 流形优化，以及特征值算法 QR 迭代的底层。工程排查：loss 突然 NaN 时先查是否写了 inv(A) @ b；协方差矩阵 Cholesky 报 LinAlgError 时先看是否缺了 jitter。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "lu_qr.py",
+        "code": "import numpy as np\n\ndef lu(A):\n    A = A.astype(float).copy()\n    n = A.shape[0]\n    P, L = np.eye(n), np.zeros((n, n))\n    for k in range(n):\n        p = k + np.argmax(np.abs(A[k:, k]))\n        if p != k:\n            A[[k, p]] = A[[p, k]]\n            P[[k, p]] = P[[p, k]]\n            L[[k, p]] = L[[p, k]]\n        L[k, k] = 1.0\n        for i in range(k + 1, n):\n            L[i, k] = A[i, k] / A[k, k]\n            A[i, k:] -= L[i, k] * A[k, k:]\n    return P, L, np.triu(A)\n\nrng = np.random.default_rng(0)\nA = rng.normal(size=(5, 5))\nP, L, U = lu(A)\nprint('PA=LU 误差:', np.abs(P @ A - L @ U).max())\nQ, R = np.linalg.qr(A)\nprint('QR 重构误差:', np.abs(A - Q @ R).max())\nprint('Q 正交性误差:', np.abs(Q.T @ Q - np.eye(5)).max())\nb = rng.normal(size=5)\nprint('LU 解与 QR 解之差:', np.abs(np.linalg.solve(A, b) - np.linalg.solve(R, Q.T @ b)).max())"
+      },
+      "mistakes": [
+        "用 inv(A) @ b 解方程：先求逆再相乘，误差与耗时都更大，应直接调用 solve 或自己做 LU",
+        "最小二乘直接解正规方程 A^T A x = A^T b：条件数被平方，κ(A) 到 1e4 时 fp32 已无有效位，应改用 QR",
+        "手写高斯消元不做列主元：主元接近 0 时除法把误差放大到失控，必须选绝对值最大的主元",
+        "以为 LU 只对可逆矩阵成立：顺序主子式为零但矩阵可逆时仍需行交换，正确形式是 PA = LU"
+      ],
+      "interviewPoints": [
+        "手推高斯消元为什么等价于 A = LU，以及为什么 L 的元素恰好是消元乘子",
+        "解释为什么最小二乘要用 QR 而不是正规方程：κ(A^T A) = κ(A)²，浮点有效位直接减半",
+        "对比 LU、Cholesky、QR 的适用条件与复杂度（2n³/3 与 n³/3），说明什么时候必须用哪一种",
+        "一次分解多右端项复用在训练与推理的哪些环节能真正省时间"
+      ],
+      "resources": [
+        {
+          "title": "MIT 18.06 Linear Algebra (Gilbert Strang)",
+          "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/"
+        },
+        {
+          "title": "Trefethen & Bau, Numerical Linear Algebra",
+          "url": "https://epubs.siam.org/doi/book/10.1137/1.9780898719574"
+        },
+        {
+          "title": "NumPy 线性代数 API 文档",
+          "url": "https://numpy.org/doc/stable/reference/routines.linalg.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "matrix-decomposition-q1",
+          "type": "choice",
+          "prompt": "关于 LU 与 QR 分解，下列说法正确的是？",
+          "options": [
+            "任意方阵都存在唯一的 LU 分解，不需要行交换",
+            "带行交换时 PA = LU，且一次 LU 分解可复用于多个右端项",
+            "QR 分解要求矩阵对称正定",
+            "解最小二乘时正规方程比 QR 数值更稳定"
+          ],
+          "answerIndex": 1,
+          "explanation": "行交换后 A 满足 PA = LU，L、U 可缓存复用，每换一个 b 只需 O(n²) 的前代回代。A 错在需要顺序主子式非零或行交换；C 错在 QR 对任意矩阵都存在，对称正定是 Cholesky 的条件；D 恰好相反，正规方程把条件数平方。"
+        },
+        {
+          "id": "matrix-decomposition-q2",
+          "type": "short",
+          "prompt": "为什么求解最小二乘问题时应优先使用 QR 分解而不是正规方程？",
+          "answer": "参考回答：正规方程要显式构造 A^T A，其条件数是 κ(A)²，fp32 下 κ(A) 达到 1e4 就损失全部有效位；同时构造 A^T A 本身还可能引入抵消误差。QR 分解把问题化为 Rx = Q^T b，R 的条件数就是 κ(A)，误差放大倍数从平方降回一次，且 Q 正交变换不放大误差，因此更稳定，代价只是常数略大。",
+          "keywords": ["条件数平方", "正交变换", "κ(A)", "稳定性"],
+          "explanation": "得分点在 κ(A^T A) = κ(A)² 与正交变换不放大误差这两句。"
+        },
+        {
+          "id": "matrix-decomposition-q3",
+          "type": "code",
+          "prompt": "实现带部分主元选取的 LU 分解，函数返回 P、L、U 使 P @ A = L @ U，并用随机矩阵验证误差小于 1e-10。",
+          "starterCode": "import numpy as np\n\ndef lu_partial_pivot(A):\n    '''返回 (P, L, U) 使得 P @ A == L @ U'''\n    pass\n\nA = np.random.default_rng(0).normal(size=(4, 4))\n",
+          "solution": "import numpy as np\n\ndef lu_partial_pivot(A):\n    A = A.astype(float).copy()\n    n = A.shape[0]\n    P, L = np.eye(n), np.zeros((n, n))\n    for k in range(n):\n        p = k + int(np.argmax(np.abs(A[k:, k])))\n        if p != k:\n            A[[k, p]] = A[[p, k]]\n            P[[k, p]] = P[[p, k]]\n            L[[k, p]] = L[[p, k]]\n        L[k, k] = 1.0\n        for i in range(k + 1, n):\n            L[i, k] = A[i, k] / A[k, k]\n            A[i, k:] -= L[i, k] * A[k, k:]\n    return P, L, np.triu(A)\n\nA = np.random.default_rng(0).normal(size=(4, 4))\nP, L, U = lu_partial_pivot(A)\nprint(np.abs(P @ A - L @ U).max())\n",
+          "checks": ["np.argmax", "np.triu", "return P, L"],
+          "explanation": "关键是每步选列中绝对值最大的元素作主元并同步交换 P、L 的行，最后把消元后的上三角部分取出作为 U。"
+        }
+      ]
+    },
+    {
+      "slug": "eigen-svd",
+      "title": "特征值分解与 SVD",
+      "order": 2,
+      "module": "线性代数进阶",
+      "difficulty": "进阶",
+      "estimatedMinutes": 50,
+      "summary": "特征值分解刻画方阵在不变方向上的伸缩，SVD 把它推广到任意矩阵，给出秩、能量分布与最优低秩逼近。",
+      "intuition": "任何矩阵乘法都能理解成「旋转—拉伸—再旋转」。特征向量是那些被矩阵作用后方向不变、只被拉伸的向量，但只有方阵、且要有足够多线性无关的特征向量才谈得上特征分解。SVD 换了一个更聪明的问法：不问哪些输入方向不变，而问输入空间里哪些方向被放得最大。它给出一组输入正交方向 v_i、一组输出正交方向 u_i 和放大倍数 σ_i，于是任意矩阵都能写成若干秩一外积之和。这解释了为什么一张图、一个权重矩阵用前几个 σ 就能近似：信息集中在前几个方向。PCA、LoRA、压缩、推荐系统全都建立在这上面。",
+      "formal": "对称矩阵谱定理：实对称 A 满足 A = QΛQ^T，Q 正交、特征值全为实数。一般方阵的特征方程为 Av = λv 与 det(A − λI) = 0，只有存在 n 个线性无关特征向量时才能对角化。SVD：任意 A ∈ R^{m×n} 可写为 A = UΣV^T，U、V 为正交矩阵，Σ 对角且 σ_1 ≥ σ_2 ≥ … ≥ 0，非零奇异值个数等于 rank(A)。推导思路：对半正定的 A^T A 用谱定理得 A^T A = VΣ²V^T，于是 σ_i = sqrt(λ_i(A^T A))，右奇异向量是 A^T A 的特征向量；对 σ_i > 0 取 u_i = A v_i / σ_i，则 u_i 也标准正交，拼起来即得 U。Eckart–Young 定理：截断 SVD A_k = Σ_{i≤k} σ_i u_i v_i^T 是所有秩不超过 k 的矩阵中在谱范数与 Frobenius 范数下的最优逼近，误差分别为 σ_{k+1} 与 sqrt(Σ_{i>k} σ_i²)。数值上不要显式构造 A^T A，用 Golub–Kahan 双对角化加 QR 迭代。",
+      "formula": "\\mathbf{A} = \\mathbf{U}\\mathbf{\\Sigma}\\mathbf{V}^\\top = \\sum_{i=1}^{r} \\sigma_i \\mathbf{u}_i \\mathbf{v}_i^\\top, \\qquad \\|\\mathbf{A} - \\mathbf{A}_k\\|_2 = \\sigma_{k+1}, \\qquad \\|\\mathbf{A} - \\mathbf{A}_k\\|_F = \\sqrt{\\sum_{i>k} \\sigma_i^2}",
+      "aiConnection": "SVD 是 LoRA 的数学依据：微调增量 ΔW 被假设为低秩，写成 B·A 后（r ≪ min(d,k)）可训练参数从 dk 降到 r(d+k)，7B 模型上单层 4096×4096 的权重从 1.6e7 降到 4e5 量级。用 SVD 对原权重做低秩近似来初始化（PiSSA 一类做法）比随机高斯初始化收敛更快。PCA 就是对中心化数据做 SVD，取前 k 个右奇异向量作投影方向；模型压缩、推荐系统的矩阵分解、评估「权重是否低秩」看奇异值谱衰减速度，都在用同一套工具。若 σ 衰减很慢，LoRA 的秩就得调大。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "svd_lowrank.py",
+        "code": "import numpy as np\n\nrng = np.random.default_rng(0)\nA = rng.normal(size=(60, 40))\nU, s, Vt = np.linalg.svd(A, full_matrices=False)\nprint('前 5 个奇异值:', np.round(s[:5], 3))\n\nfor k in (1, 5, 20):\n    Ak = (U[:, :k] * s[:k]) @ Vt[:k]\n    err = np.linalg.norm(A - Ak)\n    theory = np.sqrt((s[k:] ** 2).sum())\n    print(f'k={k:2d} 重构误差={err:.4f} 理论值={theory:.4f}')\n\nk = 5\nbest = np.linalg.norm(A - (U[:, :k] * s[:k]) @ Vt[:k])\nworst = min(np.linalg.norm(A - rng.normal(size=(60, k)) @ rng.normal(size=(k, 40)))\n            for _ in range(200))\nprint('截断 SVD:', round(best, 4), '随机秩 5 最好:', round(worst, 4), 'SVD 更优:', best <= worst)\n\nprint('A^T A 特征值 == sigma^2:', np.abs(np.linalg.eigvalsh(A.T @ A)[::-1][:5] - s[:5] ** 2).max())"
+      },
+      "mistakes": [
+        "以为所有方阵都能对角化：像 [[1,1],[0,1]] 这样的缺陷矩阵没有 n 个线性无关特征向量，只能写成 Jordan 标准形",
+        "把特征值与奇异值混为一谈：奇异值恒非负且 σ_i = sqrt(λ_i(A^T A))，与特征值的符号无关",
+        "用 A^T A 的特征分解求奇异值：条件数被平方，大矩阵上精度损失严重，应直接调用 svd",
+        "截断后算错误差：Frobenius 范数下的误差是 sqrt(Σ_{i>k} σ_i²)，不是 σ_{k+1}"
+      ],
+      "interviewPoints": [
+        "证明 σ_i² 是 A^T A 的特征值、右奇异向量是其对应特征向量，并由此说明奇异值非负",
+        "叙述 Eckart–Young 定理，写出谱范数与 Frobenius 范数下低秩逼近误差的表达式",
+        "LoRA 为什么用低秩分解：参数量从 dk 降到 r(d+k)，并说明秩 r 该怎么选、与奇异值谱衰减的关系",
+        "SVD 与 PCA 的关系：中心化数据的主成分是右奇异向量，对应方差为 σ_i²/(n−1)"
+      ],
+      "resources": [
+        {
+          "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+          "url": "https://arxiv.org/abs/2106.09685"
+        },
+        {
+          "title": "Stanford CS229 讲义（SVD 与 PCA 章节）",
+          "url": "https://cs229.stanford.edu/notes2022fall/main_notes.pdf"
+        },
+        {
+          "title": "numpy.linalg.svd 文档",
+          "url": "https://numpy.org/doc/stable/reference/generated/numpy.linalg.svd.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "eigen-svd-q1",
+          "type": "choice",
+          "prompt": "关于奇异值分解，下列说法错误的是？",
+          "options": [
+            "任意 m×n 实矩阵都存在 SVD，且奇异值非负",
+            "非零奇异值的个数等于矩阵的秩",
+            "截断 SVD 是所有同秩矩阵中 Frobenius 范数意义下的最优逼近",
+            "奇异值等于矩阵的特征值"
+          ],
+          "answerIndex": 3,
+          "explanation": "只有对称半正定矩阵的奇异值才等于特征值；一般矩阵的奇异值是 A^T A 特征值的平方根，恒非负，而特征值可以为负甚至为复数。其余三项都是 SVD 的标准结论。"
+        },
+        {
+          "id": "eigen-svd-q2",
+          "type": "short",
+          "prompt": "LoRA 为什么可以用低秩分解来近似微调增量？秩 r 应该如何选？",
+          "answer": "参考回答：微调时权重增量 ΔW 被假设位于低维子空间，因此可写成 B·A 两个低秩矩阵之积，参数量从 dk 降到 r(d+k)，显存与优化器状态同比下降，且推理时可把 BA 合并回原权重、不增加延迟。秩 r 取决于原权重奇异值谱的衰减速度：衰减快说明能量集中，r 取 4~16 就够；衰减慢或任务差异大时需调大 r，也可用奇异值能量占比来定。",
+          "keywords": ["低秩假设", "参数量 r(d+k)", "奇异值谱", "合并权重"],
+          "explanation": "要点是低秩假设带来的参数量下降与秩由谱衰减决定。"
+        },
+        {
+          "id": "eigen-svd-q3",
+          "type": "code",
+          "prompt": "给定矩阵 A，用 SVD 做秩 k 截断重构，打印 Frobenius 范数误差并验证它等于 sqrt(sum(sigma[k:]^2))。",
+          "starterCode": "import numpy as np\n\nA = np.random.default_rng(0).normal(size=(50, 30))\nk = 5\n# 用 np.linalg.svd 做截断重构并比较误差\n",
+          "solution": "import numpy as np\n\nA = np.random.default_rng(0).normal(size=(50, 30))\nk = 5\nU, s, Vt = np.linalg.svd(A, full_matrices=False)\nAk = (U[:, :k] * s[:k]) @ Vt[:k]\nerr = np.linalg.norm(A - Ak)\ntheory = np.sqrt((s[k:] ** 2).sum())\nprint(err, theory, np.isclose(err, theory))\n",
+          "checks": ["np.linalg.svd", "Vt[:k]", "s[k:]"],
+          "explanation": "截断重构就是只保留前 k 个奇异值对应的外积之和，Frobenius 误差等于被丢掉奇异值的平方和开根。"
+        }
+      ]
+    },
+    {
+      "slug": "matrix-calculus",
+      "title": "矩阵求导与雅可比",
+      "order": 3,
+      "module": "线性代数进阶",
+      "difficulty": "高阶",
+      "estimatedMinutes": 55,
+      "summary": "把标量求导推广到向量与矩阵，用统一的布局约定和形状规则推导反向传播与各类梯度公式。",
+      "intuition": "神经网络里没有「一个数对一个数」的导数：loss 是标量，参数上亿个；中间层输入输出都是向量。矩阵求导就是问「输入的每个分量动一点点，输出的每个分量会怎么动」，把所有偏导排成一张表就是雅可比矩阵。反向传播本质上是这张表的链式相乘，只不过框架把它实现成向量–雅可比积，从不显式构造那张巨大的表。理解了形状规则，你就能自己推 softmax 的雅可比、LayerNorm 的梯度、注意力的反向，而不是背公式；手推梯度出 bug 时，九成能从形状对不上看出来。",
+      "formal": "设 f: R^n → R^m，其雅可比 J ∈ R^{m×n} 定义为 J_ij = ∂f_i/∂x_j，链式法则给出 J_{g∘f} = J_g J_f。常用恒等式：∂(a^T x)/∂x = a；∂(x^T A x)/∂x = (A + A^T)x，A 对称时化简为 2Ax；∂(Ax)/∂x = A；∂ tr(AB)/∂A = B^T；∂ log det A/∂A = A^{-T}；∂‖x‖²/∂x = 2x。推导思路（以二次型为例）：把 x^T A x 展开成 Σ_i Σ_j x_i A_ij x_j，对 x_k 求偏导，两项分别贡献 Σ_j A_kj x_j 与 Σ_i x_i A_ik，即 (Ax)_k + (A^T x)_k，合起来得 (A + A^T)x；只有 A 对称时两项相同才得到 2Ax。反向传播：若 z = g(x)、L 依赖 z，则 ∂L/∂x = (∂z/∂x)^T ∂L/∂z，形状为 (n×m)(m×1) 恰与 x 同形。边界：雅可比一般是长方形，只有 m = n 且满秩时才可逆；标量对矩阵求导的结果与矩阵同形（分母布局）。工程上还有两条常用结论：复合函数的梯度等于各局部雅可比转置的连乘；有限差分校验时步长取 1e-6 左右，误差约 O(eps²)。",
+      "formula": "\\frac{\\partial (\\mathbf{x}^\\top \\mathbf{A}\\mathbf{x})}{\\partial \\mathbf{x}} = (\\mathbf{A} + \\mathbf{A}^\\top)\\mathbf{x}, \\qquad \\frac{\\partial L}{\\partial \\mathbf{x}} = \\left(\\frac{\\partial \\mathbf{z}}{\\partial \\mathbf{x}}\\right)^\\top \\frac{\\partial L}{\\partial \\mathbf{z}}",
+      "aiConnection": "手推梯度是算法岗笔试面试高频题：softmax 加交叉熵的梯度为什么化简成 p − y、LayerNorm 的反向为什么比前向贵、注意力里 softmax 的雅可比是 diag(p) − pp^T（因此必须存 n×n 矩阵，FlashAttention 用在线 softmax 规避）。工程上 torch.autograd.gradcheck 用有限差分校验解析梯度，写自定义算子、Triton kernel、梯度累积与裁剪时都靠这套形状规则定位 bug；混合精度下的 loss scaling 也是对整个 ∂L/∂θ 做统一放缩。读论文附录里的梯度推导、自己写 loss 时的求导，都靠这套规则。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "grad_check.py",
+        "code": "import numpy as np\n\ndef numerical_grad(f, x, eps=1e-6):\n    g = np.zeros_like(x)\n    for i in range(x.size):\n        e = np.zeros_like(x)\n        e[i] = eps\n        g[i] = (f(x + e) - f(x - e)) / (2 * eps)\n    return g\n\nrng = np.random.default_rng(0)\nA = rng.normal(size=(4, 4))\nx = rng.normal(size=4)\nquad = lambda v: v @ A @ v\nprint('解析梯度:', np.round((A + A.T) @ x, 6))\nprint('数值梯度:', np.round(numerical_grad(quad, x), 6))\n\nW = rng.normal(size=(3, 4))\nb = rng.normal(size=3)\nloss = lambda v: 0.5 * np.sum((W @ v + b) ** 2)\nprint('链式解析:', np.round(W.T @ (W @ x + b), 6))\nprint('链式数值:', np.round(numerical_grad(loss, x), 6))\n\n# 只有 A 对称时梯度才等于 2Ax\nS = A + A.T\nprint('对称情形 2Sx 与 (S+S^T)x 一致:', np.allclose(2 * S @ x, (S + S.T) @ x))"
+      },
+      "mistakes": [
+        "分子布局与分母布局混用：转置到处错，动手前先声明约定，并用形状是否与自变量一致来校验",
+        "把 ∂(x^T A x)/∂x 记成 2Ax：只有 A 对称时才成立，一般矩阵必须写 (A + A^T)x",
+        "以为雅可比一定是方阵可逆：f: R^n → R^m 时是 m×n 长方形矩阵，m ≠ n 时连逆都不存在",
+        "手推梯度不做数值校验：3~5 维小例子跑一次有限差分就能定位错误，比盯着公式找快得多"
+      ],
+      "interviewPoints": [
+        "推导 softmax 的雅可比 diag(p) − pp^T，并说明它与交叉熵复合后为什么化简为 p − y",
+        "写出反向传播的链式法则与形状规则，并解释 VJP 与 JVP 的区别及各自适用场景",
+        "证明 ∂(x^T A x)/∂x = (A + A^T)x 与 ∂ tr(AB)/∂A = B^T",
+        "为什么手推梯度要用有限差分校验，步长 eps 取多大合适"
+      ],
+      "resources": [
+        {
+          "title": "The Matrix Cookbook（矩阵求导速查手册）",
+          "url": "https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf"
+        },
+        {
+          "title": "CS231n 反向传播与梯度推导笔记",
+          "url": "https://cs231n.github.io/optimization-2/"
+        },
+        {
+          "title": "PyTorch Autograd 机制文档",
+          "url": "https://pytorch.org/docs/stable/notes/autograd.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "matrix-calculus-q1",
+          "type": "choice",
+          "prompt": "设 f(x) = x^T A x，其中 A 是任意实方阵，则 ∇f(x) 为？",
+          "options": [
+            "2Ax",
+            "(A + A^T)x",
+            "Ax",
+            "x^T A"
+          ],
+          "answerIndex": 1,
+          "explanation": "展开为 Σ_i Σ_j x_i A_ij x_j 后对 x_k 求偏导，得 (Ax)_k + (A^T x)_k，即 (A + A^T)x；只有当 A 对称时两项相同，才退化成 2Ax。D 连形状都不对。"
+        },
+        {
+          "id": "matrix-calculus-q2",
+          "type": "short",
+          "prompt": "反向传播中为什么说「形状校验能抓住大部分手推梯度的错误」？",
+          "answer": "参考回答：链式法则要求 ∂L/∂x = (∂z/∂x)^T ∂L/∂z，其中上游梯度与 z 同形、结果必须与 x 同形，矩阵乘法的维度必须严格匹配。若推导结果形状与自变量不一致，说明漏了转置、弄错求和维度或混淆了布局约定。因此在手写算子或自定义层时，先用小维度张量跑一遍并断言形状，再上大规模训练，是最省时间的调试手段。",
+          "keywords": ["链式法则", "转置", "形状一致", "上游梯度"],
+          "explanation": "要点是「结果必须与自变量同形」这一必要条件，以及维度匹配检查。"
+        },
+        {
+          "id": "matrix-calculus-q3",
+          "type": "code",
+          "prompt": "用中心差分实现数值梯度，并验证 f(x) = x^T A x 的解析梯度 (A + A^T)x，最大误差应小于 1e-6。",
+          "starterCode": "import numpy as np\n\ndef numerical_grad(f, x, eps=1e-6):\n    pass\n\nA = np.random.default_rng(0).normal(size=(3, 3))\nx = np.random.default_rng(1).normal(size=3)\n",
+          "solution": "import numpy as np\n\ndef numerical_grad(f, x, eps=1e-6):\n    g = np.zeros_like(x)\n    for i in range(x.size):\n        e = np.zeros_like(x)\n        e[i] = eps\n        g[i] = (f(x + e) - f(x - e)) / (2 * eps)\n    return g\n\nA = np.random.default_rng(0).normal(size=(3, 3))\nx = np.random.default_rng(1).normal(size=3)\nana = (A + A.T) @ x\nnum = numerical_grad(lambda v: v @ A @ v, x)\nprint(np.abs(ana - num).max())\n",
+          "checks": ["(x + e)", "(x - e)", "(A + A.T) @ x"],
+          "explanation": "中心差分误差是 O(eps²)，eps 取 1e-6 时精度约 1e-12 量级，足以校验解析梯度。"
+        }
+      ]
+    },
+    {
+      "slug": "positive-definite-quadratic",
+      "title": "正定矩阵与二次型",
+      "order": 4,
+      "module": "线性代数进阶",
+      "difficulty": "进阶",
+      "estimatedMinutes": 45,
+      "summary": "二次型把矩阵变成曲面，正定性决定它是碗还是鞍面，也是凸性、Hessian 可解性与 Cholesky 分解的共同前提。",
+      "intuition": "一维时 f(x) = ax² 的符号决定开口方向；多维时 x^T A x 就是它的推广，叫二次型。A 正定意味着除原点外任何方向都被「抬起来」，曲面像一个碗，只有一个最低点。这不是纯数学趣味：损失函数在某点的 Hessian 若正定，那里就是局部极小；高斯分布的协方差矩阵必须正定，否则密度函数不合法；核函数必须半正定，否则 SVM 的对偶不是凸问题。判断手段各有代价：特征值最可靠但最贵，顺序主子式便宜却只对对称矩阵有效，Cholesky 能跑通就说明正定——工程上最常用这一条。",
+      "formal": "定义：实对称 A 若对任意 x ≠ 0 有 x^T A x > 0，称正定，记 A ≻ 0；取 ≥ 0 则称半正定。等价条件：① 所有特征值大于 0；② 所有顺序主子式大于 0（Sylvester 判据，仅对对称矩阵有效）；③ 存在可逆 B 使 A = B^T B；④ Cholesky 分解 A = LL^T 存在且 L 的对角元为正。推导思路：对对称 A 做谱分解 A = QΛQ^T，令 y = Q^T x，则 x^T A x = Σ λ_i y_i² 且 ‖x‖ = ‖y‖，因此正定性等价于所有 λ_i > 0，Rayleigh 商 x^T A x / x^T x 落在 [λ_min, λ_max] 内并在特征向量处取到端点。推论：正定矩阵可逆且 det A = Πλ_i > 0；A^T A 与 AA^T 恒半正定，加 λI（λ > 0）后变为正定，这正是岭回归、Levenberg–Marquardt 阻尼与协方差估计加 jitter 的数学理由。注意 x^T A x 只依赖 A 的对称部分 (A + A^T)/2。",
+      "formula": "\\mathbf{x}^\\top \\mathbf{A}\\mathbf{x} > 0 \\;(\\forall \\mathbf{x} \\neq \\mathbf{0}) \\iff \\lambda_i(\\mathbf{A}) > 0, \\qquad \\mathbf{A} = \\mathbf{L}\\mathbf{L}^\\top, \\qquad \\frac{\\mathbf{x}^\\top \\mathbf{A}\\mathbf{x}}{\\mathbf{x}^\\top \\mathbf{x}} \\in [\\lambda_{\\min}, \\lambda_{\\max}]",
+      "aiConnection": "高斯过程回归、贝叶斯线性回归、卡尔曼滤波都要对协方差矩阵做 Cholesky；核矩阵若因浮点误差出现极小负特征值，Cholesky 会直接抛 LinAlgError，工程做法是加 K + εI（ε 取 1e-6 量级），也就是常说的 jitter。二阶优化（牛顿法、K-FAC、自然梯度）要求 Hessian 或 Fisher 信息矩阵正定才敢当下降方向，实践中用 λI 阻尼保证；对比学习、度量学习里把距离矩阵投影到半正定锥也是同一套工具。判断损失曲面在某点是否局部凸，就看 Hessian 的最小特征值。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "psd_check.py",
+        "code": "import numpy as np\n\nrng = np.random.default_rng(0)\nB = rng.normal(size=(5, 5))\nA = B.T @ B + 1e-3 * np.eye(5)\n\neig = np.linalg.eigvalsh(A)\nprint('最小特征值:', round(float(eig.min()), 6), '全部为正:', bool((eig > 0).all()))\nL = np.linalg.cholesky(A)\nprint('Cholesky 重构误差:', np.abs(A - L @ L.T).max())\nlead = [np.linalg.det(A[:k, :k]) for k in range(1, 6)]\nprint('顺序主子式全正:', all(d > 0 for d in lead), np.round(lead, 6))\n\nvals, vecs = np.linalg.eigh(A)\nfor i in (0, 4):\n    v = vecs[:, i]\n    r = float(v @ A @ v / (v @ v))\n    print(f'特征向量 {i} 的 Rayleigh 商={r:.6f} 特征值={vals[i]:.6f}')\n\nC = np.array([[1.0, 3.0], [0.0, 1.0]])\nx = np.array([1.0, -1.0])\nprint('C 对称?', np.allclose(C, C.T), '特征值:', np.round(np.linalg.eigvals(C), 3))\nprint('顺序主子式:', np.round([C[0, 0], np.linalg.det(C)], 3), '但 x^T C x =', float(x @ C @ x))\nprint('对称部分 (C+C^T)/2 的特征值:', np.round(np.linalg.eigvalsh((C + C.T) / 2), 3))"
+      },
+      "mistakes": [
+        "对非对称矩阵用 Sylvester 判据：二次型只由对称部分决定，必须先对称化再判断正定性",
+        "把正定与「元素全为正」混淆：[[1,2],[2,1]] 元素全正但特征值是 3 和 −1，并不正定",
+        "协方差矩阵直接 Cholesky 不做抖动：浮点误差导致的极小负特征值会让分解失败，应加 εI",
+        "以为半正定矩阵一定可逆：A^T A 在列相关时奇异，求逆前先看最小特征值或条件数"
+      ],
+      "interviewPoints": [
+        "证明 A 正定等价于所有特征值大于 0，关键是谱分解后 x^T A x = Σ λ_i y_i² 且正交变换保范数",
+        "说明 Rayleigh 商的最值为什么是 λ_min 与 λ_max，以及它与 PCA 中方差最大化的联系",
+        "岭回归加 λI 为什么能保证解存在唯一：A^T A ⪰ 0 加上 λI 后 ⪰ λI ≻ 0，同时条件数被压小",
+        "Cholesky、特征值分解、顺序主子式三种正定性判据的代价与适用条件对比"
+      ],
+      "resources": [
+        {
+          "title": "Boyd & Vandenberghe, Convex Optimization（附录 A 矩阵性质）",
+          "url": "https://web.stanford.edu/~boyd/cvxbook/"
+        },
+        {
+          "title": "numpy.linalg.cholesky 文档",
+          "url": "https://numpy.org/doc/stable/reference/generated/numpy.linalg.cholesky.html"
+        },
+        {
+          "title": "Gaussian Processes for Machine Learning（第 2 章协方差矩阵）",
+          "url": "http://gaussianprocess.org/gpml/chapters/"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "positive-definite-quadratic-q1",
+          "type": "choice",
+          "prompt": "关于正定矩阵，下列说法正确的是？",
+          "options": [
+            "元素全为正的对称矩阵一定正定",
+            "对称矩阵正定当且仅当所有特征值为正，也当且仅当 Cholesky 分解存在",
+            "顺序主子式全为正可以判定任意方阵正定",
+            "半正定矩阵一定可逆"
+          ],
+          "answerIndex": 1,
+          "explanation": "对称矩阵下「特征值全正」「Cholesky 可分解」「顺序主子式全正」「A = B^T B 且 B 可逆」互相等价。A 反例是 [[1,2],[2,1]]；C 错在 Sylvester 判据只对对称矩阵成立，因为 x^T A x 只依赖对称部分；D 错在半正定允许零特征值，例如列相关的 A^T A。"
+        },
+        {
+          "id": "positive-definite-quadratic-q2",
+          "type": "short",
+          "prompt": "为什么高斯过程回归里要对核矩阵加一个很小的 εI？",
+          "answer": "参考回答：核矩阵 K 理论上半正定，但浮点运算与近邻样本会让它出现极小的负特征值或接近奇异，Cholesky 分解随即失败或数值不稳定。加上 εI（常用 1e-6 量级）把所有特征值抬高 ε，矩阵变成严格正定，分解稳定；同时它等价于假设观测噪声方差至少为 ε，避免对数据点做精确插值而过拟合。",
+          "keywords": ["jitter", "半正定", "Cholesky 失败", "数值稳定"],
+          "explanation": "要点是浮点误差导致负特征值、加 εI 后变为严格正定，以及它等价于噪声下限。"
+        },
+        {
+          "id": "positive-definite-quadratic-q3",
+          "type": "code",
+          "prompt": "实现函数 is_positive_definite(A)，用 Cholesky 分解判断对称矩阵是否正定，并用随机生成的 B^T B + εI 与一个非正定矩阵验证。",
+          "starterCode": "import numpy as np\n\ndef is_positive_definite(A):\n    pass\n\nrng = np.random.default_rng(0)\nB = rng.normal(size=(4, 4))\n",
+          "solution": "import numpy as np\n\ndef is_positive_definite(A):\n    try:\n        np.linalg.cholesky(A)\n        return True\n    except np.linalg.LinAlgError:\n        return False\n\nrng = np.random.default_rng(0)\nB = rng.normal(size=(4, 4))\nprint(is_positive_definite(B.T @ B + 1e-6 * np.eye(4)))\nprint(is_positive_definite(np.array([[1.0, 2.0], [2.0, 1.0]])))\n",
+          "checks": ["np.linalg.cholesky", "LinAlgError", "B.T @ B"],
+          "explanation": "Cholesky 分解存在当且仅当对称矩阵正定，用异常捕获是最省事的实现，注意必须先保证输入对称。"
+        }
+      ]
+    },
+    {
+      "slug": "probability-families",
+      "title": "常见概率分布族",
+      "order": 5,
+      "module": "概率与信息论",
+      "difficulty": "基础",
+      "estimatedMinutes": 45,
+      "summary": "伯努利、类别、高斯、拉普拉斯、泊松等分布族决定了损失函数的形式，指数族把它们的共同结构一次讲清。",
+      "intuition": "选损失函数其实就是在选「数据的噪声长什么样」。假设标签是 0/1 且独立，最大似然推出来就是二元交叉熵；假设输出是 C 类中的一类，推出来就是 softmax 加交叉熵；假设目标是连续值、误差服从高斯，推出来就是 MSE；假设误差服从拉普拉斯（重尾、有离群点），推出来就是 L1。所以不该死记「分类用交叉熵、回归用 MSE」，而要先问数据服从哪个分布族。指数族进一步把这一堆分布写成同一个模板，让充分统计量、共轭先验、广义线性模型这些概念一次说清，也解释了为什么这些损失函数都是凸的。",
+      "formal": "指数族标准形 p(x|η) = h(x)·exp(η^T T(x) − A(η))，其中 η 是自然参数、T(x) 是充分统计量、A(η) 是对数配分函数。关键性质：∇_η A(η) = E[T(x)]，∇²_η A(η) = Cov(T(x)) ⪰ 0，所以 A 是凸函数，这直接说明指数族的极大似然是凸优化问题。成员举例：伯努利 p = φ^y(1−φ)^{1−y}，类别分布 p(y=c) = π_c 且 Σπ_c = 1，高斯密度含 exp(−(x−μ)²/(2σ²))，拉普拉斯含 exp(−|x−μ|/b)，泊松 P(k) = e^{−λ}λ^k/k! 且方差等于均值。推导思路（伯努利 MLE）：对数似然为 Σ[y_i log φ + (1−y_i) log(1−φ)]，对 φ 求导并令其为 0 得 φ̂ = Σy_i/n，即样本均值；同理高斯下 μ̂ 为样本均值、σ̂² 为二阶中心矩，说明估计量的形式完全由分布族决定。注意泊松出现过离散时方差大于均值，应改用负二项分布。",
+      "formula": "p(x \\mid \\eta) = h(x)\\exp\\!\\big(\\eta^\\top T(x) - A(\\eta)\\big), \\qquad \\nabla_\\eta A(\\eta) = \\mathbb{E}[T(x)], \\qquad \\nabla^2_\\eta A(\\eta) = \\mathrm{Cov}(T(x)) \\succeq \\mathbf{0}",
+      "aiConnection": "输出层与损失的配对就是分布族的直接翻译：二分类 sigmoid + BCE 对应伯努利，多分类 softmax + 交叉熵对应类别分布，回归用 MSE 等价于假设高斯噪声且方差固定，稳健回归用 Huber 或 L1 对应拉普拉斯，计数任务用泊松回归。语言模型每个位置都是一个 |V| 类的类别分布，交叉熵就是它的负对数似然。VAE 的重参数化来自高斯，扩散模型的前向加噪是高斯马尔可夫链；focal loss 对易分样本降权、标签平滑抑制过度自信，都要回到分布假设上理解。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "dist_families.py",
+        "code": "import numpy as np\n\nrng = np.random.default_rng(0)\n\ny = rng.binomial(1, 0.3, size=20000)\nprint('伯努利 MLE:', round(float(y.mean()), 4), '理论值 0.3')\nprint('样本方差:', round(float(y.var()), 4), '理论值 p(1-p) =', round(0.3 * 0.7, 4))\n\nx = rng.normal(2.0, 3.0, size=20000)\nprint('mu MLE:', round(float(x.mean()), 3), 'sigma^2 MLE:', round(float(x.var()), 3), '理论值 9')\n\neta = 0.7\nsigmoid = 1 / (1 + np.exp(-eta))\nsamples = rng.binomial(1, sigmoid, size=200000)\nprint('nabla A(eta) = sigmoid(eta):', round(sigmoid, 4), '样本 E[T]:', round(float(samples.mean()), 4))\n\nnoise = rng.normal(0, 1, 1000)\nnoise[0] = 500.0\nprint('含一个离群点: mean =', round(float(noise.mean()), 3), ' median =', round(float(np.median(noise)), 3))\nprint('剔除该点后: mean =', round(float(noise[1:].mean()), 3), ' median =', round(float(np.median(noise[1:])), 3))"
+      },
+      "mistakes": [
+        "回归默认用 MSE 而不看噪声：重尾或有离群点时 MSE 被单个样本主导，应改用 L1 或 Huber",
+        "把 softmax 的多个输出当独立概率相乘：多分类是同一个类别分布的不同取值，概率之和必须为 1",
+        "混淆泊松的均值与方差：泊松方差等于均值，数据过离散时应改用负二项分布",
+        "采样后忘记重参数化：直接从 N(μ, σ²) 采样无法对 μ、σ 反传，必须写成 μ + σ·ε"
+      ],
+      "interviewPoints": [
+        "从最大似然推导逻辑回归的交叉熵损失，并说明它等价于伯努利分布假设",
+        "写出指数族标准形，证明 ∇_η A(η) = E[T(x)] 与 ∇²_η A(η) = Cov(T(x))，并说明极大似然为什么是凸的",
+        "为什么回归用 MSE、稳健回归用 L1：分别对应高斯与拉普拉斯噪声假设，中位数比均值更抗离群点",
+        "VAE 为什么必须用重参数化技巧，不重参数化会怎样"
+      ],
+      "resources": [
+        {
+          "title": "Bishop, Pattern Recognition and Machine Learning（第 2 章概率分布）",
+          "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/"
+        },
+        {
+          "title": "Stanford CS229 讲义（广义线性模型章节）",
+          "url": "https://cs229.stanford.edu/notes2022fall/main_notes.pdf"
+        },
+        {
+          "title": "Exponential family（Wikipedia）",
+          "url": "https://en.wikipedia.org/wiki/Exponential_family"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "probability-families-q1",
+          "type": "choice",
+          "prompt": "若假设回归目标的观测噪声服从拉普拉斯分布，则最大似然等价于最小化哪种损失？",
+          "options": [
+            "均方误差 MSE",
+            "平均绝对误差 L1",
+            "合页损失 Hinge",
+            "交叉熵"
+          ],
+          "answerIndex": 1,
+          "explanation": "拉普拉斯密度的负对数是 |x − μ|/b 加常数，最大化似然即最小化绝对误差之和，因此 L1 对应拉普拉斯噪声、对离群点稳健；MSE 对应高斯噪声，Hinge 来自 SVM 的间隔最大化，交叉熵来自伯努利或类别分布。"
+        },
+        {
+          "id": "probability-families-q2",
+          "type": "short",
+          "prompt": "什么是指数族？为什么说指数族的极大似然是凸优化问题？",
+          "answer": "参考回答：指数族指可写成 p(x|η) = h(x)exp(η^T T(x) − A(η)) 的分布族，η 为自然参数、T(x) 为充分统计量、A(η) 为对数配分函数，伯努利、高斯、泊松、指数分布都是其成员。A(η) 的梯度等于 E[T(x)]，Hessian 等于 T(x) 的协方差矩阵，半正定，所以 A 是凸函数；对数似然为 η^T Σ T(x_i) − nA(η)，是线性项减凸函数，因此是凹函数，最大化它是凸优化。",
+          "keywords": ["充分统计量", "对数配分函数", "协方差半正定", "对数似然凹"],
+          "explanation": "得分点在标准形写对，以及 A(η) 的 Hessian 是协方差矩阵因而半正定。"
+        },
+        {
+          "id": "probability-families-q3",
+          "type": "code",
+          "prompt": "用 numpy 从伯努利分布采样验证 MLE 等于样本均值，并验证指数族中 A(η) = log(1 + e^η) 的导数等于 sigmoid(η)、也等于充分统计量的期望。",
+          "starterCode": "import numpy as np\n\nrng = np.random.default_rng(0)\n# 1) 伯努利 MLE 2) A(eta) 的导数 == E[T]\n",
+          "solution": "import numpy as np\n\nrng = np.random.default_rng(0)\ny = rng.binomial(1, 0.3, size=20000)\nprint('MLE:', y.mean())\n\neta = 0.7\nsigmoid = 1 / (1 + np.exp(-eta))\nsamples = rng.binomial(1, sigmoid, size=200000)\nprint('nabla A(eta):', sigmoid, 'E[T]:', samples.mean())\n",
+          "checks": ["rng.binomial", "1 / (1 + np.exp(-eta))", ".mean()"],
+          "explanation": "伯努利的对数配分函数是 A(η) = log(1 + e^η)，其导数恰为 sigmoid(η)，也等于该分布下 T(x) = x 的期望。"
+        }
+      ]
+    },
+    {
+      "slug": "maximum-likelihood-map",
+      "title": "最大似然与最大后验",
+      "order": 6,
+      "module": "概率与信息论",
+      "difficulty": "进阶",
+      "estimatedMinutes": 50,
+      "summary": "MLE 只信数据，MAP 加上先验；两者之差恰好等价于在损失里加一项正则，这是 weight decay 与稀疏性的概率解释。",
+      "intuition": "抛 3 次硬币全是正面，MLE 会说「正面概率等于 1」，下次必然出正面——样本太少时这个结论荒谬。MAP 的做法是先带上「硬币大概公平」的信念（先验），让数据只负责修正它，于是估计落在 0.8 而不是 1.0；数据越多先验越被冲淡，MAP 收敛到 MLE。这个先验在工程上就是正则项：高斯先验取负对数得到 λ‖w‖²，拉普拉斯先验得到 λ‖w‖₁，所以 weight decay 不是拍脑袋的技巧，而是「我认为权重应该小」的贝叶斯表达。再往前一步是全贝叶斯：不取单点估计，而是对整个后验积分，从而得到预测的不确定性。",
+      "formal": "给定数据 D，MLE 为 θ̂ = argmax log p(D|θ)；由贝叶斯公式 p(θ|D) = p(D|θ)p(θ)/p(D)，MAP 为 θ̂ = argmax [log p(D|θ) + log p(θ)]，分母与 θ 无关可以丢掉。推导（L2 正则的来源）：取先验 θ ~ N(0, τ²I)，则 log p(θ) = −‖θ‖²/(2τ²) + C，代入得目标「负对数似然 + λ‖θ‖²」且 λ = 1/(2τ²)；若先验为各分量独立的 Laplace(0, b)，则 log p(θ) = −‖θ‖₁/b，得到 L1 正则，其在 0 点不可导的尖峰使部分坐标被精确压到 0，即稀疏性。性质：MLE 在正则条件下相合且渐近正态，√n(θ̂ − θ*) → N(0, I(θ*)^{-1})，达到 Cramér–Rao 下界；MAP 是后验众数，n → ∞ 时趋于 MLE，但它不具备重参数化不变性（换一组参数化后众数会变），而 MLE 具备。边界：先验选错会引入偏差，τ 太小等于正则过强，表现为欠拟合。",
+      "formula": "\\hat{\\theta}_{\\mathrm{MAP}} = \\arg\\max_\\theta \\big[\\log p(D \\mid \\theta) + \\log p(\\theta)\\big], \\qquad \\theta \\sim \\mathcal{N}(\\mathbf{0}, \\tau^2 \\mathbf{I}) \\;\\Longrightarrow\\; \\mathcal{L} = -\\log p(D \\mid \\theta) + \\frac{1}{2\\tau^2}\\|\\theta\\|_2^2",
+      "aiConnection": "weight decay 就是高斯先验的 MAP，L1 正则（稀疏、剪枝、特征选择）就是拉普拉斯先验。Dropout 被解释为对权重的近似贝叶斯模型平均，标签平滑等价于给标签加先验以抑制过度自信。小样本场景（冷启动、few-shot、A/B 实验早期）必须靠先验或正则防止估计爆掉：CTR 预估里对每个 item 的点击率做贝叶斯平滑，就是加 Beta 先验。持续学习里的 EWC 用 Fisher 信息量加权做 L2 正则以防遗忘。反过来，数据量增大时先验影响可以忽略，正则系数应随之调小。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "mle_map.py",
+        "code": "import numpy as np\n\nrng = np.random.default_rng(0)\n\ndef map_beta(alpha, beta, k, n):\n    return (alpha + k - 1) / (alpha + beta + n - 2)\n\nfor n, k in ((3, 3), (30, 21), (3000, 2100)):\n    print(f'n={n:5d} k={k:5d} MLE={k / n:.4f} MAP(Beta(2,2))={map_beta(2, 2, k, n):.4f}')\n\nX = rng.normal(size=(200, 5))\nw_true = rng.normal(size=5)\ny = X @ w_true + rng.normal(scale=0.5, size=200)\nlam = 1.0\nw_map = np.linalg.solve(X.T @ X + lam * np.eye(5), X.T @ y)\nw_mle = np.linalg.solve(X.T @ X, X.T @ y)\nprint('MAP 与 MLE 权重之差:', np.round(w_map - w_mle, 4))\nprint('||w_map|| < ||w_mle||:', np.linalg.norm(w_map) < np.linalg.norm(w_mle))\nprint('训练残差平方和 MAP:', round(float(np.sum((X @ w_map - y) ** 2)), 3),\n      'MLE:', round(float(np.sum((X @ w_mle - y) ** 2)), 3))"
+      },
+      "mistakes": [
+        "样本极少时直接用 MLE：抛 3 次全正面就得出 p = 1，必须加先验或做贝叶斯平滑",
+        "以为 MAP 一定优于 MLE：先验选错会引入偏差，τ 太小则正则过强导致欠拟合",
+        "对参数做非线性重参数化后仍用 MAP：MAP 不具备重参数化不变性，此时应改用 MLE 或全贝叶斯",
+        "把 weight decay 只当优化技巧：它等价于高斯先验，系数 λ 应与数据量、先验方差一起考虑"
+      ],
+      "interviewPoints": [
+        "推导高斯先验下 MAP 等价于 L2 正则，并写出 λ 与先验方差 τ² 的定量关系 λ = 1/(2τ²)",
+        "解释 L1 正则为什么产生稀疏解：拉普拉斯先验在 0 处有尖峰，次梯度条件让部分坐标恰好取 0",
+        "叙述 MLE 的渐近正态性与 Cramér–Rao 下界，并说明为什么数据量大时先验影响可忽略",
+        "MAP 与全贝叶斯的区别：单点估计与后验积分在不确定性表达上的差异"
+      ],
+      "resources": [
+        {
+          "title": "Dropout as a Bayesian Approximation（Gal & Ghahramani）",
+          "url": "https://arxiv.org/abs/1506.02142"
+        },
+        {
+          "title": "Stanford CS229 讲义（MLE 与 MAP）",
+          "url": "https://cs229.stanford.edu/notes2022fall/main_notes.pdf"
+        },
+        {
+          "title": "MacKay, Information Theory, Inference, and Learning Algorithms",
+          "url": "http://www.inference.org.uk/itila/book.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "maximum-likelihood-map-q1",
+          "type": "choice",
+          "prompt": "若把线性回归的权重先验设为各分量独立的标准拉普拉斯分布，MAP 估计等价于？",
+          "options": [
+            "带 L2 正则的岭回归",
+            "带 L1 正则的 Lasso",
+            "无正则的最小二乘",
+            "逻辑回归"
+          ],
+          "answerIndex": 1,
+          "explanation": "拉普拉斯先验的负对数是 ‖w‖₁ 的线性倍数，因此 MAP 等于最小二乘加 L1 正则，即 Lasso，其解在坐标轴上具有稀疏性；高斯先验才对应 L2 与岭回归。"
+        },
+        {
+          "id": "maximum-likelihood-map-q2",
+          "type": "short",
+          "prompt": "为什么说 weight decay 不是纯工程技巧，而是有概率含义的？",
+          "answer": "参考回答：给权重加高斯先验 N(0, τ²I) 后，MAP 目标为负对数似然加上 ‖w‖²/(2τ²)，正是「损失 + λ‖w‖²」的形式，λ = 1/(2τ²)。所以 weight decay 等价于「我认为权重应该接近 0、方差为 τ²」这一先验信念，先验越强（τ 越小）正则越强。数据量增大时似然项主导，最优 λ 应随之减小，这与实践中大模型反而用小 weight decay 一致。",
+          "keywords": ["高斯先验", "MAP", "λ = 1/(2τ²)", "先验方差"],
+          "explanation": "要点是写出 λ 与先验方差的定量关系，并说明数据量对最优正则强度的影响。"
+        },
+        {
+          "id": "maximum-likelihood-map-q3",
+          "type": "code",
+          "prompt": "实现 Beta-Bernoulli 的 MAP 估计，比较 n = 3、30、3000 时 MLE 与 MAP(Beta(2,2)) 的差异，并用闭式解验证 L2 正则的 MAP 权重范数小于 MLE。",
+          "starterCode": "import numpy as np\n\ndef map_beta(alpha, beta, k, n):\n    pass\n\nrng = np.random.default_rng(0)\n",
+          "solution": "import numpy as np\n\ndef map_beta(alpha, beta, k, n):\n    return (alpha + k - 1) / (alpha + beta + n - 2)\n\nrng = np.random.default_rng(0)\nfor n, k in ((3, 3), (30, 21), (3000, 2100)):\n    print(n, k / n, map_beta(2, 2, k, n))\n\nX = rng.normal(size=(200, 5))\ny = X @ rng.normal(size=5) + rng.normal(scale=0.5, size=200)\nw_map = np.linalg.solve(X.T @ X + np.eye(5), X.T @ y)\nw_mle = np.linalg.solve(X.T @ X, X.T @ y)\nprint(np.linalg.norm(w_map) < np.linalg.norm(w_mle))\n",
+          "checks": ["map_beta", "np.linalg.solve", "np.linalg.norm"],
+          "explanation": "Beta(α, β) 后验为 Beta(α+k, β+n−k)，其众数为 (α+k−1)/(α+β+n−2)；L2 正则在闭式解里表现为给 X^T X 加 λI，使权重被整体缩小。"
+        }
+      ]
+    },
+    {
+      "slug": "entropy-cross-entropy-kl",
+      "title": "熵、交叉熵与 KL 散度",
+      "order": 7,
+      "module": "概率与信息论",
+      "difficulty": "进阶",
+      "estimatedMinutes": 50,
+      "summary": "熵衡量不确定性，交叉熵是用错误分布编码真实分布的代价，KL 是两者之差，也是语言模型损失与 RLHF 约束的核心。",
+      "intuition": "熵回答「这件事有多难猜」：公平硬币 1 bit，必然事件 0 bit，三分类均匀分布 log 3 ≈ 1.0986 nat。交叉熵回答「我以为的分布和真实分布差多少」：真实分布是 p 却用 q 去编码，平均要多付 KL(p‖q) 个 nat。KL 不是距离——它不对称，KL(p‖q) 一般不等于 KL(q‖p)，而且 q 在某处为 0 而 p 不为 0 时会直接发散。这个不对称正是它在生成模型里的用法分野：forward KL 惩罚「q 漏掉了 p 的概率质量」，倾向覆盖所有模式；reverse KL 惩罚「q 在 p 没质量的地方乱放概率」，倾向锁定单一模式。训练里几乎所有损失函数都能写成它的某种变形。",
+      "formal": "熵 H(p) = −Σ p_i log p_i，单位由对数底决定。交叉熵 H(p, q) = −Σ p_i log q_i。KL 散度 KL(p‖q) = Σ p_i log(p_i/q_i) = H(p, q) − H(p)。推导（非负性，用 Jensen 不等式）：KL(p‖q) = −Σ p_i log(q_i/p_i) ≥ −log Σ p_i·(q_i/p_i) = −log 1 = 0，等号当且仅当 p = q 几乎处处成立。关键性质：非负、不对称、不满足三角不等式；与最大似然的等价性——min_q KL(p‖q) 等价于 min_q H(p, q)，因为 H(p) 与 q 无关，所以「最小化交叉熵」与「最小化 KL」是同一件事，这就是分类任务直接用交叉熵的依据。相关量：条件熵满足链式法则 H(X,Y) = H(X) + H(Y|X)，H(X) ≤ log|X| 且在均匀分布取等。数值边界：q_i → 0 时 p_i log q_i 发散，实现上要么加 eps 截断，要么保证支撑集覆盖，要么用 log_softmax 融合实现。",
+      "formula": "\\mathrm{KL}(p \\,\\|\\, q) = \\sum_i p_i \\log \\frac{p_i}{q_i} = H(p, q) - H(p) \\ge 0",
+      "aiConnection": "语言模型的训练损失就是交叉熵，等价于困惑度 perplexity = exp(交叉熵)，数值上直接反映「模型在多少个候选词之间犹豫」。RLHF/PPO 在奖励里显式加 β·KL(π_θ‖π_ref) 惩罚项，防止策略跑离参考模型太远导致 reward hacking；DPO 把带 KL 约束的 RLHF 目标解析地化成一个只依赖偏好对的分类损失。知识蒸馏用 KL(p_teacher‖p_student) 传递软标签，温度 T 放大了小概率类别的信息。VAE 的 ELBO 是重构项减去 KL(q(z|x)‖p(z))，变分推断用 reverse KL。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "entropy_kl.py",
+        "code": "import numpy as np\n\ndef entropy(p):\n    p = np.asarray(p, dtype=float).ravel()\n    p = p[p > 0]\n    return float(-(p * np.log(p)).sum())\n\ndef cross_entropy(p, q):\n    p, q = np.asarray(p, float), np.asarray(q, float)\n    return float(-(p * np.log(q + 1e-12)).sum())\n\ndef kl(p, q):\n    return cross_entropy(p, q) - entropy(p)\n\np = np.array([0.7, 0.2, 0.1])\nq = np.array([0.5, 0.3, 0.2])\nprint('H(p) =', round(entropy(p), 4), '<= log 3 =', round(float(np.log(3)), 4))\nprint('H(p,q) =', round(cross_entropy(p, q), 4))\nprint('KL(p||q) =', round(kl(p, q), 4), ' KL(q||p) =', round(kl(q, p), 4))\nprint('非负:', kl(p, q) >= 0, ' 不对称:', not np.isclose(kl(p, q), kl(q, p)))\nprint('交叉熵减熵等于 KL:', np.isclose(cross_entropy(p, q) - entropy(p), kl(p, q)))\n\nu = np.ones(3) / 3\nprint('均匀分布熵:', round(entropy(u), 4), '等于 log 3:', np.isclose(entropy(u), np.log(3)))\n\nq0 = np.array([1.0, 0.0, 0.0])\nprint('支撑集不覆盖时 CE =', cross_entropy(np.array([0.5, 0.3, 0.2]), q0))"
+      },
+      "mistakes": [
+        "把 KL 当距离用：它不对称也不满足三角不等式，做聚类或最近邻时必须明确用哪个方向",
+        "以为 KL 一定有界：q_i = 0 而 p_i > 0 时 KL 发散，实现上要么加 eps 要么保证支撑集覆盖",
+        "训练时手写 log(softmax(x))：数值上会溢出成 inf，必须用 log_softmax 与 NLL 的融合实现",
+        "混淆 forward 与 reverse KL 的用途：MLE、蒸馏用 KL(p‖q)，变分推断、RLHF 约束用 KL(q‖p)"
+      ],
+      "interviewPoints": [
+        "用 Jensen 不等式证明 KL ≥ 0，并说明等号成立的条件",
+        "为什么最小化交叉熵等价于最小化 KL，以及分类任务为什么不需要知道 H(p)",
+        "解释 forward KL 与 reverse KL 的行为差异（mass-covering 与 mode-seeking），以及在 VAE、RLHF 中的体现",
+        "困惑度 perplexity = exp(交叉熵) 的含义、读法，以及它与交叉熵的换算"
+      ],
+      "resources": [
+        {
+          "title": "Cover & Thomas, Elements of Information Theory",
+          "url": "https://onlinelibrary.wiley.com/doi/book/10.1002/047174882X"
+        },
+        {
+          "title": "DPO: Direct Preference Optimization",
+          "url": "https://arxiv.org/abs/2305.18290"
+        },
+        {
+          "title": "PyTorch CrossEntropyLoss 文档",
+          "url": "https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "entropy-cross-entropy-kl-q1",
+          "type": "choice",
+          "prompt": "关于 KL 散度，下列说法正确的是？",
+          "options": [
+            "KL(p‖q) = KL(q‖p)，可以直接当距离使用",
+            "KL(p‖q) ≥ 0，且最小化交叉熵等价于最小化 KL(p‖q)",
+            "KL 一定是有界的，最大不超过 log|X|",
+            "KL(p‖q) 与 H(p) 无关"
+          ],
+          "answerIndex": 1,
+          "explanation": "由 Jensen 不等式可得 KL 非负；又因为 H(p, q) = H(p) + KL(p‖q) 且 H(p) 与 q 无关，最小化交叉熵就是最小化 KL。A 错在不对称；C 错在 q 支撑集不覆盖 p 时会发散；D 错在 KL = H(p, q) − H(p)，与 H(p) 直接相关。"
+        },
+        {
+          "id": "entropy-cross-entropy-kl-q2",
+          "type": "short",
+          "prompt": "RLHF 中为什么要在奖励里加一项 KL 惩罚？它约束的方向是什么？",
+          "answer": "参考回答：奖励模型只是人类偏好的近似，策略如果无约束地最大化它，会钻到奖励模型打分虚高但实际很差的区域，即 reward hacking，同时输出分布会退化、多样性下降。加入 β·KL(π_θ‖π_ref) 相当于用参考模型做先验，把策略限制在参考模型附近，只在有把握的方向上偏离。方向是 reverse KL（策略在前、参考在后），因为它惩罚策略在参考模型没质量的地方乱放概率，行为上更保守。",
+          "keywords": ["reward hacking", "参考模型", "reverse KL", "β 约束强度"],
+          "explanation": "要点是奖励模型不完美导致 reward hacking，KL 项起信任域作用，并说清方向性。"
+        },
+        {
+          "id": "entropy-cross-entropy-kl-q3",
+          "type": "code",
+          "prompt": "实现 entropy、cross_entropy、kl 三个函数，验证 KL 非负、不对称，且 H(p, q) − H(p) 等于 KL(p‖q)。",
+          "starterCode": "import numpy as np\n\ndef entropy(p):\n    pass\n\ndef cross_entropy(p, q):\n    pass\n\ndef kl(p, q):\n    pass\n\np = np.array([0.7, 0.2, 0.1])\nq = np.array([0.5, 0.3, 0.2])\n",
+          "solution": "import numpy as np\n\ndef entropy(p):\n    p = np.asarray(p, dtype=float).ravel()\n    p = p[p > 0]\n    return float(-(p * np.log(p)).sum())\n\ndef cross_entropy(p, q):\n    p, q = np.asarray(p, float), np.asarray(q, float)\n    return float(-(p * np.log(q + 1e-12)).sum())\n\ndef kl(p, q):\n    return cross_entropy(p, q) - entropy(p)\n\np = np.array([0.7, 0.2, 0.1])\nq = np.array([0.5, 0.3, 0.2])\nprint(kl(p, q), kl(q, p))\nprint(kl(p, q) >= 0, np.isclose(cross_entropy(p, q) - entropy(p), kl(p, q)))\n",
+          "checks": ["def entropy", "def cross_entropy", "def kl"],
+          "explanation": "先用 KL = H(p, q) − H(p) 实现最直观；注意熵只对 p > 0 的分量求和，交叉熵里对 q 加 eps 防止 log 0。"
+        }
+      ]
+    },
+    {
+      "slug": "mutual-information",
+      "title": "互信息与最大熵",
+      "order": 8,
+      "module": "概率与信息论",
+      "difficulty": "高阶",
+      "estimatedMinutes": 50,
+      "summary": "互信息衡量两个变量共享多少信息，能捕捉非线性依赖；最大熵原理给出已知约束下最不武断的分布，并推出逻辑回归。",
+      "intuition": "互信息回答「知道 X 之后，Y 的不确定性减少了多少」。完全独立时知道 X 对猜 Y 毫无帮助，互信息为 0；Y 是 X 的确定性函数时，互信息等于 Y 自己的熵。它比相关系数强的地方在于能捕捉非线性依赖：y = sin(3x) 时相关系数接近 0，互信息却很大——相关为 0 不代表独立，但互信息为 0 就等价于独立。最大熵是另一面的智慧：只知道「平均长度是 5」这类约束时不要编造额外假设，选熵最大的分布。这个原则推出了逻辑回归、softmax 与「均值方差已知时最合理的分布是高斯」。",
+      "formal": "互信息定义为 I(X;Y) = KL(p(x,y)‖p(x)p(y)) = H(X) − H(X|Y) = H(X) + H(Y) − H(X,Y)。推导（与熵的关系）：由 H(X|Y) = −Σ p(x,y) log p(x|y) 及 log p(x|y) = log p(x,y) − log p(y)，得 H(X|Y) = H(X,Y) − H(Y)，代入即得 I = H(X) − H(X|Y) = H(X) + H(Y) − H(X,Y)。性质：非负（由 KL 非负）、对称、I(X;X) = H(X)、在可逆变换下不变（I(f(X);Y) = I(X;Y) 当 f 可逆）。最大熵原理：在约束 E_p[f_k] = c_k 与归一化条件下最大化 H(p)，用拉格朗日乘子法解得 p(x) ∝ exp(Σ_k λ_k f_k(x))，即指数族；其对偶恰好是无约束的对数似然最大化，这就是最大熵模型等于逻辑回归的原因。估计难点：高维互信息估计方差大，常用 MINE 的 Donsker–Varadhan 下界、对比学习里的 InfoNCE 下界，或 Kraskov 的 k 近邻估计。最大熵原理还有一个直接推论：约束越少、分布越接近均匀，这正是熵正则化与标签平滑的出发点。",
+      "formula": "I(X;Y) = \\mathrm{KL}\\!\\big(p(x,y) \\,\\|\\, p(x)p(y)\\big) = H(X) - H(X \\mid Y), \\qquad p^*(x) = \\frac{1}{Z(\\lambda)}\\exp\\Big(\\sum_k \\lambda_k f_k(x)\\Big)",
+      "aiConnection": "InfoNCE 是对比学习（SimCLR、MoCo、CLIP）的目标函数，本质是互信息的变分下界：拉近正样本对、推远负样本对就是在最大化「表示」与「增强视图」之间的互信息，温度 τ 控制对难负样本的关注程度。特征工程里用互信息筛掉与标签只有非线性关系的特征（sklearn 的 mutual_info_classif）。决策树用信息增益（即互信息）选分裂点，C4.5 改用信息增益率修正对多值特征的偏好。条件生成中 I(条件; 生成样本) 接近 0 说明模型忽略了条件，是检测 mode collapse 的手段之一。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "mutual_info.py",
+        "code": "import numpy as np\n\ndef entropy(p):\n    p = np.asarray(p, float).ravel()\n    p = p[p > 0]\n    return float(-(p * np.log(p)).sum())\n\ndef mutual_info(x, y, bins=12):\n    c_xy, _, _ = np.histogram2d(x, y, bins=bins)\n    pxy = c_xy / c_xy.sum()\n    px = pxy.sum(axis=1, keepdims=True)\n    py = pxy.sum(axis=0, keepdims=True)\n    nz = pxy > 0\n    return float((pxy[nz] * np.log(pxy[nz] / (px @ py)[nz])).sum())\n\nrng = np.random.default_rng(0)\nx = rng.normal(size=5000)\ny = np.sin(3 * x) + 0.3 * rng.normal(size=5000)\nz = rng.normal(size=5000)\nprint('相关系数 corr(x,y) =', round(float(np.corrcoef(x, y)[0, 1]), 4))\nprint('I(x;y) =', round(mutual_info(x, y), 4), ' I(x;z) =', round(mutual_info(x, z), 4))\nprint('I(x;x) =', round(mutual_info(x, x), 4), ' H(x) =',\n      round(entropy(np.histogram(x, bins=12)[0] / 5000), 4))\nprint('可逆变换下不变:', np.isclose(mutual_info(x, y), mutual_info(x, 2 * y + 1)))"
+      },
+      "mistakes": [
+        "用相关系数代替互信息：相关系数只能发现线性关系，y = sin(3x) 时相关系数约 0 但互信息很大",
+        "直方图分箱数随手定：bins 太小低估互信息，太大方差爆炸，比较特征时必须固定 bins 与种子",
+        "把信息增益直接用于多值特征：取值多的特征信息增益天然偏大，应改用信息增益率或卡方检验",
+        "把 InfoNCE 的数值当绝对互信息：它只是下界，且随 batch size 与温度变化，不能跨设置比较"
+      ],
+      "interviewPoints": [
+        "证明 I(X;Y) = H(X) − H(X|Y) = H(X) + H(Y) − H(X,Y)，并说明 I(X;X) = H(X)",
+        "为什么互信息能捕捉非线性依赖而相关系数不能，给出一个具体反例",
+        "用拉格朗日乘子法从最大熵原理推出指数族分布，并说明它如何退化为逻辑回归",
+        "InfoNCE 为什么是互信息的下界，温度系数 τ 与负样本数量起什么作用"
+      ],
+      "resources": [
+        {
+          "title": "MINE: Mutual Information Neural Estimation",
+          "url": "https://arxiv.org/abs/1801.04062"
+        },
+        {
+          "title": "Representation Learning with Contrastive Predictive Coding（InfoNCE 出处）",
+          "url": "https://arxiv.org/abs/1807.03748"
+        },
+        {
+          "title": "sklearn mutual_info_classif 文档",
+          "url": "https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_classif.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "mutual-information-q1",
+          "type": "choice",
+          "prompt": "设 X 服从标准正态分布，Y = sin(3X) + 噪声，下列说法正确的是？",
+          "options": [
+            "相关系数接近 0，说明 X 与 Y 独立",
+            "相关系数接近 0，但互信息明显大于 0，说明存在非线性依赖",
+            "互信息一定为 0，因为相关系数为 0",
+            "互信息等于 X 的熵"
+          ],
+          "answerIndex": 1,
+          "explanation": "相关系数只度量线性相关，sin 这类奇函数的线性相关接近 0；互信息度量一般依赖，此时明显大于 0。A、C 把「不线性相关」误当成独立；D 只在 Y 是 X 的可逆函数时才成立。"
+        },
+        {
+          "id": "mutual-information-q2",
+          "type": "short",
+          "prompt": "从最大熵原理出发，为什么约束特征期望后得到的是指数族分布？",
+          "answer": "参考回答：在 E_p[f_k] = c_k 与概率归一化约束下最大化熵，构造拉格朗日函数并对每个 p(x) 求偏导，得到 −log p(x) − 1 + Σλ_k f_k(x) = 0，解出 p(x) ∝ exp(Σλ_k f_k(x))，即指数族。对偶问题变成对 λ 的无约束对数似然最大化，是凸问题。逻辑回归正是取特征为 x 与标签乘积时的特例，所以最大熵模型与逻辑回归等价。",
+          "keywords": ["拉格朗日乘子", "特征期望约束", "指数族", "对偶"],
+          "explanation": "要点是写出拉格朗日求导那一步，并点明对偶是凸的对数似然最大化。"
+        },
+        {
+          "id": "mutual-information-q3",
+          "type": "code",
+          "prompt": "用直方图法实现互信息估计，验证 (1) 独立变量互信息接近 0；(2) I(X;X) 等于 X 的熵；(3) 可逆线性变换不改变互信息。",
+          "starterCode": "import numpy as np\n\ndef mutual_info(x, y, bins=12):\n    pass\n\nrng = np.random.default_rng(0)\n",
+          "solution": "import numpy as np\n\ndef mutual_info(x, y, bins=12):\n    c_xy, _, _ = np.histogram2d(x, y, bins=bins)\n    pxy = c_xy / c_xy.sum()\n    px = pxy.sum(axis=1, keepdims=True)\n    py = pxy.sum(axis=0, keepdims=True)\n    nz = pxy > 0\n    return float((pxy[nz] * np.log(pxy[nz] / (px @ py)[nz])).sum())\n\nrng = np.random.default_rng(0)\nx = rng.normal(size=5000)\ny = rng.normal(size=5000)\nprint(mutual_info(x, y))\nprint(mutual_info(x, x))\nprint(np.isclose(mutual_info(x, x), mutual_info(x, 2 * x + 1)))\n",
+          "checks": ["np.histogram2d", "keepdims=True", "pxy > 0"],
+          "explanation": "互信息即联合分布与边缘分布乘积的 KL；直方图估计要把联合概率与边缘概率都归一化，并跳过零概率格子。"
+        }
+      ]
+    },
+    {
+      "slug": "convexity",
+      "title": "凸集与凸函数",
+      "order": 9,
+      "module": "优化理论",
+      "difficulty": "进阶",
+      "estimatedMinutes": 50,
+      "summary": "凸性保证局部最优就是全局最优，是逻辑回归、SVM、Lasso 能被放心优化的根本原因，也是选求解器前的第一道筛子。",
+      "intuition": "凸集是「集合里任意两点的连线仍在集合内」：圆盘、半空间、多面体都是，月牙形不是。凸函数是「图像上任意两点的连线在图像上方」，形状像碗。凸优化的好处是决定性的：梯度下降不会卡在假的局部最低点，因为根本没有陷阱；最优性判据也简单，无约束时梯度为 0 就够，有约束时用 KKT。所以拿到问题第一步该问「它凸不凸」：凸就用靠谱求解器稳拿全局最优；不凸（神经网络、矩阵分解、k-means）才需要初始化技巧、学习率调度、多次重启这些工程手段。深度学习的很多「玄学」都源于非凸性。",
+      "formal": "凸集：∀x, y ∈ C 与 θ ∈ [0,1] 有 θx + (1−θ)y ∈ C。凸函数：f(θx + (1−θ)y) ≤ θf(x) + (1−θ)f(y)，且定义域必须是凸集。一阶条件：可微 f 为凸当且仅当 f(y) ≥ f(x) + ∇f(x)^T(y − x)，即图像始终在任意切线上方，这保证了梯度是全局下界。二阶条件：二阶可微 f 为凸当且仅当 ∇²f(x) ⪰ 0 在整个定义域上成立。证明思路（一阶条件必要性）：固定 x、y，令 g(t) = f(x + t(y − x))，由凸性得 g(t) ≤ (1−t)g(0) + t·g(1)，于是 [g(t) − g(0)]/t ≤ g(1) − g(0)，令 t → 0⁺ 即得 ∇f(x)^T(y − x) ≤ f(y) − f(x)。保凸运算：非负加权和、与仿射映射复合 f(Ax + b)、逐点取最大值、对部分变量取下确界——最后一条解释了为什么 SVM 的对偶问题仍然是凸的。典型凸问题：LP、QP（含 L2 正则的回归）、SOCP、SDP。典型非凸：秩约束、L0 范数、双线性项 uv^T、神经网络损失。注意凸函数之积一般不凸，非凸函数之和却可能凸。",
+      "formula": "f(\\theta \\mathbf{x} + (1-\\theta)\\mathbf{y}) \\le \\theta f(\\mathbf{x}) + (1-\\theta) f(\\mathbf{y}), \\qquad f(\\mathbf{y}) \\ge f(\\mathbf{x}) + \\nabla f(\\mathbf{x})^\\top (\\mathbf{y} - \\mathbf{x}), \\qquad \\nabla^2 f(\\mathbf{x}) \\succeq \\mathbf{0}",
+      "aiConnection": "逻辑回归的负对数似然是凸的：Hessian 为 X^T diag(p(1−p)) X，因 p(1−p) ≥ 0 而半正定，所以 L-BFGS、牛顿法都能稳定收敛到全局最优。软间隔 SVM 的原问题是凸 QP，对偶后仍是凸 QP，才有 SMO 这种高效解法与核技巧。Lasso 凸但不可微，需要近端梯度或坐标下降。深度学习整体非凸，但很多子问题是凸的（最后一层线性头、混合模型的 E 步、LoRA 在固定 A 时对 B 的子问题），工程上「哪里凸就在哪里用闭式解」。判断损失曲面时，Hessian 最小特征值为负说明存在鞍点方向，这在大规模训练里比局部极小更常见。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "convexity_check.py",
+        "code": "import numpy as np\n\ndef is_convex_1st_order(f, grad, scale=3.0, trials=2000, seed=0):\n    rng = np.random.default_rng(seed)\n    for _ in range(trials):\n        x, y = rng.normal(scale=scale, size=2), rng.normal(scale=scale, size=2)\n        if f(y) < f(x) + grad(x) @ (y - x) - 1e-8:\n            return False\n    return True\n\nM = np.array([[2.0, 0.5], [0.5, 1.0]])\nf_convex = lambda v: 0.5 * v @ M @ v\ng_convex = lambda v: M @ v\nprint('二次型满足一阶条件:', is_convex_1st_order(f_convex, g_convex))\nprint('Hessian 最小特征值:', round(float(np.linalg.eigvalsh(M).min()), 4))\n\nf_non = lambda v: v[0] ** 2 - v[1] ** 2\ng_non = lambda v: np.array([2 * v[0], -2 * v[1]])\nprint('鞍面满足一阶条件:', is_convex_1st_order(f_non, g_non))\n\nrng = np.random.default_rng(1)\nX = np.c_[np.ones(50), rng.normal(size=(50, 3))]\nw = rng.normal(size=4)\np = 1 / (1 + np.exp(-X @ w))\nH = X.T @ np.diag(p * (1 - p)) @ X\nprint('逻辑回归 Hessian 最小特征值:', round(float(np.linalg.eigvalsh(H).min()), 6))\nprint('Hessian 半正定:', bool((np.linalg.eigvalsh(H) > -1e-12).all()))"
+      },
+      "mistakes": [
+        "以为凸函数之和、之积都凸：非负加权和保凸，乘积一般不保凸，需要单独验证",
+        "只看某一点的 Hessian 就下结论：凸性要求 Hessian 在整个定义域上处处半正定",
+        "把非凸问题直接丢给求解器：CVXPY 会报 DCP 错误，必须先松弛、换参数化或改写成凸子问题",
+        "忘记检查定义域：f(x) = log x 是凸函数但定义域是 x > 0，定义域非凸时凸性无从谈起"
+      ],
+      "interviewPoints": [
+        "证明可微凸函数的一阶条件 f(y) ≥ f(x) + ∇f(x)^T(y − x)，并说明它为什么保证梯度下降不会停在非全局最优点",
+        "写出逻辑回归的 Hessian 并证明其半正定，从而说明负对数似然是凸的",
+        "Lasso 是凸问题却不能用普通梯度下降，说明原因与近端梯度、次梯度的处理方式",
+        "列举三个保凸运算，并解释 SVM 的对偶问题为什么保持凸性"
+      ],
+      "resources": [
+        {
+          "title": "Boyd & Vandenberghe, Convex Optimization（免费 PDF）",
+          "url": "https://web.stanford.edu/~boyd/cvxbook/"
+        },
+        {
+          "title": "CVXPY 的 DCP 规则",
+          "url": "https://www.cvxpy.org/tutorial/dcp/index.html"
+        },
+        {
+          "title": "Stanford EE364a: Convex Optimization I",
+          "url": "https://stanford.edu/class/ee364a/"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "convexity-q1",
+          "type": "choice",
+          "prompt": "下列哪个问题不是凸优化问题？",
+          "options": [
+            "带 L2 正则的线性回归（岭回归）",
+            "软间隔 SVM 的原问题",
+            "最小化 uv^T 形式的双线性目标",
+            "带 L1 正则的 Lasso"
+          ],
+          "answerIndex": 2,
+          "explanation": "双线性项 uv^T 关于 (u, v) 联合是非凸的（固定一个变量才是凸的），这是矩阵分解类问题的典型困难。岭回归是 QP，SVM 是凸 QP，Lasso 虽然不可微但仍是凸问题，可用近端梯度求解。"
+        },
+        {
+          "id": "convexity-q2",
+          "type": "short",
+          "prompt": "为什么说逻辑回归的负对数似然是凸函数？请给出关键推导。",
+          "answer": "参考回答：负对数似然为 Σ[log(1 + e^{x_i^T w}) − y_i x_i^T w]，其中 y_i ∈ {0,1}。逐项求二阶导得 Hessian 为 X^T diag(p_i(1 − p_i)) X，其中 p_i = sigmoid(x_i^T w)。因为 0 < p_i < 1，对角元 p_i(1 − p_i) 全为正，对角矩阵半正定，左乘右乘 X 后仍半正定，所以 Hessian ⪰ 0 处处成立，函数是凸的。这意味着任何局部最优都是全局最优，且可用牛顿法快速收敛。",
+          "keywords": ["Hessian", "p(1-p)", "半正定", "局部最优即全局最优"],
+          "explanation": "得分点是把 Hessian 写成 X^T diag(p(1−p)) X 并说明它半正定。"
+        },
+        {
+          "id": "convexity-q3",
+          "type": "code",
+          "prompt": "用随机采样检验一阶条件来实现 is_convex_1st_order(f, grad)，并用凸二次型与鞍面 f(x) = x1² − x2² 验证它能否区分两者。",
+          "starterCode": "import numpy as np\n\ndef is_convex_1st_order(f, grad, scale=3.0, trials=2000, seed=0):\n    pass\n",
+          "solution": "import numpy as np\n\ndef is_convex_1st_order(f, grad, scale=3.0, trials=2000, seed=0):\n    rng = np.random.default_rng(seed)\n    for _ in range(trials):\n        x, y = rng.normal(scale=scale, size=2), rng.normal(scale=scale, size=2)\n        if f(y) < f(x) + grad(x) @ (y - x) - 1e-8:\n            return False\n    return True\n\nM = np.array([[2.0, 0.5], [0.5, 1.0]])\nprint(is_convex_1st_order(lambda v: 0.5 * v @ M @ v, lambda v: M @ v))\nprint(is_convex_1st_order(lambda v: v[0] ** 2 - v[1] ** 2, lambda v: np.array([2 * v[0], -2 * v[1]])))\n",
+          "checks": ["rng.normal", "grad(x) @ (y - x)", "return False"],
+          "explanation": "一阶条件是充要条件，随机采样只要找到一个违反它的点就能判定非凸；减 1e-8 是给浮点误差留的容差。"
+        }
+      ]
+    },
+    {
+      "slug": "gradient-descent-family",
+      "title": "梯度下降族：SGD 到 Adam 的推导",
+      "order": 10,
+      "module": "优化理论",
+      "difficulty": "高阶",
+      "estimatedMinutes": 55,
+      "summary": "从最速下降出发，经动量、RMSProp 到 Adam 与 AdamW，每一步都在修补上一代的具体缺陷，理解缺陷比背超参数重要。",
+      "intuition": "梯度下降是最朴素的策略：往最陡的下坡方向走一小步。麻烦有三个：mini-batch 估计的梯度方向抖；各方向尺度差太多，在峡谷地形里来回震荡；步长很难定。动量用惯性平滑噪声并冲出平坦区；RMSProp 给每个参数单独缩放步长，让陡的方向走小步、平的方向走大步；Adam 把两者结合并做偏差修正。AdamW 修正了一个长期被忽视的细节：weight decay 应该直接作用在参数上，而不是混进梯度里，否则它会被自适应缩放扭曲。每一条设计都对应一个可复现的失败案例，不是装饰。",
+      "formal": "目标 min_θ f(θ) = (1/n)Σ f_i(θ)，mini-batch 梯度 g_t 满足 E[g_t] = ∇f(θ_t)，即无偏。SGD：θ_{t+1} = θ_t − ηg_t。动量：m_t = βm_{t−1} + g_t，θ_{t+1} = θ_t − ηm_t，等价于对梯度做指数移动平均，β = 0.9 时有效窗口约 1/(1−β) = 10 步。RMSProp：v_t = β₂v_{t−1} + (1−β₂)g_t²，θ_{t+1} = θ_t − ηg_t/(√v_t + ε)，把每维步长归一化到约 η。Adam：m_t = β₁m_{t−1} + (1−β₁)g_t，v_t = β₂v_{t−1} + (1−β₂)g_t²，偏差修正后 θ_{t+1} = θ_t − η·m̂_t/(√v̂_t + ε)。推导（为什么必须做偏差修正）：m_0 = 0 使 E[m_t] = (1−β₁^t)E[g]，前几步被系统性地缩小，除以 (1−β₁^t) 才无偏；不修正时首步更新量被压缩到约 η·(1−β₁)/√(1−β₂)，β₂ = 0.999 时相当于把步长缩小约 1000 倍。AdamW 把 L2 从梯度中拆出：θ_{t+1} = θ_t − η(m̂_t/(√v̂_t + ε) + λθ_t)。收敛性：凸且 Lipschitz 光滑时 SGD 取 η ∝ 1/√t 可达 O(1/√T)；Adam 在一般条件下不保证收敛，存在反例，需要 AMSGrad 或调低 β₂。实践中 warmup 正是为了对冲早期矩估计不准、步长尺度失真的问题。",
+      "formula": "\\theta_{t+1} = \\theta_t - \\eta \\frac{\\hat{m}_t}{\\sqrt{\\hat{v}_t} + \\epsilon}, \\qquad \\hat{m}_t = \\frac{m_t}{1-\\beta_1^t}, \\quad \\hat{v}_t = \\frac{v_t}{1-\\beta_2^t}",
+      "aiConnection": "大模型训练的默认配置就是 AdamW 加 warmup 与 cosine 衰减：β₁ = 0.9、β₂ = 0.95（长序列训练比 0.999 更稳）、ε = 1e-8、weight decay 0.1、warmup 占前 0.1%~1% 步数。Adam 的显存代价是每个参数额外存 m 与 v 两份状态：fp32 下 7B 模型仅优化器状态就要 7B×8 = 56 GB，这正是 ZeRO/FSDP 分片与 8-bit Adam 存在的直接原因；LoRA 只训练少量参数，优化器状态同比缩小。理解逐参数缩放还能解释为什么 Adam 对学习率不那么敏感、为什么嵌入层与 LayerNorm 常需要单独设 lr。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "optimizers.py",
+        "code": "import numpy as np\n\ndef loss(w):\n    return 0.5 * (w[0] ** 2 + 100 * w[1] ** 2)\n\ndef noisy_grad(w, rng):\n    return np.array([w[0] * (1 + 0.3 * rng.normal()), 100 * w[1] + 10 * rng.normal()])\n\ndef run(opt, steps=3000, lr=0.002, seed=0):\n    rng = np.random.default_rng(seed)\n    w = np.array([1.0, 1.0])\n    state = {}\n    for t in range(1, steps + 1):\n        w = opt(w, noisy_grad(w, rng), state, lr, t)\n    return w\n\ndef sgd(w, g, s, lr, t):\n    return w - lr * g\n\ndef momentum(w, g, s, lr, t, beta=0.9):\n    s['m'] = beta * s.get('m', 0) + g\n    return w - lr * s['m']\n\ndef adam(w, g, s, lr, t, b1=0.9, b2=0.999, eps=1e-8):\n    s['m'] = b1 * s.get('m', 0) + (1 - b1) * g\n    s['v'] = b2 * s.get('v', 0) + (1 - b2) * g ** 2\n    m_hat = s['m'] / (1 - b1 ** t)\n    v_hat = s['v'] / (1 - b2 ** t)\n    return w - lr * m_hat / (np.sqrt(v_hat) + eps)\n\nfor name, opt in [('SGD', sgd), ('Momentum', momentum), ('Adam', adam)]:\n    losses = [loss(run(opt, seed=s)) for s in range(5)]\n    print(f'{name:9s} 5 个种子平均 loss = {np.mean(losses):.4e}')\n\ng = np.array([1.0, 1.0])\nv = (1 - 0.999) * g ** 2\nprint('首步未修正步长:', np.round(g / (np.sqrt(v) + 1e-8), 3),\n      ' 修正后:', np.round(g / np.sqrt(v / (1 - 0.999)), 3))"
+      },
+      "mistakes": [
+        "Adam 里把 weight decay 写进梯度（L2 正则项）：它会被 1/√v̂ 的自适应缩放扭曲，大梯度参数的衰减被削弱，应改用 AdamW 直接衰减参数",
+        "忘记偏差修正：前几十步的有效步长远小于 η，表现为训练初期几乎不动，warmup 阶段尤其明显",
+        "β₂ 沿用 0.999 训练长序列大模型：二阶矩记忆过长导致非平稳目标下反应迟钝，实践中常用 0.95",
+        "以为 Adam 一定比 SGD 收敛好：凸光滑问题上调好的 SGD 泛化有时更好，Adam 在一般条件下甚至不保证收敛"
+      ],
+      "interviewPoints": [
+        "写出 Adam 的完整更新式，并推导为什么需要偏差修正（不修正时首步被缩小多少）",
+        "动量法与 RMSProp 各自解决了 SGD 的什么问题，Adam 如何把两者结合",
+        "AdamW 与 Adam + L2 正则的区别，为什么前者在大模型训练里成为默认",
+        "Adam 的显存开销如何计算，ZeRO、8-bit Adam、LoRA 各自从哪个角度缓解"
+      ],
+      "resources": [
+        {
+          "title": "Adam: A Method for Stochastic Optimization",
+          "url": "https://arxiv.org/abs/1412.6980"
+        },
+        {
+          "title": "Decoupled Weight Decay Regularization (AdamW)",
+          "url": "https://arxiv.org/abs/1711.05101"
+        },
+        {
+          "title": "PyTorch optim 模块文档（含各优化器伪代码）",
+          "url": "https://pytorch.org/docs/stable/optim.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "gradient-descent-family-q1",
+          "type": "choice",
+          "prompt": "Adam 中偏差修正项 1/(1 − β₂^t) 的作用是？",
+          "options": [
+            "让学习率随时间衰减到 0",
+            "修正二阶矩估计从 0 初始化带来的系统性偏小，使前几步的步长尺度正确",
+            "防止梯度爆炸",
+            "把一阶矩与二阶矩解耦"
+          ],
+          "answerIndex": 1,
+          "explanation": "m、v 都从 0 初始化，E[v_t] = (1 − β₂^t)E[g²]，前期被系统性低估，不修正时首步有效步长被压缩约 (1−β₁)/√(1−β₂) 倍。A 是学习率调度的事，C 靠梯度裁剪，D 是 AdamW 做的事。"
+        },
+        {
+          "id": "gradient-descent-family-q2",
+          "type": "short",
+          "prompt": "AdamW 相比 Adam 加 L2 正则，为什么更适合大模型训练？",
+          "answer": "参考回答：在 Adam 中把 L2 项加进梯度后，它会与梯度一起被 1/(√v̂ + ε) 缩放，导致梯度大的参数实际受到的衰减被削弱，weight decay 强度与学习率、梯度尺度纠缠在一起。AdamW 把衰减项直接作用在参数上（θ ← θ − ηλθ），与自适应缩放解耦，衰减强度可独立调节，超参数更可预测。这也是 GPT 系列等大模型统一采用 AdamW 的原因。",
+          "keywords": ["解耦", "自适应缩放", "权重衰减", "超参数可预测"],
+          "explanation": "要点是「L2 混进梯度会被自适应分母扭曲」，解耦后衰减强度独立可控。"
+        },
+        {
+          "id": "gradient-descent-family-q3",
+          "type": "code",
+          "prompt": "手写 SGD、动量、Adam 三个更新函数，在一个条件数为 100 的噪声二次目标上各跑 3000 步，比较最终 loss，并验证偏差修正前后的首步步长差异。",
+          "starterCode": "import numpy as np\n\ndef loss(w):\n    return 0.5 * (w[0] ** 2 + 100 * w[1] ** 2)\n\ndef sgd(w, g, s, lr, t):\n    pass\n\ndef momentum(w, g, s, lr, t, beta=0.9):\n    pass\n\ndef adam(w, g, s, lr, t, b1=0.9, b2=0.999, eps=1e-8):\n    pass\n",
+          "solution": "import numpy as np\n\ndef loss(w):\n    return 0.5 * (w[0] ** 2 + 100 * w[1] ** 2)\n\ndef noisy_grad(w, rng):\n    return np.array([w[0] * (1 + 0.3 * rng.normal()), 100 * w[1] + 10 * rng.normal()])\n\ndef sgd(w, g, s, lr, t):\n    return w - lr * g\n\ndef momentum(w, g, s, lr, t, beta=0.9):\n    s['m'] = beta * s.get('m', 0) + g\n    return w - lr * s['m']\n\ndef adam(w, g, s, lr, t, b1=0.9, b2=0.999, eps=1e-8):\n    s['m'] = b1 * s.get('m', 0) + (1 - b1) * g\n    s['v'] = b2 * s.get('v', 0) + (1 - b2) * g ** 2\n    return w - lr * (s['m'] / (1 - b1 ** t)) / (np.sqrt(s['v'] / (1 - b2 ** t)) + eps)\n\nfor name, opt in [('SGD', sgd), ('Momentum', momentum), ('Adam', adam)]:\n    rng = np.random.default_rng(0)\n    w, state = np.array([1.0, 1.0]), {}\n    for t in range(1, 3001):\n        w = opt(w, noisy_grad(w, rng), state, 0.002, t)\n    print(name, loss(w))\n",
+          "checks": ["s['m']", "s['v']", "1 - b1 ** t"],
+          "explanation": "注意状态字典要跨步复用，Adam 的偏差修正在前几步影响最大；在噪声梯度下 Adam 的逐维归一化优势最明显。"
+        }
+      ]
+    },
+    {
+      "slug": "duality-kkt",
+      "title": "对偶问题与 KKT 条件",
+      "order": 11,
+      "module": "优化理论",
+      "difficulty": "高阶",
+      "estimatedMinutes": 55,
+      "summary": "拉格朗日对偶把带约束问题转成极小极大问题：弱对偶恒成立，凸问题满足 Slater 条件时强对偶成立，KKT 是最优性的完整刻画。",
+      "intuition": "约束优化像在山坡上找最低点，但必须待在栅栏以内。拉格朗日乘子给每道栅栏标一个价格：如果某道栅栏卡住了你（约束取等号），价格就大于 0；如果栅栏根本没碰到你（约束不紧），价格就是 0——这就是互补松弛。对偶问题换了视角：不问「最低点有多低」，而问「用这些价格能给目标函数定出多好的下界」。弱对偶说下界永远不超过真实最优值；强对偶说凸问题里下界恰好取到，两者之间没有间隙。SVM 能看出「只有支持向量起作用」、能引入核函数，全靠这套结构。",
+      "formal": "原问题 min f_0(x) s.t. f_i(x) ≤ 0, h_j(x) = 0。拉格朗日函数 L(x, λ, ν) = f_0(x) + Σλ_i f_i(x) + Σν_j h_j(x)，要求 λ ⪰ 0。对偶函数 g(λ, ν) = inf_x L(x, λ, ν) 恒为凹函数（一族仿射函数的下确界），且对任意可行 x 有 g(λ, ν) ≤ f_0(x)，取 inf 得弱对偶 d* ≤ p*，差值 p* − d* 称为对偶间隙。强对偶：若原问题凸且满足 Slater 条件（存在严格可行点），则 d* = p*。KKT 条件（凸问题下为充要）：① 原可行 f_i(x*) ≤ 0 且 h_j(x*) = 0；② 对偶可行 λ* ⪰ 0；③ 互补松弛 λ*_i f_i(x*) = 0；④ 稳定性 ∇f_0(x*) + Σλ*_i ∇f_i(x*) + Σν*_j ∇h_j(x*) = 0。SVM 特例：由互补松弛 α_i[y_i(w^T x_i + b) − 1] = 0 可知只有落在间隔边界上的样本 α_i > 0，即支持向量；同时 w = Σα_i y_i x_i，预测只依赖内积 ⟨x_i, x⟩，把内积替换为核 K(x_i, x) 即得核 SVM。退化情形（多个约束同时紧、乘子不唯一）下 KKT 只是必要条件，需借助 LICQ 等约束品性才能保证充分性。",
+      "formula": "\\max_{\\lambda \\succeq 0} \\inf_{\\mathbf{x}} \\mathcal{L}(\\mathbf{x}, \\lambda, \\nu), \\qquad \\lambda_i f_i(\\mathbf{x}^*) = 0, \\qquad \\nabla f_0(\\mathbf{x}^*) + \\sum_i \\lambda_i \\nabla f_i(\\mathbf{x}^*) = \\mathbf{0}",
+      "aiConnection": "SVM 的对偶形式让核技巧成立：只需样本间内积，不必显式映射到高维，同时只有支持向量的 α_i > 0，模型天然稀疏。软间隔 SVM 的对偶是盒约束 QP（0 ≤ α_i ≤ C），C 越大越接近硬间隔、越容易过拟合。Lasso 的 KKT 条件直接给出软阈值算子与稀疏条件（当 |X^T r| ≤ λ 时对应坐标被压到 0），这是 ISTA/FISTA 近端算法的来源。深度学习里 KKT 出现在约束强化学习与安全 RL、公平性约束，以及把硬约束转成惩罚项的增广拉格朗日与 ADMM 中。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "kkt_duality.py",
+        "code": "import numpy as np\n\nrng = np.random.default_rng(0)\na = rng.normal(size=3)\n# 原问题: min 0.5*||x||^2  s.t.  1 - a^T x <= 0\nlam = 1.0 / (a @ a)\nx_star = lam * a\nprint('x* =', np.round(x_star, 4), ' 约束值 a^T x* =', round(float(a @ x_star), 6))\nprint('稳定性条件 x* - lam*a =', np.round(x_star - lam * a, 12))\nprint('互补松弛 lam*(1 - a^T x*) =', round(float(lam * (1 - a @ x_star)), 12))\n\ndef dual(l):\n    x = l * a\n    return 0.5 * x @ x + l * (1 - a @ x)\n\ngrid = np.linspace(0, 5, 20001)\nvals = np.array([dual(l) for l in grid])\np_star = 0.5 * x_star @ x_star\nprint('原问题最优 p* =', round(float(p_star), 6))\nprint('对偶最优 d* =', round(float(vals.max()), 6), ' 解析式 =',\n      round(float(lam - 0.5 * lam ** 2 * (a @ a)), 6))\nprint('对偶间隙 =', round(float(p_star - vals.max()), 8))\nprint('数值最优乘子 =', round(float(grid[vals.argmax()]), 4), ' 解析解 =', round(float(lam), 4))"
+      },
+      "mistakes": [
+        "以为强对偶永远成立：非凸问题一般存在对偶间隙，凸问题也需要 Slater 条件",
+        "忘记不等式约束的乘子必须非负：等式约束的乘子 ν 可正可负，λ ⪰ 0 不能省",
+        "互补松弛理解反了：条件是 λ_i f_i(x*) = 0，即不紧的约束乘子必为 0，而不是两者相加为 0",
+        "对非凸问题用 KKT 求出驻点就宣布全局最优：KKT 只是必要条件，需再验证凸性或比较多个驻点"
+      ],
+      "interviewPoints": [
+        "写出 KKT 四个条件，并解释互补松弛的直观含义（栅栏价格）",
+        "从 SVM 的对偶推导说明为什么只有支持向量的 α_i > 0，以及核技巧为什么成立",
+        "证明对偶函数 g(λ, ν) 是凹函数，并说明弱对偶为什么无条件成立",
+        "Lasso 的 KKT 条件如何给出稀疏性与软阈值算子"
+      ],
+      "resources": [
+        {
+          "title": "Boyd & Vandenberghe, Convex Optimization（第 5 章 Duality）",
+          "url": "https://web.stanford.edu/~boyd/cvxbook/"
+        },
+        {
+          "title": "Stanford CS229 讲义（SVM 与对偶）",
+          "url": "https://cs229.stanford.edu/notes2022fall/main_notes.pdf"
+        },
+        {
+          "title": "Boyd et al., Distributed Optimization and Statistical Learning via ADMM",
+          "url": "https://web.stanford.edu/~boyd/papers/admm_distr_stats.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "duality-kkt-q1",
+          "type": "choice",
+          "prompt": "关于互补松弛条件 λ_i f_i(x*) = 0，下列说法正确的是？",
+          "options": [
+            "所有约束的乘子都必须大于 0",
+            "若某个不等式约束在最优解处不紧（f_i(x*) < 0），则其乘子必为 0",
+            "乘子为 0 意味着该约束一定不紧，反之亦然",
+            "互补松弛只在非凸问题中成立"
+          ],
+          "answerIndex": 1,
+          "explanation": "互补松弛说明「不紧的约束没有价格」，乘子只能在不紧时为 0；反过来乘子为 0 时约束可以紧也可以不紧（退化情形）。A 与 D 明显错误，C 忽略了退化情形。"
+        },
+        {
+          "id": "duality-kkt-q2",
+          "type": "short",
+          "prompt": "SVM 的对偶形式为什么能引入核函数，并且只有支持向量的系数非零？",
+          "answer": "参考回答：对偶问题里权重可写成 w = Σα_i y_i x_i，判别函数只出现内积 ⟨x_i, x⟩，因此把内积替换成核 K(x_i, x) 就等价于在隐式高维空间中做线性分类，无需显式计算映射。由互补松弛 α_i[y_i(w^T x_i + b) − 1] = 0，只有满足 y_i(w^T x_i + b) = 1 的样本（落在间隔边界上）才有 α_i > 0，其余样本对模型无贡献，这就是支持向量与稀疏性。",
+          "keywords": ["w = Σα_i y_i x_i", "内积", "互补松弛", "支持向量"],
+          "explanation": "要点是判别式只依赖内积、互补松弛筛出支持向量这两步。"
+        },
+        {
+          "id": "duality-kkt-q3",
+          "type": "code",
+          "prompt": "对 min 0.5‖x‖² s.t. 1 − a^T x ≤ 0 解析求出 KKT 点与乘子，验证互补松弛，并用网格搜索对偶函数的最大值确认对偶间隙为 0。",
+          "starterCode": "import numpy as np\n\na = np.random.default_rng(0).normal(size=3)\n# 求 x*、lam，验证 KKT 与对偶间隙\n",
+          "solution": "import numpy as np\n\na = np.random.default_rng(0).normal(size=3)\nlam = 1.0 / (a @ a)\nx_star = lam * a\nprint(a @ x_star, lam * (1 - a @ x_star))\n\ndef dual(l):\n    x = l * a\n    return 0.5 * x @ x + l * (1 - a @ x)\n\ngrid = np.linspace(0, 5, 20001)\nvals = np.array([dual(l) for l in grid])\nprint(0.5 * x_star @ x_star - vals.max())\n",
+          "checks": ["1.0 / (a @ a)", "dual(", "vals.max()"],
+          "explanation": "由稳定性条件 x = λa 与紧约束 a^T x = 1 联立得 λ = 1/‖a‖²；对偶函数在 λ* 处取到与原问题相同的最优值。"
+        }
+      ]
+    },
+    {
+      "slug": "numerical-stability",
+      "title": "数值稳定性与条件数",
+      "order": 12,
+      "module": "优化理论",
+      "difficulty": "高阶",
+      "estimatedMinutes": 50,
+      "summary": "同样的算法在不同精度下可能收敛或爆炸：条件数决定误差被放大多少倍，这是 fp16 训练必须做 loss scaling 的根本原因。",
+      "intuition": "浮点数不是实数：fp32 有 24 位有效位（约 7 位十进制），fp16 只有 10 位（约 3 位），而且 fp16 能表示的最小正规数只有 6.1e-5，比它更小的数会掉进非规格化区间甚至直接变成 0。真实训练里梯度常在 1e-8 甚至更小，直接写进 fp16 就静悄悄地归零，表现为 loss 完全不降却不报错。loss scaling 的办法很直接：先把 loss 乘一个大数，链式法则让所有梯度同比放大到 fp16 能表示的区间，更新前再除回来。另一类问题是「问题本身病态」：条件数 κ 表示输入相对误差最多被放大 κ 倍，κ = 1e10 的矩阵在 fp32 下解出来几乎没有有效位。所以数值稳定性的两大来源是精度不够与问题病态，对应手段是换精度/缩放与换算法/加正则。",
+      "formal": "浮点表示 x = (−1)^s·m·2^e：fp32 为 1+8+23 位，机器精度 u = 2^{−24} ≈ 5.96e−8；fp16 为 1+5+10 位，u ≈ 4.88e−4，最小正规数 6.1e−5，最大可表示 65504；bf16 为 1+8+7 位，u ≈ 3.9e−3，但指数范围与 fp32 相同，因此不需要 loss scaling，代价是有效位更少。条件数：对 Ax = b 定义 κ(A) = ‖A‖‖A^{−1}‖，在谱范数下等于 σ_max/σ_min。推导（误差放大界）：由 δx = A^{−1}δb 取范数得 ‖δx‖ ≤ ‖A^{−1}‖‖δb‖，又由 ‖b‖ ≤ ‖A‖‖x‖ 得 1/‖x‖ ≤ ‖A‖/‖b‖，两式相乘即得相对误差放大 κ(A) 倍。推论：解正规方程会把条件数平方，κ(A^T A) = κ(A)²，fp32 下 κ(A) 到 1e4 就已损失全部有效位。另一个基本技巧是对数域稳定化：log Σ e^{x_i} = max(x) + log Σ e^{x_i − max(x)}，把上溢风险彻底消掉，这是 softmax 的稳定实现与 FlashAttention 在线 softmax 的基础。梯度下溢的对策是 loss scaling，配合动态调整：出现 inf/NaN 就跳过该步并把 scale 减半，稳定若干步后加倍。",
+      "formula": "\\kappa(\\mathbf{A}) = \\|\\mathbf{A}\\|\\,\\|\\mathbf{A}^{-1}\\| = \\frac{\\sigma_{\\max}}{\\sigma_{\\min}}, \\qquad \\frac{\\|\\delta \\mathbf{x}\\|}{\\|\\mathbf{x}\\|} \\le \\kappa(\\mathbf{A}) \\frac{\\|\\delta \\mathbf{b}\\|}{\\|\\mathbf{b}\\|}, \\qquad \\log\\sum_i e^{x_i} = \\max_i x_i + \\log\\sum_i e^{x_i - \\max_i x_i}",
+      "aiConnection": "混合精度训练的标准流程是 fp16/bf16 前向反向加 fp32 主权重副本加 loss scaling，PyTorch 的 GradScaler 就是动态 loss scaling 的实现。bf16 指数范围与 fp32 一致，LLM 预训练通常不需要 loss scaling，但累加仍建议用 fp32。注意力里的 exp 必须减最大值防上溢；方差计算要先减均值避免灾难性抵消；交叉熵要用 log_softmax 而不是 log(softmax(x))。数值稳定性还影响评测：KL、perplexity、BLEU 里 eps 加的位置不同会带来可观测差异；int8/fp8 量化的 scale 选择本质也是在管动态范围。训练挂掉的三个信号是 loss 变 NaN、grad_norm 突然为 0、参数更新量远小于 1e-7。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "numerical_stability.py",
+        "code": "import numpy as np\n\ngrad = np.array([1e-4, 1e-6, 1e-8, 1e-9], dtype=np.float32)\nprint('fp16 直接存梯度:', (grad.astype(np.float16)).astype(np.float32))\nscale = 65536.0\nscaled = (grad * scale).astype(np.float16).astype(np.float32) / scale\nprint('loss scaling 后:  ', scaled)\nwith np.errstate(divide='ignore', invalid='ignore'):\n    print('相对误差:', np.abs(scaled - grad) / grad)\nwith np.errstate(over='ignore'):\n    print('scale 过大时上溢:', (np.array([1.0], dtype=np.float32) * 1e5).astype(np.float16))\n\nrng = np.random.default_rng(0)\nQ, _ = np.linalg.qr(rng.normal(size=(5, 5)))\nA = Q @ np.diag([1.0, 1e-1, 1e-2, 1e-3, 1e-4]) @ Q.T\nprint('条件数:', round(float(np.linalg.cond(A)), 1))\nx = rng.normal(size=5)\nb = A @ x\ndb = rng.normal(size=5) * 1e-8\ndx = np.linalg.solve(A, b + db) - x\nprint('输入相对扰动:', f'{np.linalg.norm(db) / np.linalg.norm(b):.2e}',\n      ' 输出相对误差:', f'{np.linalg.norm(dx) / np.linalg.norm(x):.2e}')\n\nv = np.array([1000.0, 1000.0, 1000.0], dtype=np.float32)\nwith np.errstate(over='ignore'):\n    naive = np.log(np.exp(v).sum())\nm = float(v.max())\nstable = m + np.log(np.exp(v - m).sum())\nprint('直接计算:', naive, ' 稳定计算:', round(float(stable), 6), ' 理论值:', round(1000 + np.log(3), 6))\nprint('fp32 机器精度:', np.finfo(np.float32).eps, ' fp16 机器精度:', np.finfo(np.float16).eps)\nprint('fp16 最小正规数:', np.finfo(np.float16).tiny, ' fp16 最大可表示数:', np.finfo(np.float16).max)"
+      },
+      "mistakes": [
+        "fp16 下不加 loss scaling 直接训练：小于约 3e-8 的梯度全部下溢成 0，表现为 loss 不下降但不报错",
+        "用 log(softmax(x)) 代替 log_softmax：exp 上溢成 inf，取对数后反传直接产生 NaN，应在对数域计算",
+        "把 bf16 与 fp16 混为一谈：bf16 指数范围同 fp32 不需要 loss scaling，但有效位更少，累加应用 fp32",
+        "解病态线性系统时先算 A^T A：条件数被平方，应改用 QR、SVD 或加正则项"
+      ],
+      "interviewPoints": [
+        "推导 κ(A) 如何放大相对误差，并说明为什么 κ(A^T A) = κ(A)²",
+        "解释 fp16 训练为什么必须做 loss scaling，动态 loss scaling 的调整策略是什么",
+        "写出 log-sum-exp 的稳定形式，并说明它在 softmax 与注意力中的作用",
+        "对比 fp32、fp16、bf16 的位宽、机器精度与动态范围，各自适合什么场景"
+      ],
+      "resources": [
+        {
+          "title": "Micikevicius et al., Mixed Precision Training",
+          "url": "https://arxiv.org/abs/1710.03740"
+        },
+        {
+          "title": "PyTorch AMP 使用示例与原理",
+          "url": "https://pytorch.org/docs/stable/notes/amp_examples.html"
+        },
+        {
+          "title": "Trefethen & Bau, Numerical Linear Algebra（条件数章节）",
+          "url": "https://epubs.siam.org/doi/book/10.1137/1.9780898719574"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "numerical-stability-q1",
+          "type": "choice",
+          "prompt": "关于 fp16 混合精度训练中的 loss scaling，下列说法正确的是？",
+          "options": [
+            "loss scaling 的目的是加快收敛速度",
+            "把 loss 放大后，链式法则使所有梯度同比放大，避免小梯度在 fp16 中下溢为 0",
+            "bf16 训练同样必须使用 loss scaling",
+            "scale 越大越好，可以一直增大"
+          ],
+          "answerIndex": 1,
+          "explanation": "loss scaling 只解决 fp16 表示范围窄导致的下溢：放大 loss 等于等比放大全部梯度，更新前再除回。A 错在它不改变优化轨迹；C 错在 bf16 指数范围与 fp32 相同；D 错在 scale 过大会让大梯度上溢成 inf，必须动态调整。"
+        },
+        {
+          "id": "numerical-stability-q2",
+          "type": "short",
+          "prompt": "为什么计算 softmax 和交叉熵时要先减去最大值，或者直接用 log_softmax？",
+          "answer": "参考回答：logits 较大时 e^{x_i} 会溢出成 inf，归一化后得到 NaN，梯度随之污染整个网络。减去最大值不改变 softmax 的数学结果（分子分母同乘 e^{−max}），却把指数自变量压到 ≤ 0，彻底消除上溢。交叉熵要用 log_softmax 而不是 log(softmax(x))，因为后者先算出概率再取对数，小概率被截断为 0 后 log 0 = −inf；log_softmax 在对数域直接计算，既避免上溢也保住了小概率的精度。",
+          "keywords": ["减去最大值", "上溢", "log_softmax", "数值等价"],
+          "explanation": "要点是减最大值不改变结果但消除上溢，以及 log_softmax 在对数域计算保住小概率精度。"
+        },
+        {
+          "id": "numerical-stability-q3",
+          "type": "code",
+          "prompt": "用 numpy 演示三件事：(1) 小梯度在 fp16 中下溢为 0、经 loss scaling 后可恢复；(2) 条件数为 1e4 的矩阵解方程时误差被放大；(3) 直接计算 log(sum(exp(x))) 上溢而 log-sum-exp 稳定。",
+          "starterCode": "import numpy as np\n\ngrad = np.array([1e-4, 1e-6, 1e-8, 1e-9], dtype=np.float32)\n# 1) fp16 下溢与 loss scaling 2) 条件数 3) log-sum-exp\n",
+          "solution": "import numpy as np\n\ngrad = np.array([1e-4, 1e-6, 1e-8, 1e-9], dtype=np.float32)\nprint((grad.astype(np.float16)).astype(np.float32))\nscale = 65536.0\nprint((grad * scale).astype(np.float16).astype(np.float32) / scale)\n\nrng = np.random.default_rng(0)\nQ, _ = np.linalg.qr(rng.normal(size=(5, 5)))\nA = Q @ np.diag([1.0, 1e-1, 1e-2, 1e-3, 1e-4]) @ Q.T\nx = rng.normal(size=5)\nb = A @ x\ndx = np.linalg.solve(A, b + rng.normal(size=5) * 1e-8) - x\nprint(np.linalg.cond(A), np.linalg.norm(dx) / np.linalg.norm(x))\n\nv = np.array([1000.0, 1000.0, 1000.0], dtype=np.float32)\nwith np.errstate(over='ignore'):\n    print(np.log(np.exp(v).sum()))\nprint(float(v.max()) + np.log(np.exp(v - v.max()).sum()))\n",
+          "checks": ["astype(np.float16)", "np.linalg.cond", "v.max()"],
+          "explanation": "三点分别对应精度、病态与动态范围：缩放把梯度搬进可表示区间，条件数决定误差放大倍数，减最大值消除指数上溢。"
+        }
+      ]
+    }
+  ]
+}

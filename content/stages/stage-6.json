@@ -1,0 +1,506 @@
+{
+  "stage": 6,
+  "stageSlug": "machine-learning",
+  "stageTitle": "机器学习",
+  "stageEmoji": "🤖",
+  "stageDesc": "回归、树模型、SVM、聚类与 PCA：经典机器学习算法全貌",
+  "category": "进阶",
+  "lessons": [
+    {
+      "slug": "linear-regression",
+      "title": "Linear Regression 线性回归",
+      "order": 1,
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "线性回归用一条直线（超平面）拟合输入与输出的关系，是最基础的回归模型，常作预测模型与被解释的基线。",
+      "intuition": "想象在二维平面上一堆散点，你想画条直线来大致穿过它们，好根据 x 猜测 y。模型要学的就是直线的斜率（权重）和截距（偏置）。找到让预测值和实际值差距最小的那条线，就是线性回归。",
+      "formal": "模型为 $\\hat{y} = w_0 + w_1x_1 + \\dots + w_dx_d = \\mathbf{w}^T\\mathbf{x}$。用均方误差（MSE）衡量损失：$L = \\frac{1}{n}\\sum_i (\\hat{y}_i - y_i)^2$。可用最小二乘解析解 $\\mathbf{w}=(\\mathbf{X}^T\\mathbf{X})^{-1}\\mathbf{X}^T\\mathbf{y}$ 或梯度下降求最优权重。它假设特征与目标近似线性，简单可解释；当关系非线性时需特征变换或改用更复杂的模型。",
+      "formula": "\\hat{y} = \\mathbf{w}^T\\mathbf{x} + b, \\quad L = \\frac{1}{n}\\sum_{i=1}^{n}(\\hat{y}_i - y_i)^2, \\quad \\mathbf{w} = (\\mathbf{X}^T\\mathbf{X})^{-1}\\mathbf{X}^T\\mathbf{y}",
+      "aiConnection": "线性回归既是价格预测、趋势估计的常用工具，也是许多复杂模型（如神经网络线性层）的最小单元。理解它的损失与梯度，为理解更大模型的训练奠定基础，其系数也可用于解释各特征的贡献。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "linear_regression.py",
+        "code": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.linear_model import LinearRegression\n\n# 造一点带噪声的线性数据\nnp.random.seed(0)\nX = np.random.rand(50, 1) * 10\ny = 2 * X.ravel() + 3 + np.random.normal(0, 1, 50)\n\nmodel = LinearRegression()\nmodel.fit(X, y)\n\nprint('w =', round(model.coef_[0], 3))   # ≈ 2\nprint('b =', round(model.intercept_, 3)) # ≈ 3\nprint('R2 =', round(model.score(X, y), 3))\n\n# 预测并画图\npred = model.predict(X)\nplt.scatter(X, y)\nplt.plot(X, pred, color='red')\nplt.show()"
+      },
+      "mistakes": [
+        "用 linear 模型拟合明显非线性的数据而不做特征变换",
+        "忽略特征量纲差异，导致系数大小失真",
+        "把正则与无正则混用，未做训练/测试划分就评估",
+        "把相关性强当作因果关系"
+      ],
+      "interviewPoints": [
+        "「线性回归为什么用均方误差而不是绝对值误差？」要答到高斯噪声假设下的极大似然、MSE 处处可导，以及它对异常值更敏感",
+        "「正规方程和梯度下降怎么选？」要答到正规方程要算 (XᵀX)⁻¹、复杂度约 O(n³) 且可能不可逆，大样本高维只能用梯度下降",
+        "「回归系数 w 该怎么解释？」要答到控制其他特征不变时 x_j 每增一单位 y 的平均变化，以及必须先标准化才能比较系数大小",
+        "「线性回归的假设被违反会怎样？」要答到非线性、异方差、多重共线会让系数不稳、检验失效，需要特征变换或改用 Ridge"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "linear-regression-q1",
+          "type": "choice",
+          "prompt": "线性回归常用的损失函数是？",
+          "options": [
+            "均方误差 MSE",
+            "交叉熵",
+            "准确率",
+            "F1-score"
+          ],
+          "answerIndex": 0,
+          "explanation": "连续值回归常用均方误差 MSE 来衡量预测与真实值的平方差均值。"
+        },
+        {
+          "id": "linear-regression-q2",
+          "type": "short",
+          "prompt": "线性回归模型的系数 w 有什么含义？",
+          "answer": "参考回答：每个系数 w_j 表示当其它特征不变时，特征 x_j 每增加一个单位，预测目标 y 平均增加 w_j。它刻画了各特征对输出的贡献大小，因此线性回归具有较好的可解释性。",
+          "keywords": [
+            "权重",
+            "特征",
+            "解释"
+          ],
+          "explanation": "系数表示特征对目标的影响/贡献，衡量解释性。"
+        },
+        {
+          "id": "linear-regression-q3",
+          "type": "code",
+          "prompt": "用 sklearn 的 LinearRegression 拟合 X、y 并打印 w 与 b。",
+          "starterCode": "import numpy as np\nfrom sklearn.linear_model import LinearRegression\n\nX = np.array([[1], [2], [3], [4]])\ny = np.array([3, 5, 7, 9])\n",
+          "solution": "import numpy as np\nfrom sklearn.linear_model import LinearRegression\n\nX = np.array([[1], [2], [3], [4]])\ny = np.array([3, 5, 7, 9])\n\nmodel = LinearRegression()\nmodel.fit(X, y)\nprint(model.coef_, model.intercept_)",
+          "checks": [
+            "fit",
+            "coef",
+            "intercept"
+          ],
+          "explanation": "用 model.fit(X,y) 训练，读 model.coef_ 与 model.intercept_ 得到斜率与截距。"
+        }
+      ]
+    },
+    {
+      "slug": "logistic-regression",
+      "title": "Logistic Regression 逻辑回归",
+      "order": 2,
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "逻辑回归用 sigmoid 函数把线性输出映射为概率，用于二分类，是分类问题的基础模型。",
+      "intuition": "名字虽叫回归，其实做的是分类。它把线性得分压缩到 0~1 之间，变成\"属于正类的概率\"，再跟 0.5 比较来决定类别。越接近 1 越可能是正类，越接近 0 越可能是负类。",
+      "formal": "先算线性得分 $z = \\mathbf{w}^T\\mathbf{x} + b$，再用 sigmoid 压缩：$\\hat{p} = \\sigma(z) = \\frac{1}{1+e^{-z}}$。损失用二分类交叉熵：$L = -\\frac{1}{n}\\sum_i [y_i\\log\\hat{p}_i + (1-y_i)\\log(1-\\hat{p}_i)]$。预测规则：$\\hat{p}\\geq 0.5 \\Rightarrow$ 正类。它输出的是概率而非硬标签，可微且易扩展为多分类（softmax），且系数同样具有可解释性。",
+      "formula": "\\hat{p} = \\sigma(z) = \\frac{1}{1+e^{-z}}, \\quad z = \\mathbf{w}^T\\mathbf{x}+b, \\quad L = -\\frac{1}{n}\\sum_i [y_i\\log\\hat{p}_i + (1-y_i)\\log(1-\\hat{p}_i)]",
+      "aiConnection": "逻辑回归是分类的基石，其 sigmoid + 交叉熵结构正是神经网络输出层与损失的核心组成。模型给出的概率可用于置信度判断与排序（如风险打分），也是许多大型分类模型的线性baseline。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "logistic_regression.py",
+        "code": "import numpy as np\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\n\n# 造二分类数据\nX, y = make_classification(n_samples=200, n_features=2, n_redundant=0, random_state=0)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\nmodel = LogisticRegression()\nmodel.fit(X_train, y_train)\n\n# 输出概率\nprob = model.predict_proba(X_test)[:5]\nprint('前 5 个样本的正类概率:')\nprint(np.round(prob[:, 1], 3))\n\nprint('准确率 =', round(model.score(X_test, y_test), 3))\nprint('系数 =', np.round(model.coef_[0], 3))"
+      },
+      "mistakes": [
+        "把逻辑回归当回归用，直接拿概率当连续值而不做阈值判断",
+        "误以为用 MSE 训练分类模型合适（应为交叉熵）",
+        "把输入特征未标准化就训练，导致梯度下降收敛不稳定",
+        "混淆概率值与硬类标签的用途"
+      ],
+      "interviewPoints": [
+        "「逻辑回归为什么用交叉熵而不用 MSE？」要答到交叉熵等价于伯努利极大似然，且 MSE 配 sigmoid 会梯度消失、收敛极慢",
+        "「sigmoid 的导数是什么？为什么会梯度消失？」要答到 σ'=σ(1-σ) 最大仅 0.25，多层连乘指数衰减，深层网络因此难训",
+        "「分类阈值一定是 0.5 吗？」要答到不一定，应按业务代价调阈值，不平衡或高召回场景要结合 PR 曲线选点而非看准确率",
+        "「逻辑回归和神经网络输出层是什么关系？」要答到它就是一个没有隐藏层的单层网络，sigmoid 加交叉熵正是二分类输出头的原型"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "logistic-regression-q1",
+          "type": "choice",
+          "prompt": "逻辑回归输出层常用的激活函数是？",
+          "options": [
+            "sigmoid",
+            "ReLU",
+            "tanh",
+            "identity"
+          ],
+          "answerIndex": 0,
+          "explanation": "逻辑回归用 sigmoid 把线性得分映射到 (0,1) 表示正类概率。"
+        },
+        {
+          "id": "logistic-regression-q2",
+          "type": "short",
+          "prompt": "为什么逻辑回归用交叉熵而不用均方误差做损失？",
+          "answer": "参考回答：因为交叉熵更适合概率输出的分类任务，其梯度更平稳、收敛更快；而 MSE 在 sigmoid 两侧梯度接近 0，收敛慢且容易陷入局部差解。交叉熵对应最大似然，与概率建模一致。",
+          "keywords": [
+            "交叉熵",
+            "概率",
+            "收敛"
+          ],
+          "explanation": "交叉熵与概率建模一致、梯度更稳；MSE 在此易梯度消失、收敛慢。"
+        },
+        {
+          "id": "logistic-regression-q3",
+          "type": "code",
+          "prompt": "用 sklearn 的 LogisticRegression 在 X、y 上训练，打印预测概率。",
+          "starterCode": "from sklearn.linear_model import LogisticRegression\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n",
+          "solution": "from sklearn.linear_model import LogisticRegression\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n\nmodel = LogisticRegression()\nmodel.fit(X, y)\nprint(model.predict_proba(X))",
+          "checks": [
+            "fit",
+            "predict_proba"
+          ],
+          "explanation": "用 model.fit 训练，predict_proba(X) 返回各类别的概率。"
+        }
+      ]
+    },
+    {
+      "slug": "decision-tree",
+      "title": "Decision Tree 决策树",
+      "order": 3,
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "决策树通过一系列\"是/否\"判断把数据划分到叶子类别，规则直观、可解释，既能分类也能回归。",
+      "intuition": "决策树就像一场\"20 个问题\"游戏：从根节点开始，不断问\"这个特征大于某个值吗？\"，按答案走向不同分支，最后落到一个叶子，给出预测。树上每条路径都是一条可读的 if-else 规则。",
+      "formal": "树的构建通过递归选择最佳划分特征与阈值来最大化信息增益（或最小化不纯度）。分类常用基尼不纯度 $G = 1 - \\sum_k p_k^2$ 或熵 $H = -\\sum_k p_k\\log p_k$；回归用均方误差。信息增益是划分前后不纯度的下降：$\\text{IG} = H_{\\text{parent}} - \\sum_j \\frac{n_j}{n} H_j$。为防止过拟合需限制深度、最小样本数或做剪枝。",
+      "formula": "H(S) = -\\sum_{k} p_k \\log p_k, \\quad \\text{IG} = H_{\\text{parent}} - \\sum_j \\frac{|S_j|}{|S|} H(S_j), \\quad \\text{深度/剪枝可约束模型复杂度",
+      "aiConnection": "决策树因可解释性强，常用于风控、医疗等需要解释的场景；它也是随机森林、梯度提升等强大集成模型的基础组件。通过特征重要性我们还能看出哪些特征在判断中起关键作用。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "decision_tree.py",
+        "code": "from sklearn.tree import DecisionTreeClassifier, plot_tree\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nimport matplotlib.pyplot as plt\n\n# 用鸢尾花数据集\nX, y = load_iris(return_X_y=True)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 限制深度防止过拟合\nclf = DecisionTreeClassifier(max_depth=3, random_state=0)\nclf.fit(X_train, y_train)\n\nprint('准确率 =', round(clf.score(X_test, y_test), 3))\n\n# 特征重要性\nnames = ['sepal_len', 'sepal_wid', 'petal_len', 'petal_wid']\nprint('特征重要性:')\nfor n, imp in zip(names, clf.feature_importances_):\n    print(n, round(imp, 3))\n\n# 可视化树\nplt.figure(figsize=(10, 5))\nplot_tree(clf, feature_names=names, filled=True)\nplt.show()"
+      },
+      "mistakes": [
+        "不限制深度让树无限生长，导致严重过拟合",
+        "忽略类别不平衡，导致叶子偏向多数类",
+        "把数值特征直接用于切分而不考虑过拟合风险",
+        "只用准确率评估，忽视类别分布与召回"
+      ],
+      "interviewPoints": [
+        "「信息增益、增益率、基尼不纯度怎么选？」要答到 ID3 的增益偏向多取值特征、C4.5 用增益率校正、CART 用基尼且更快",
+        "「决策树为什么容易过拟合？」要答到不加约束时它能切分到每个叶子都纯，把噪声和个别样本也记住，导致方差极大",
+        "「预剪枝和后剪枝的区别？」要答到预剪枝边建树边限制深度与最小样本数、快但可能欠拟合；后剪枝先长满再回剪、更准但更贵",
+        "「特征重要性怎么算？有什么坑？」要答到按各节点不纯度下降加权求和，坑是它偏向高基数特征，相关特征还会互相分摊"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "decision-tree-q1",
+          "type": "choice",
+          "prompt": "决策树选择划分特征时常用什么准则？",
+          "options": [
+            "信息增益/基尼不纯度",
+            "均方误差",
+            "准确率",
+            "余弦相似度"
+          ],
+          "answerIndex": 0,
+          "explanation": "分类树用信息增益或基尼不纯度衡量划分好坏；回归才用均方误差。"
+        },
+        {
+          "id": "decision-tree-q2",
+          "type": "short",
+          "prompt": "为什么深度过大的决策树容易过拟合？如何缓解？",
+          "answer": "参考回答：因为树过深会对训练数据的噪声和细节过度拟合，泛化变差。可限制 max_depth、min_samples_leaf 等超参，或做剪枝（预剪枝/后剪枝），并用验证集调节复杂度。",
+          "keywords": [
+            "过拟合",
+            "深度",
+            "剪枝"
+          ],
+          "explanation": "过深树拟合噪声导致过拟合，用限制深度/剪枝缓解。"
+        },
+        {
+          "id": "decision-tree-q3",
+          "type": "code",
+          "prompt": "用 sklearn 的 DecisionTreeClassifier(max_depth=3) 拟合 X、y 并打印准确率。",
+          "starterCode": "from sklearn.tree import DecisionTreeClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2], [4, 3]]\ny = [0, 0, 1, 1, 1]\n",
+          "solution": "from sklearn.tree import DecisionTreeClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2], [4, 3]]\ny = [0, 0, 1, 1, 1]\n\nclf = DecisionTreeClassifier(max_depth=3)\nclf.fit(X, y)\nprint(clf.score(X, y))",
+          "checks": [
+            "DecisionTreeClassifier",
+            "fit",
+            "score"
+          ],
+          "explanation": "创建 max_depth=3 的决策树，fit 训练后用 score 返回准确率。"
+        }
+      ]
+    },
+    {
+      "slug": "random-forest",
+      "title": "Random Forest 随机森林",
+      "order": 4,
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "随机森林通过训练多棵彼此略有差异的决策树并集成投票，显著提升泛化能力与鲁棒性。",
+      "intuition": "一棵树容易\"一根筋\"，对噪声敏感。随机森林训练很多棵树，每棵只看数据的一部分、特征的一部分，结果各不相同；预测时把所有树的答案汇总投票。少数几棵树的错误会被多数正确树淹没，整体比单棵树更稳、更准。",
+      "formal": "随机森林是 bagging（自助聚合）的一种：每次从数据中有放回采样得到子集，并对每个划分节点随机选取特征子集，训练多棵独立决策树。分类用多数投票，回归用平均。因为引入了\"样本抽样 + 特征子集随机\"两种随机性，降低了单棵树的方差，从而减少过拟合、提高稳定性。它也可输出特征重要性。",
+      "formula": "\\hat{y}_{RF} = \\begin{cases} \\text{mode}\\{\\hat{y}_t\\}, & \\text{分类} \\\\ \\frac{1}{T}\\sum_t \\hat{y}_t, & \\text{回归} \\end{cases}, \\quad \\text{每棵树用有放回采样 + 特征子集}",
+      "aiConnection": "随机森林是表格数据的常用强基线，兼顾准确率与可解释（特征重要性）。与深度学习相比，它训练快、超参少、对量纲不敏感，适合结构化特征；它也是理解\"集成如何提升性能\"的典型例子，与 LLM 中的 ensemble 思路相通。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "random_forest.py",
+        "code": "from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\n\n# 造数据\nX, y = make_classification(n_samples=500, n_features=5, n_informative=3, random_state=0)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 构建随机森林\nrf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=0)\nrf.fit(X_train, y_train)\n\nprint('准确率 =', round(rf.score(X_test, y_test), 3))\n\n# 特征重要性\nprint('特征重要性:')\nprint([round(v, 3) for v in rf.feature_importances_])\n\n# 单棵树与森林对比（可选）\nfrom sklearn.tree import DecisionTreeClassifier\nsingle = DecisionTreeClassifier(max_depth=5, random_state=0).fit(X_train, y_train)\nprint('单树准确率 =', round(single.score(X_test, y_test), 3))"
+      },
+      "mistakes": [
+        "把样本抽样和特征子集随机性漏掉，退化为多棵完全一样的树",
+        "n_estimators 定得过大导致训练慢而收益有限",
+        "只调树深度却不看特征重要性等整体效果",
+        "忽视可复现性，不设 random_state"
+      ],
+      "interviewPoints": [
+        "「随机森林的两种随机性是什么？」要答到行方向 bootstrap 有放回采样、列方向每个节点随机抽特征子集，缺一个就退化成相同的树",
+        "「为什么 bagging 能降低方差？」要答到对近似独立的树取平均时方差按 1/T 下降、偏差基本不变，所以关键在让基模型彼此不同",
+        "「OOB 估计有什么用？」要答到每棵树约有 36.8% 的样本没被抽中，可直接当验证集估计泛化误差，省下一次数据划分",
+        "「随机森林和 GBDT 的本质区别？」要答到 RF 并行、靠 bagging 降方差；GBDT 串行拟合残差降偏差，通常更准但更易过拟合"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "random-forest-q1",
+          "type": "choice",
+          "prompt": "随机森林用于分类时，最终预测通常如何得出？",
+          "options": [
+            "多数投票",
+            "概率平均",
+            "加权最小二乘",
+            "单一最优树的结果"
+          ],
+          "answerIndex": 0,
+          "explanation": "随机森林分类用所有树的类别做多数投票；回归才用平均值。"
+        },
+        {
+          "id": "random-forest-q2",
+          "type": "short",
+          "prompt": "随机森林相比单棵决策树为什么更不易过拟合？",
+          "answer": "参考回答：因为它在训练时引入样本有放回抽样与特征子集随机化两种随机性，让多棵树彼此差异、各自只见数据一角，平均/投票后抵消掉单棵树的方差与个别过拟合，从而提升泛化、降低过拟合。",
+          "keywords": [
+            "随机",
+            "抽样",
+            "方差"
+          ],
+          "explanation": "双重随机性让树彼此不同，集成后降低方差与过拟合。"
+        },
+        {
+          "id": "random-forest-q3",
+          "type": "code",
+          "prompt": "用 sklearn 的 RandomForestClassifier(n_estimators=10) 拟合 X、y 并打印准确率。",
+          "starterCode": "from sklearn.ensemble import RandomForestClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n",
+          "solution": "from sklearn.ensemble import RandomForestClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n\nrf = RandomForestClassifier(n_estimators=10)\nrf.fit(X, y)\nprint(rf.score(X, y))",
+          "checks": [
+            "RandomForestClassifier",
+            "n_estimators",
+            "fit"
+          ],
+          "explanation": "用 n_estimators=10 创建森林，fit 训练后用 score 求准确率。"
+        }
+      ]
+    },
+    {
+      "slug": "svm",
+      "title": "SVM",
+      "order": 5,
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "支持向量机（SVM）寻找能最大化类别间隔的分离超平面，擅长高维与小样本分类，可配合核方法处理非线性。",
+      "intuition": "想象两类点中间有一道分界线。可能存在很多条都能分开两类点的线，但 SVM 偏要选那条离两类点都最远的\"最中间\"的线，因为这样对噪声的容忍最大、泛化最好。决定这条线的，就是贴着边界的少数几个\"支持向量\"。",
+      "formal": "线性可分时，SVM 寻找满足 $y_i(\\mathbf{w}^T\\mathbf{x}_i + b) \\geq 1$ 且最大化间隔 $\\frac{2}{\\|\\mathbf{w}\\|}$ 的超平面，等价于最小化 $\\frac{1}{2}\\|\\mathbf{w}\\|^2$。对不可分情形引入软间隔与惩罚参数 $C$。通过核技巧（如 RBF 核 $K(\\mathbf{x},\\mathbf{y})=e^{-\\gamma\\|\\mathbf{x}-\\mathbf{y}\\|^2}$）把数据映射到高维实现非线性分类，而无需显式计算映射。",
+      "formula": "\\min_{\\mathbf{w}, b} \\frac{1}{2}\\|\\mathbf{w}\\|^2 \\quad \\text{s.t. } y_i(\\mathbf{w}^T\\mathbf{x}_i+b)\\geq 1, \\quad K(\\mathbf{x},\\mathbf{y}) = e^{-\\gamma\\|\\mathbf{x}-\\mathbf{y}\\|^2}",
+      "aiConnection": "SVM 的\"最大化间隔\"思想与核技巧，是机器学习中把数据升到更高维再线性划分的经典思路，也被借鉴进一些嵌入/相似度模型。理解支持向量与损失（hinge loss），能帮助你理解鲁棒分类与边界设计。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "svm.py",
+        "code": "from sklearn.svm import SVC\nfrom sklearn.datasets import make_blobs\nfrom sklearn.model_selection import train_test_split\n\n# 生成两类稍微重叠的数据\nX, y = make_blobs(n_samples=200, centers=2, cluster_std=1.5, random_state=0)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 用 RBF 核处理非线性\nsvm = SVC(kernel='rbf', C=1.0, gamma='scale')\nsvm.fit(X_train, y_train)\n\nprint('准确率 =', round(svm.score(X_test, y_test), 3))\n\n# 支持向量的数量\nprint('支持向量数 =', len(svm.support_vectors_))\n\n# 线性核的决策函数\nlinear = SVC(kernel='linear').fit(X_train, y_train)\nprint('线性核准确率 =', round(linear.score(X_test, y_test), 3))"
+      },
+      "mistakes": [
+        "不对特征做标准化，导致间隔与核函数受量纲影响",
+        "误以为线性核可处理任意非线性数据",
+        "把 C 与 gamma 大小对过拟合/欠拟合的影响搞反",
+        "把支持向量误认为是全部训练样本"
+      ],
+      "interviewPoints": [
+        "「SVM 为什么最大化间隔，而不是随便找条线分开？」要答到间隔越大对扰动的容忍度越高，结构风险最小化给出的泛化上界更紧",
+        "「支持向量是什么？预测只依赖它们吗？」要答到只有落在间隔边界上或违反间隔的样本 α>0，决策函数只是它们的核函数加权和",
+        "「核技巧为什么不需要显式升维？」要答到对偶形式只用到样本间内积，核函数直接给出高维内积，避免构造无穷维映射的代价",
+        "「C 和 gamma 调大调小分别会怎样？」要答到 C 越大越不容忍错分、易过拟合；gamma 越大核越窄、边界越碎、同样易过拟合"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "svm-q1",
+          "type": "choice",
+          "prompt": "SVM 选择分离超平面的原则是？",
+          "options": [
+            "最大化类别间隔",
+            "最小化训练误差",
+            "最小化特征数",
+            "最大化训练样本数"
+          ],
+          "answerIndex": 0,
+          "explanation": "SVM 目标是找到能最大化两类之间间隔的超平面，以获得更好的泛化。"
+        },
+        {
+          "id": "svm-q2",
+          "type": "short",
+          "prompt": "SVM 中核技巧的作用是什么？",
+          "answer": "参考回答：核技巧通过一个核函数隐式地把样本映射到高维特征空间，让原本线性不可分的数据在高维变得线性可分，同时避免了显式计算高维映射，从而高效实现非线性分类。",
+          "keywords": [
+            "高维",
+            "核",
+            "线性"
+          ],
+          "explanation": "核技巧隐式升维使数据线性可分，无需显式映射，支持非线性分类。"
+        },
+        {
+          "id": "svm-q3",
+          "type": "code",
+          "prompt": "用 sklearn 的 SVC(kernel='linear') 拟合 X、y 并打印准确率。",
+          "starterCode": "from sklearn.svm import SVC\n\nX = [[0, 0], [1, 1], [2, 0], [3, 1]]\ny = [0, 0, 1, 1]\n",
+          "solution": "from sklearn.svm import SVC\n\nX = [[0, 0], [1, 1], [2, 0], [3, 1]]\ny = [0, 0, 1, 1]\n\nsvm = SVC(kernel='linear')\nsvm.fit(X, y)\nprint(svm.score(X, y))",
+          "checks": [
+            "SVC",
+            "kernel='linear'",
+            "fit"
+          ],
+          "explanation": "创建线性核 SVC，fit 训练后用 .score() 返回准确率。"
+        }
+      ]
+    },
+    {
+      "slug": "clustering",
+      "title": "Clustering 聚类",
+      "order": 6,
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "聚类是无监督学习，在没有标签的情况下把相似样本自动归成若干组，最常用的是 K-Means。",
+      "intuition": "给你一堆没有标签的点，让你凭直觉把它们分成几堆，让\"每堆内部尽量近、堆与堆尽量远\"。K-Means 就这样：先随便放几个中心点，把每个点分给最近的中心，再移动中心到堆的平均位置，重复直到稳定。",
+      "formal": "K-Means 目标是最小化簇内平方和：$\\sum_{k=1}^{K}\\sum_{\\mathbf{x}\\in C_k}\\|\\mathbf{x}-\\boldsymbol{\\mu}_k\\|^2$。算法交替进行：分配步把每个样本分到最近的中心，更新步把 $\\boldsymbol{\\mu}_k$ 设为簇内均值，迭代至收敛。需预先指定 $K$（可用肘部法/轮廓系数选择），对初始中心和特征尺度敏感。",
+      "formula": "J = \\sum_{k=1}^{K}\\sum_{\\mathbf{x}\\in C_k}\\|\\mathbf{x}-\\boldsymbol{\\mu}_k\\|^2, \\quad \\boldsymbol{\\mu}_k = \\frac{1}{|C_k|}\\sum_{\\mathbf{x}\\in C_k}\\mathbf{x}",
+      "aiConnection": "聚类常用于无标签场景：用户分群、文档主题发现、异常检测、向量检索的粗聚类。在 RAG 中，对大量 embedding 做聚类能帮助组织语料或加速检索，是理解无监督表示学习的一把钥匙。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "clustering.py",
+        "code": "from sklearn.cluster import KMeans\nfrom sklearn.datasets import make_blobs\nimport matplotlib.pyplot as plt\n\n# 造三个簇的数据\nX, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.8, random_state=0)\n\n# K-Means 聚成 3 类\nkmeans = KMeans(n_clusters=3, n_init=10, random_state=0)\nlabels = kmeans.fit_predict(X)\n\n# 查看各簇中心\nprint('簇中心:')\nprint(kmeans.cluster_centers_)\nprint('簇标签样例:', labels[:10])\n\n# 肘部法思路：观察不同 K 的 inertia\ninertias = []\nfor k in range(1, 6):\n    inertias.append(KMeans(n_clusters=k, n_init=10, random_state=0).fit(X).inertia_)\nprint('不同 K 的 inertia =', [round(v, 1) for v in inertias])\n\n# 可视化\nplt.scatter(X[:, 0], X[:, 1], c=labels, cmap='viridis')\nplt.show()"
+      },
+      "mistakes": [
+        "不标准化特征就让距离主导，导致聚类偏向量纲大的维度",
+        "把 K-Means 的聚类中心当成真实类别标签使用",
+        "不评估 K 的取值，直接拍脑袋定簇数",
+        "把聚类当作有监督分类，混淆无监督与有监督"
+      ],
+      "interviewPoints": [
+        "「K-Means 的目标函数是什么？为什么一定收敛？」要答到最小化簇内平方和，分配步与更新步都单调降低 J，故收敛到局部最优",
+        "「K-Means 有哪些明显缺点？」要答到需要预先指定 K、对初始中心敏感、隐含假设簇是球形且方差相近，并对量纲和异常值敏感",
+        "「怎么选 K？肘部法和轮廓系数有何区别？」要答到肘部法看 inertia 拐点、较主观；轮廓系数衡量簇内紧与簇间离、更客观",
+        "「K-Means 和 KNN 的区别是什么？」要答到前者是无监督聚类、后者是有监督分类，名字相似但输入、目标与训练方式完全不同"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "clustering-q1",
+          "type": "choice",
+          "prompt": "K-Means 聚类属于哪类学习？",
+          "options": [
+            "无监督学习",
+            "监督学习",
+            "半监督学习",
+            "强化学习"
+          ],
+          "answerIndex": 0,
+          "explanation": "聚类在无标签数据上进行，是无监督学习。"
+        },
+        {
+          "id": "clustering-q2",
+          "type": "short",
+          "prompt": "K-Means 算法中的\"更新步\"做了什么？",
+          "answer": "参考回答：在把每个样本分配到最近的中心后，把每个簇的中心点重新设置为该簇所有样本的均值，使中心逐步向簇内质心靠拢，反复迭代直到基本不变或达到迭代上限。",
+          "keywords": [
+            "均值",
+            "中心",
+            "迭代"
+          ],
+          "explanation": "更新步把簇中心改为该簇样本的均值，迭代优化簇内距离。"
+        },
+        {
+          "id": "clustering-q3",
+          "type": "code",
+          "prompt": "用 sklearn 的 KMeans(n_clusters=2) 对 X 聚类并打印簇标签。",
+          "starterCode": "from sklearn.cluster import KMeans\n\nX = [[1, 1], [1.2, 1.1], [8, 8], [8.2, 7.9]]\n",
+          "solution": "from sklearn.cluster import KMeans\n\nX = [[1, 1], [1.2, 1.1], [8, 8], [8.2, 7.9]]\n\nkmeans = KMeans(n_clusters=2, n_init=10)\nlabels = kmeans.fit_predict(X)\nprint(labels)",
+          "checks": [
+            "KMeans",
+            "fit_predict",
+            "n_clusters=2"
+          ],
+          "explanation": "用 KMeans(n_clusters=2, n_init=10) 建模型，fit_predict(X) 返回簇标签。"
+        }
+      ]
+    },
+    {
+      "slug": "pca",
+      "title": "PCA 主成分分析",
+      "order": 7,
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "主成分分析（PCA）通过线性降维把高维数据投影到方差最大的几个方向上，用于压缩与去噪。",
+      "intuition": "想象一张非常扁的云朵，真正重要的信息只沿着少数几个方向扩散。PCA 就找到这些\"信息最多的方向\"（主成分），把数据投影上去，用尽量少的维度保留尽量多的变化。它既压缩体积，又尽量不丢信息。",
+      "formal": "PCA 对数据中心化后的协方差矩阵做特征分解，取特征值最大的 $d$ 个特征向量作为主成分投影方向。降维后数据为 $\\mathbf{Z} = \\mathbf{X}\\mathbf{W}$，其中 $\\mathbf{W}$ 的列是前 $d$ 个主成分。可保留的方差比例约为 $\\frac{\\sum_{i=1}^{d}\\lambda_i}{\\sum_{i=1}^{n}\\lambda_i}$，据此选择主成分个数。选择主成分数可通过解释方差比（explained variance ratio）判断。",
+      "formula": "\\text{协方差矩阵 } \\mathbf{C} = \\frac{1}{n}\\mathbf{X}^T\\mathbf{X}, \\quad \\mathbf{Z} = \\mathbf{X}\\mathbf{W}, \\quad \\text{保留方差比} = \\frac{\\sum_{i=1}^{d}\\lambda_i}{\\sum_{i=1}^{n}\\lambda_i}",
+      "aiConnection": "PCA 常用于高维特征降维、去相关与可视化（把高维 embedding 降到 2D 展示），也是大模型分析词向量空间、数据预处理的常见步骤。理解它帮你判断\"到底多少维够用\"。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "pca.py",
+        "code": "from sklearn.decomposition import PCA\nfrom sklearn.datasets import load_iris\nfrom sklearn.preprocessing import StandardScaler\nimport numpy as np\n\n# 加载 4 维数据\nX, _ = load_iris(return_X_y=True)\n\n# 标准化\nX_scaled = StandardScaler().fit_transform(X)\n\n# 降到 2 维\npca = PCA(n_components=2)\nX_pca = pca.fit_transform(X_scaled)\n\nprint('原始维度:', X.shape[1])\nprint('降维后维度:', X_pca.shape[1])\nprint('explained variance ratio:')\nprint(np.round(pca.explained_variance_ratio_, 3))\nprint('累计解释方差:', round(pca.explained_variance_ratio_.sum(), 3))\n\n# 看保留几维能达到 95% 方差\npca2 = PCA(n_components=0.95)\npca2.fit(X_scaled)\nprint('达到95%方差所需维数:', pca2.n_components_)"
+      },
+      "mistakes": [
+        "PCA 前不做标准化，让量纲大的特征主导主成分",
+        "把 PCA 降到 2 维就当成最好的可视化，忽视保留方差比例",
+        "误以为 PCA 是无监督且线性，无法处理高度非线性结构",
+        "混淆降维后的主成分轴与原始特征的可解释性"
+      ],
+      "interviewPoints": [
+        "「PCA 为什么等价于协方差矩阵的特征分解？」要答到最大化投影方差等价于最大化 wᵀΣw，在 ‖w‖=1 约束下解正是 Σ 的最大特征向量",
+        "「PCA 之前为什么必须标准化？」要答到它完全基于方差，量纲大的特征会主导主成分方向，标准化后各特征才被公平对待",
+        "「PCA 和 SVD 是什么关系？」要答到对中心化矩阵直接做 SVD 就能得到主成分方向与奇异值，数值上比显式特征分解更稳定",
+        "「PCA 的局限是什么？」要答到它是无监督线性方法，可能丢掉最关键的判别方向；非线性结构需 kernel PCA 或 UMAP"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "pca-q1",
+          "type": "choice",
+          "prompt": "PCA 降维时保留的主成分方向是？",
+          "options": [
+            "数据方差最大的方向",
+            "数据均值最大的方向",
+            "类别标签的方向",
+            "随机方向"
+          ],
+          "answerIndex": 0,
+          "explanation": "PCA 取协方差矩阵特征值最大的特征向量作为主成分，即方差最大的方向。"
+        },
+        {
+          "id": "pca-q2",
+          "type": "short",
+          "prompt": "为什么 PCA 前通常要先对特征做标准化？",
+          "answer": "参考回答：因为 PCA 基于方差，若某个变量量纲（范围）很大，它会主导方差从而主导主成分方向。标准化让各特征均值为 0、方差为 1，避免量纲差异干扰，使主成分真正反映数据的内部结构。",
+          "keywords": [
+            "标准化",
+            "方差",
+            "量纲"
+          ],
+          "explanation": "标准化消除量纲影响，避免大范围特征主导 PCA 的方差。"
+        },
+        {
+          "id": "pca-q3",
+          "type": "code",
+          "prompt": "用 sklearn 的 PCA(n_components=2) 对 X 降维并打印降维后的形状。",
+          "starterCode": "from sklearn.decomposition import PCA\n\nX = [[1, 2, 3], [2, 3, 4], [3, 4, 5]]\n",
+          "solution": "from sklearn.decomposition import PCA\n\nX = [[1, 2, 3], [2, 3, 4], [3, 4, 5]]\n\npca = PCA(n_components=2)\nX_pca = pca.fit_transform(X)\nprint(X_pca.shape)",
+          "checks": [
+            "PCA",
+            "fit_transform",
+            "shape"
+          ],
+          "explanation": "用 PCA(n_components=2) 建模型，fit_transform(X) 得降维结果，.shape 查看维度。"
+        }
+      ]
+    }
+  ]
+}

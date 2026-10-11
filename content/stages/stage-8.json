@@ -1,0 +1,425 @@
+{
+  "stage": 8,
+  "stageSlug": "transformer",
+  "stageTitle": "Transformer",
+  "stageEmoji": "⚡",
+  "stageDesc": "Token、Embedding、Attention 与整体架构：大模型的结构基石",
+  "category": "进阶",
+  "lessons": [
+    {
+      "slug": "token",
+      "title": "Token 词元",
+      "order": 1,
+      "module": "词与表示",
+      "difficulty": "进阶",
+      "estimatedMinutes": 21,
+      "summary": "Token 是语言模型处理文本的最小单位，文本会被切分成一串 token 再输入模型。",
+      "intuition": "语言模型并不直接读完整的单词，而先像切面包一样把文本切成一粒粒更小的'词元'（token）。一个常见英文词可能占一到几个 token，不常见的词会被切得更碎，中文则常一个字或一个词切成 token。模型把所有理解和生成的运算都建立在这串 token 序列之上，计费也通常按 token 数量算。",
+      "formal": "分词器（tokenizer）把原始字符串映射为整数 id 序列，每个整数对应词表（vocabulary）里的一个 token。常见分词算法有 BPE（Byte-Pair Encoding）、WordPiece、SentencePiece 等，它们从字符开始反复合并最常见的一对片段来构建子词（subword）词表。一个 token 是 vocab 里的一个条目，模型在词表上输出概率分布，从而预测下一个 token。",
+      "formula": "\\text{text} \\xrightarrow{\\text{tokenizer}} [t_1, t_2, \\dots, t_n]",
+      "aiConnection": "大语言模型的输入输出与计费都以 token 为单位。理解 token 切分，才能解释为什么同一句话在不同分词器下 token 数量不同、为什么某些语言的 token 消耗更高，以及上下文窗口能装下多少内容——这些直接决定你在 API 调用时的成本与长度上限。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "tokenize.py",
+        "code": "import tiktoken\n\n# gpt-4 / gpt-3.5 使用的编码\nenc = tiktoken.get_encoding(\"cl100k_base\")\n\ntext = \"Hello, world! 深度学习很有趣。\"\ntokens = enc.encode(text)\nprint(\"token 个数:\", len(tokens))\nprint(\"token id:\", tokens)\nprint(\"还原文本:\", enc.decode(tokens))\n# token 个数与字符数并不相等\nprint(\"字符数:\", len(text))"
+      },
+      "mistakes": [
+        "把 token 和字符/单词画等号，导致上下文占用估算错误",
+        "以为 token 数量等于字符数量，低估了中文等非英语文本的 token 消耗",
+        "用不同分词器叠加会导致 id 与文本无法正确对应"
+      ],
+      "interviewPoints": [
+        "「BPE 是怎么把文本切成 token 的？」要答到从字符出发反复合并最高频相邻对、词表大小与压缩率的权衡，以及常用词整块而罕见词被切碎",
+        "「为什么同一句话在不同模型下 token 数不同？」要答到分词器与词表不同、token id 空间不通用，换模型必须重新分词并重新估算成本",
+        "「中文为什么比英文更费 token？」要答到子词合并偏向英语语料、词频分布不同，同样信息量下中文常占更多 token，推高计费与窗口占用",
+        "「词表是不是越大越好？」要答到 embedding 与输出 softmax 参数量随词表线性增长、长尾 token 训练不充分，本质是压缩率与显存效果的取舍"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "token-q1",
+          "type": "choice",
+          "prompt": "关于 Token，下列说法正确的是？",
+          "options": [
+            "Token 就是单个字符",
+            "Token 是模型处理文本的最小单位，与字符/单词不总相等",
+            "Token 只在输出时出现",
+            "Token 数量永远等于词数"
+          ],
+          "answerIndex": 1,
+          "explanation": "Token 是分词器切分出的最小处理单位，一个 token 可能是一个子词、单词或字符，与字符数和词数都不严格相等。"
+        },
+        {
+          "id": "token-q2",
+          "type": "short",
+          "prompt": "为什么说中英文的 token 消耗通常不同？",
+          "answer": "参考回答：分词器基于子词/字节合并，不同语言词频分布不同。英文常用词是现成的子词 token，而中文常需把一个字或词切成一到多个 token，因此在表述相同内容时，中文往往消耗更多 token。这会影响上下文长度和 API 计费成本。",
+          "keywords": [
+            "分词器",
+            "子词",
+            "词频"
+          ],
+          "explanation": "不同语言词频分布与分词粒度不同，导致相同信息量下 token 数量差异。"
+        },
+        {
+          "id": "token-q3",
+          "type": "code",
+          "prompt": "用 tiktoken 编码一段文本并打印 token id 数量与还原后的文本。",
+          "starterCode": "import tiktoken\n\nenc = tiktoken.get_encoding(\"cl100k_base\")\n# 在此编码 \"AI is transforming the world\"\n",
+          "solution": "import tiktoken\n\nenc = tiktoken.get_encoding(\"cl100k_base\")\ntext = \"AI is transforming the world\"\ntokens = enc.encode(text)\nprint(len(tokens))\nprint(enc.decode(tokens))\n",
+          "checks": [
+            "enc.encode",
+            "len(tokens)"
+          ],
+          "explanation": "用 enc.encode(text) 得到 id 序列，len 得到 token 数，enc.decode 还原文本。"
+        }
+      ]
+    },
+    {
+      "slug": "embedding",
+      "title": "Embedding 词嵌入",
+      "order": 2,
+      "module": "词与表示",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "Embedding 把每个 token 映射成一个稠密向量，使语义相近的词汇在向量空间里彼此靠近。",
+      "intuition": "把每个词想象成大厦里的一个房间，embedding 把这个房间用一个坐标(向量)标出来，使得意思相近的词坐标也相近——'猫'和'狗'更近，而'猫'和'数据'更远。这样一来，计算机就可以用'距离'来度量'意思像不像'，这是模型理解语义、做匹配、检索和聚类的基础。",
+      "formal": "词嵌入是一个从词表到 R^d 的映射，把离散的 token id 变成连续稠密向量 e ∈ R^d。模型最早几层通常用一个 embedding 矩阵 E ∈ R^{V×d}（V 为词表大小）查找，即 e = E[id]。这个矩阵可以随机初始化后随训练学习，也可以复用预训练好的向量（如 word2vec、GloVe）。语义相似度常通过向量余弦相似度或点积度量。",
+      "formula": "e = E[id], \\;\\; \\text{sim}(e_a, e_b) = \\frac{e_a \\cdot e_b}{\\|e_a\\| \\, \\|e_b\\|}",
+      "aiConnection": "词嵌入是让模型'理解语义'的第一步。大模型内部就包含一个巨大的嵌入层，把每个 token 投影为向量；而在 RAG 和向量检索中，我们会用 text-embedding 模型把整段文本也变成向量，从而用余弦相似度进行语义搜索。理解 embedding，是理解 RAG、向量数据库和语义匹配的根基。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "embedding.py",
+        "code": "import numpy as np\n\n# 用一个简化的词向量矩阵示意\nvocab = {\"apple\": 0, \"banana\": 1, \"cat\": 2, \"dog\": 3, \"data\": 4}\nE = np.array([\n    [0.9, 0.1, 0.0],   # apple\n    [0.8, 0.2, 0.1],   # banana\n    [0.1, 0.9, 0.0],   # cat\n    [0.2, 0.8, 0.1],   # dog\n    [0.1, 0.1, 0.9],   # data\n])\n\ndef embed(word):\n    return E[vocab[word]]\n\ndef cosine(a, b):\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\nprint(\"cat 与 dog 相似度:\", round(cosine(embed(\"cat\"), embed(\"dog\")), 3))\nprint(\"cat 与 data 相似度:\", round(cosine(embed(\"cat\"), embed(\"data\")), 3))"
+      },
+      "mistakes": [
+        "直接用 one-hot 编码替代 embedding，导致向量维度过高且没有语义相似性",
+        "把 embedding 向量方向和大小混为一谈，相似度常用归一化的余弦而非绝对值",
+        "以为不同模型训练的 embedding 可以直接互相比较"
+      ],
+      "interviewPoints": [
+        "「one-hot 和 embedding 的本质区别？」要答到 one-hot 稀疏高维、任意两词正交无法表达相似度，embedding 稠密低维可学习且相似词更近",
+        "「为什么相似度用余弦而不是欧氏距离？」要答到余弦只看方向、对向量模长不敏感，文本向量常先归一化，此时余弦与点积排序等价",
+        "「embedding 层占多少参数？」要答到规模是 V×d、大词表下可达数亿参数，输出层常与它做 weight tying，是显存与并行切分的关注点",
+        "「不同模型训出的 embedding 能直接比吗？」要答到各自训练目标与空间不对齐、维度也可能不同，混用会让检索失效，必须成对使用同一模型"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "embedding-q1",
+          "type": "choice",
+          "prompt": "词嵌入（embedding）的核心特点是？",
+          "options": [
+            "把词映射成高维稀疏的 one-hot 向量",
+            "把词映射成低维稠密向量，使语义相近的词在空间中接近",
+            "让所有词拥有相同的向量",
+            "只用于英文单词"
+          ],
+          "answerIndex": 1,
+          "explanation": "embedding 把离散词映射成稠密连续向量，语义相近的词在嵌入空间中彼此靠近，能度量语义相似度。"
+        },
+        {
+          "id": "embedding-q2",
+          "type": "short",
+          "prompt": "常用的两个向量相似度度量方式是什么？",
+          "answer": "参考回答：常用点积（dot product）与余弦相似度（cosine similarity）。余弦相似度是对向量内积做归一化，只看方向夹角，不受向量模长影响，因此在词嵌入语义比较中最常用。",
+          "keywords": [
+            "点积",
+            "余弦",
+            "归一化"
+          ],
+          "explanation": "点积与余弦相似度是两种常见度量，余弦相似度对向量做模长归一化，更常用于语义比较。"
+        },
+        {
+          "id": "embedding-q3",
+          "type": "code",
+          "prompt": "实现函数 cosine(a, b) 计算两个向量的余弦相似度。",
+          "starterCode": "import numpy as np\n\ndef cosine(a, b):\n    pass\n",
+          "solution": "import numpy as np\n\ndef cosine(a, b):\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n",
+          "checks": [
+            "np.dot",
+            "np.linalg.norm"
+          ],
+          "explanation": "余弦相似度 = 点积 / (两个向量模长的乘积)。"
+        }
+      ]
+    },
+    {
+      "slug": "attention",
+      "title": "Attention 注意力",
+      "order": 3,
+      "module": "注意力机制",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "注意力机制让模型在处理某个位置时，动态地加权关注输入序列中其他位置的相关信息。",
+      "intuition": "阅读时你的目光不会平等扫过每个词，而是重点关注与当前内容最相关的部分。注意力机制就是把这种'选择性关注'变成数学：模型拿到一个问题（Query），去和序列里每个位置的信息（Key）比一比谁更相关，相关度越高，就把注意力更多地投向它的内容（Value）。最终输出是所有 Value 按相关度加权后的融合。",
+      "formal": "注意力将一组 Query、Key、Value 计算为加权和。先计算 Q 与 K 的相似度打分，softmax 归一化成权重，再对 V 加权求和：Attention(Q,K,V) = softmax(QK^T / √d_k) V。除以 √d_k 是为了防止点积值过大导致 softmax 梯度消失。这里的 d_k 是 key 的维度。",
+      "formula": "\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right) V",
+      "aiConnection": "注意力是大语言模型理解长上下文的核心机制。它让模型在生成每个词时能回头'看'到前文所有位置，并决定该借鉴哪些词的语义。相比 RNN 的串行，注意力能一次性并行处理整个序列，这也正是 Transformer 能高效扩展、支撑大模型的原因。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "attention_numpy.py",
+        "code": "import numpy as np\n\ndef softmax(x, axis=-1):\n    x = x - np.max(x, axis=axis, keepdims=True)\n    exp = np.exp(x)\n    return exp / np.sum(exp, axis=axis, keepdims=True)\n\ndef attention(Q, K, V):\n    d_k = K.shape[-1]\n    scores = Q @ K.T / np.sqrt(d_k)   # 相似度打分\n    weights = softmax(scores)         # 归一化为权重\n    return weights @ V                # 加权求和\n\n# 三个位置的 query/key/value（维度 4）\nQ = np.random.randn(3, 4)\nK = np.random.randn(3, 4)\nV = np.random.randn(3, 4)\n\nout = attention(Q, K, V)\nprint(out.shape)  # (3, 4) 每个 query 得到融合后的向量"
+      },
+      "mistakes": [
+        "忘记对 QK^T 除以 √d_k，导致点积值过大、softmax 梯度消失",
+        "把 attention 权重和最终的 Value 混淆，误以为注意力本身就是输出",
+        "在计算 softmax 前不减去最大值，导致数值溢出为 NaN"
+      ],
+      "interviewPoints": [
+        "「Self-Attention 为什么除以 √d_k？」要答到点积方差随维度线性增长、softmax 饱和导致梯度消失，以及不缩放时的训练不稳定现象",
+        "「Q、K、V 各自扮演什么角色？」要答到 Q 是查询、K 是被匹配的索引、V 是被取回的内容，注意力权重只是对 V 的加权系数而非输出本身",
+        "「attention 的复杂度是多少？」要答到序列长 n 时 QK^T 为 O(n²d)、注意力矩阵显存也是 O(n²)，长上下文下它是主要瓶颈",
+        "「不加 causal mask 会怎样？」要答到每个位置能看到未来 token、训练 loss 虚低，但自回归生成时无法使用，属于典型的信息泄漏"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "attention-q1",
+          "type": "choice",
+          "prompt": "注意力机制最终输出是？",
+          "options": [
+            "Query 向量本身",
+            "所有 Value 按注意力权重加权求和的结果",
+            "Key 与 Value 的拼接",
+            "softmax 的权重矩阵"
+          ],
+          "answerIndex": 1,
+          "explanation": "注意力输出是对所有 Value 按（由 Query 与 Key 计算出的）注意力权重加权求和的结果，权重矩阵只是中间步骤。"
+        },
+        {
+          "id": "attention-q2",
+          "type": "short",
+          "prompt": "注意力公式中为什么要除以 √d_k？",
+          "answer": "参考回答：当 key 的维度 d_k 较大时，Query 与 Key 的点积可能会很大，从而 softmax 进入梯度极小的饱和区，造成梯度消失。除以 √d_k 是对点积做尺度缩放，让数值保持适中，使 softmax 更稳定、梯度更健康。",
+          "keywords": [
+            "点积",
+            "缩放",
+            "梯度"
+          ],
+          "explanation": "除以 √d_k 用来缩放点积，防止数值过大导致 softmax 饱和、梯度消失。"
+        },
+        {
+          "id": "attention-q3",
+          "type": "code",
+          "prompt": "实现函数 attention(Q, K, V)：先算 Q@K.T 除以 sqrt(d_k)，再 softmax，最后乘 V。",
+          "starterCode": "import numpy as np\n\n\ndef softmax(x):\n    x = x - np.max(x, axis=-1, keepdims=True)\n    e = np.exp(x)\n    return e / np.sum(e, axis=-1, keepdims=True)\n\ndef attention(Q, K, V):\n    pass\n",
+          "solution": "import numpy as np\n\n\ndef softmax(x):\n    x = x - np.max(x, axis=-1, keepdims=True)\n    e = np.exp(x)\n    return e / np.sum(e, axis=-1, keepdims=True)\n\ndef attention(Q, K, V):\n    d_k = K.shape[-1]\n    scores = Q @ K.T / np.sqrt(d_k)\n    weights = softmax(scores)\n    return weights @ V\n",
+          "checks": [
+            "/ np.sqrt",
+            "@ K.T"
+          ],
+          "explanation": "计算 Q@K.T 除以 sqrt(d_k)，softmax 归一化后乘以 V。"
+        }
+      ]
+    },
+    {
+      "slug": "self-attention",
+      "title": "Self-Attention 自注意力",
+      "order": 4,
+      "module": "注意力机制",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "自注意力让序列中的每个位置都从同一个序列的其他位置收集信息，从而建模任意两点间的关系。",
+      "intuition": "普通注意力是'去别的序列里找信息'，自注意力则是'在自己这一句话里找信息'。每个词既当提问者（Query），又当被搜索的对象（Key 和 Value）。这样，'他在河边钓鱼，因为他喜欢安静'中的'他'，就能通过自注意力把注意力投向'喜欢安静'，明白'他'指的是爱安静的人。位置之间直接建立连接，不受距离限制。",
+      "formal": "在自注意力中，对每个输入向量 x_i 线性变换得到 Q_i = x_i W_Q、K_i = x_i W_K、V_i = x_i W_V。整个序列的 Query、Key、Value 来自同一组输入。再按注意力公式计算：SelfAttention(X) = softmax((XW_Q)(XW_K)^T / √d_k) (XW_V)。这样每个位置的输出都聚合了整个序列的信息，没有距离衰减，不依赖固定的顺序窗口。",
+      "formula": "\\text{SelfAttention}(X) = \\text{softmax}\\left(\\frac{(XW_Q)(XW_K)^T}{\\sqrt{d_k}}\\right) XW_V",
+      "aiConnection": "自注意力是 Transformer 与今日所有大语言模型的核心。正是它让模型能同时建模任意相距较远的词之间的依赖，从而捕获长距离语义，这比 RNN 的逐层传递更强大。每个 token 的表示在一次自注意力后都融合了全文语境，赋予了模型强大的上下文理解能力。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "self_attention.py",
+        "code": "import numpy as np\n\ndef softmax(x, axis=-1):\n    x = x - np.max(x, axis=axis, keepdims=True)\n    e = np.exp(x)\n    return e / np.sum(e, axis=axis, keepdims=True)\n\ndef self_attention(X, W_Q, W_K, W_V):\n    # X: (seq_len, d_model)，把同一序列映射到 Q/K/V\n    Q = X @ W_Q\n    K = X @ W_K\n    V = X @ W_V\n    d_k = K.shape[-1]\n    scores = Q @ K.T / np.sqrt(d_k)\n    weights = softmax(scores)\n    return weights @ V\n\nseq_len, d_model, d_k = 4, 8, 8\nX = np.random.randn(seq_len, d_model)\nW_Q = np.random.randn(d_model, d_k)\nW_K = np.random.randn(d_model, d_k)\nW_V = np.random.randn(d_model, d_k)\n\nout = self_attention(X, W_Q, W_K, W_V)\nprint(out.shape)  # (4, 8) 每个位置都融合了整个序列的信息"
+      },
+      "mistakes": [
+        "把自注意力与普通注意力混为一谈，忽略了 Q/K/V 来自同一序列",
+        "误以为自注意力只能看到相邻词，忽视其建模任意长距离的能力",
+        "未正确添加位置编码，导致模型丢失 token 的先后顺序信息"
+      ],
+      "interviewPoints": [
+        "「自注意力和普通注意力差在哪？」要答到 Q/K/V 是否来自同一序列：自注意力建模序列内部任意两点的关系，交叉注意力才是 Q 与 K/V 分属两边",
+        "「自注意力相比 RNN 的优势与代价？」要答到任意两点路径长度为 O(1) 且可并行训练，代价是 O(n²) 复杂度并完全丢失顺序，必须补位置编码",
+        "「去掉位置编码会怎样？」要答到自注意力对输入排列等变、模型退化成词袋，语序以及「他打了我」这类语义都无法区分",
+        "「长文本为什么难做？」要答到注意力是 n² 的计算与显存、超出训练长度后外推能力差，由此引出稀疏、滑窗与线性注意力等改法"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "self-attention-q1",
+          "type": "choice",
+          "prompt": "自注意力与普通注意力的关键区别是？",
+          "options": [
+            "自注意力只处理图像",
+            "Q/K/V 都来自同一个输入序列",
+            "自注意力不需要计算权重",
+            "自注意力只能建模相邻词"
+          ],
+          "answerIndex": 1,
+          "explanation": "自注意力中 Query、Key、Value 均来自同一输入序列，用于建模序列内部任意位置之间的关系。"
+        },
+        {
+          "id": "self-attention-q2",
+          "type": "short",
+          "prompt": "自注意力的优势在于捕获哪类依赖？",
+          "answer": "参考回答：自注意力能在序列中任意两个位置间直接建立连接，不受距离限制，因此擅长捕获长距离依赖。相比 RNN 需要逐层传递信息，自注意力一次就能让每个位置看到全序列，显著提升长上下文建模能力。",
+          "keywords": [
+            "长距离",
+            "任意位置",
+            "全序列"
+          ],
+          "explanation": "自注意力让每个位置直接与全序列其他位置交互，擅长长距离依赖建模。"
+        },
+        {
+          "id": "self-attention-q3",
+          "type": "code",
+          "prompt": "实现 self_attention(X, W_Q, W_K, W_V)：先把 X 映射成 Q/K/V，计算 softmax(Q@K.T/sqrt(d_k)) @ V。",
+          "starterCode": "import numpy as np\n\n\ndef softmax(x):\n    x = x - np.max(x, axis=-1, keepdims=True)\n    e = np.exp(x)\n    return e / np.sum(e, axis=-1, keepdims=True)\n\ndef self_attention(X, W_Q, W_K, W_V):\n    pass\n",
+          "solution": "import numpy as np\n\ndef self_attention(X, W_Q, W_K, W_V):\n    Q = X @ W_Q\n    K = X @ W_K\n    V = X @ W_V\n    d_k = K.shape[-1]\n    scores = Q @ K.T / np.sqrt(d_k)\n    weights = softmax(scores)\n    return weights @ V\n",
+          "checks": [
+            "@ W_Q",
+            "/ np.sqrt"
+          ],
+          "explanation": "分别映射 Q/K/V，再按注意力公式计算加权求和。"
+        }
+      ]
+    },
+    {
+      "slug": "multi-head-attention",
+      "title": "Multi-Head Attention 多头注意力",
+      "order": 5,
+      "module": "注意力机制",
+      "difficulty": "进阶",
+      "estimatedMinutes": 25,
+      "summary": "多头注意力并行运行多组注意力，让模型能从不同的子空间关注序列的不同方面。",
+      "intuition": "一个问题往往从多个角度看才完整：读一句话，你可能同时关注它的语法角色、语义关联、情感色彩。多头注意力就是请了多位'专家'，每位专家用不同的投影矩阵（不同的头），从不同子空间去看同一序列，各自关注不同层面的关系，最后把大家看到的汇总起来，得到一个更丰富、更全面的综合观点。",
+      "formal": "多头注意力把输入分别投影到 h 组不同的 Q、K、V 子空间，每组独立计算一次缩放点积注意力得到头 head_i = Attention(XW_Q^i, XW_K^i, XW_V^i)，然后把 h 个头的结果拼接并再投影一次以融合各头：MultiHead(X) = Concat(head_1,...,head_h) W_O。头数 h 与每个头的维度 d_k = d_model / h 协调，保证总计算量不变。",
+      "formula": "\\text{MultiHead}(X) = \\text{Concat}(\\text{head}_1, \\dots, \\text{head}_h)\\, W_O",
+      "aiConnection": "大语言模型的每个注意力层都包含多个头，称为多头注意力。大量研究与实践表明，不同头会'专业分工'：有的头关注语法，有的关注指代关系，有的关注远程语义。多头注意力让模型在一次前向中并行地从多个语义视角理解文本，是提升表达能力的核心组件。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "multi_head.py",
+        "code": "import numpy as np\n\ndef softmax(x, axis=-1):\n    x = x - np.max(x, axis=axis, keepdims=True)\n    e = np.exp(x)\n    return e / np.sum(e, axis=axis, keepdims=True)\n\ndef scaled_dot_product_attention(Q, K, V):\n    d_k = K.shape[-1]\n    scores = Q @ K.T / np.sqrt(d_k)\n    return softmax(scores) @ V\n\ndef multi_head_attention(X, n_heads, d_model):\n    d_k = d_model // n_heads\n    heads = []\n    for _ in range(n_heads):\n        W_Q = np.random.randn(d_model, d_k)\n        W_K = np.random.randn(d_model, d_k)\n        W_V = np.random.randn(d_model, d_k)\n        head = scaled_dot_product_attention(X @ W_Q, X @ W_K, X @ W_V)\n        heads.append(head)\n    return np.concatenate(heads, axis=-1)  # 拼接各头\n\nX = np.random.randn(4, 8)\nout = multi_head_attention(X, n_heads=2, d_model=8)\nprint(out.shape)  # (4, 8) 两个头拼接后仍是 8 维"
+      },
+      "mistakes": [
+        "让每个头的维度过大，导致拼接后超过模型维度或内存超限",
+        "忘记把各头结果拼接后用 W_O 融合，损失跨头信息",
+        "以为头的数量越多一定越好，忽略计算成本与收益的平衡"
+      ],
+      "interviewPoints": [
+        "「多头注意力为什么比单头好？」要答到不同头用不同投影看不同子空间、可分别关注语法指代与远程语义，单头只能平均成一种关系",
+        "「头数变多会更贵吗？」要答到每头维度 d_k=d_model/h，总计算量与参数量基本不变，但头维度太小表达力下降，还要额外的 W_O 融合",
+        "「把头数设成 d_model 会怎样？」要答到头维度退化为 1、注意力几乎无区分度，效果反而变差，说明头数与头维度需要折中",
+        "「各头拼接后为什么还要乘 W_O？」要答到 concat 只是拼接、跨头信息尚未交互，W_O 负责融合投影回 d_model 并与残差维度对齐"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "multi-head-attention-q1",
+          "type": "choice",
+          "prompt": "多头注意力的最主要作用是？",
+          "options": [
+            "减少计算量",
+            "让模型从多个子空间关注序列不同方面的信息",
+            "替代位置编码",
+            "强制所有头关注相同内容"
+          ],
+          "answerIndex": 1,
+          "explanation": "多头注意力由多组注意力并行从不同投影子空间关注序列不同方面，最后拼接融合，从而获得更丰富的表示。"
+        },
+        {
+          "id": "multi-head-attention-q2",
+          "type": "short",
+          "prompt": "多头注意力和普通注意力的关系是什么？",
+          "answer": "参考回答：多头注意力是普通（缩放点积）注意力的并行扩展——它用 h 组不同的投影矩阵把输入映射到多个子空间，每组独立计算一次注意力作为一个头，再把所有头拼接并融合。每个头本质是一次普通注意力，但关注不同方面。",
+          "keywords": [
+            "投影",
+            "拼接",
+            "并行"
+          ],
+          "explanation": "多头注意力并行运行多组普通注意力，各头用不同投影关注不同子空间，随后拼接融合。"
+        },
+        {
+          "id": "multi-head-attention-q3",
+          "type": "code",
+          "prompt": "实现一个计算单头缩放点积注意力的函数 scaled_dot_product_attention(Q, K, V)。",
+          "starterCode": "import numpy as np\n\n\ndef softmax(x):\n    x = x - np.max(x, axis=-1, keepdims=True)\n    e = np.exp(x)\n    return e / np.sum(e, axis=-1, keepdims=True)\n\ndef scaled_dot_product_attention(Q, K, V):\n    pass\n",
+          "solution": "import numpy as np\n\ndef scaled_dot_product_attention(Q, K, V):\n    d_k = K.shape[-1]\n    scores = Q @ K.T / np.sqrt(d_k)\n    return softmax(scores) @ V\n",
+          "checks": [
+            "np.sqrt",
+            "softmax"
+          ],
+          "explanation": "先缩放点积得到 scores，softmax 归一化，再乘 V。"
+        }
+      ]
+    },
+    {
+      "slug": "transformer-architecture",
+      "title": "Transformer Architecture 整体架构",
+      "order": 6,
+      "module": "模型结构",
+      "difficulty": "进阶",
+      "estimatedMinutes": 27,
+      "summary": "Transformer 以自注意力为核心，由编码器与解码器堆叠而成，是现代大语言模型的统一架构。",
+      "intuition": "Transformer 像一座分工明确的'信息处理工厂'。入口是多头自注意力——让每个词先理解整句上下文；接着是前馈网络逐位置深加工；每层之间用残差连接串起主路、用层归一化稳定信号。有的版本用编码器把输入全部读完再解码（如原始 Transformer），有的（如 GPT 系列）只用一个不断自回归预测下一个词的解码器。整个结构靠堆叠多层来获得越来越深的语义理解。",
+      "formal": "Transformer 每层由多头自注意力、LayerNorm、前馈网络（Feed-Forward，通常一个两层 MLP 加 ReLU/GELU）、以及残差连接组成。输入先加位置编码（positional encoding）以注入顺序信息。原始 Transformer 采用 Encoder-Decoder 结构：编码器对输入做双向自注意力，解码器用带掩码的自注意力（causal mask）加交叉注意力（cross-attention）来预测输出。GPT 系仅用解码器，自回归生成。位置编码常为 sin/cos 或可学习 embedding。",
+      "formula": "\\text{LayerNorm}(\\text{FFN}(\\text{LN}(X + \\text{SelfAttn}(X))) + \\text{residual})",
+      "aiConnection": "今日几乎所有主流大语言模型——GPT、Llama、Qwen、DeepSeek 等——都是 Transformer 架构，尤其基于解码器（decoder-only）。这一架构并行能力强、可扩展到数千亿参数，是理解大模型训练与生成原理的最终落脚点。位置编码、残差、LayerNorm 等细节决定了大模型的稳定训练。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "transformer_block.py",
+        "code": "import torch\nimport torch.nn as nn\n\nclass TransformerBlock(nn.Module):\n    def __init__(self, d_model, n_heads, ff_dim):\n        super().__init__()\n        self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)\n        self.norm1 = nn.LayerNorm(d_model)\n        self.norm2 = nn.LayerNorm(d_model)\n        self.ffn = nn.Sequential(\n            nn.Linear(d_model, ff_dim),\n            nn.GELU(),\n            nn.Linear(ff_dim, d_model),\n        )\n\n    def forward(self, x):\n        # 多头自注意力 + 残差 + LayerNorm\n        attn_out, _ = self.attn(x, x, x)\n        x = self.norm1(x + attn_out)\n        # 前馈网络 + 残差 + LayerNorm\n        x = self.norm2(x + self.ffn(x))\n        return x\n\nblock = TransformerBlock(d_model=64, n_heads=4, ff_dim=128)\nx = torch.randn(2, 10, 64)   # batch, seq, dim\nout = block(x)\nprint(out.shape)  # (2, 10, 64)"
+      },
+      "mistakes": [
+        "混淆 encoder-decoder 与 decoder-only 结构在不同模型中的差异",
+        "忘记残差连接或位置编码，导致训练不稳定、丢失顺序信息",
+        "把 LayerNorm 与 BatchNorm 混用，忽略它们在序列任务中的适配差异"
+      ],
+      "interviewPoints": [
+        "「Transformer 一层由哪些组件构成？」要答到多头自注意力、前馈网络、残差与 LayerNorm 的顺序，以及 Pre-LN 与 Post-LN 的稳定性差异",
+        "「为什么解码器要 causal mask？」要答到屏蔽未来位置、保证自回归因果性，否则训练时模型直接抄答案，推理阶段性能会崩塌",
+        "「Encoder-Decoder 和 decoder-only 怎么选？」要答到前者适合翻译摘要等输入输出对齐任务，后者用自回归统一一切且更易规模化，GPT 系即此路线",
+        "「残差和 LayerNorm 各自解决什么？」要答到残差给梯度提供恒等通路、缓解深层退化，LayerNorm 稳定各层激活尺度，让上百层堆叠能训得动"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "transformer-architecture-q1",
+          "type": "choice",
+          "prompt": "Transformer 中注入序列位置信息的方式是？",
+          "options": [
+            "通过循环网络",
+            "通过位置编码/位置嵌入",
+            "通过卷积核",
+            "通过注意力权重"
+          ],
+          "answerIndex": 1,
+          "explanation": "Transformer 本身没有顺序概念，需要位置编码或可学习的位置嵌入把每个 token 的位置信息注入输入向量。"
+        },
+        {
+          "id": "transformer-architecture-q2",
+          "type": "short",
+          "prompt": "解码器自注意力为什么要用掩码（causal mask）？",
+          "answer": "参考回答：解码器在生成时只能看到当前及之前的位置，不能偷看未来 token。causal mask 把注意力矩阵中代表未来位置的项设为负无穷，使 softmax 后权重为 0，从而保证每个位置只关注它之前的 token，维持自回归生成的因果性。",
+          "keywords": [
+            "掩码",
+            "未来",
+            "自回归"
+          ],
+          "explanation": "causal mask 屏蔽未来位置，保证解码器生成时只看到当前及之前的 token，符合自回归因果性。"
+        },
+        {
+          "id": "transformer-architecture-q3",
+          "type": "code",
+          "prompt": "用 PyTorch 定义一个完整的 TransformerBlock，包含多头自注意力、LayerNorm 与一个两层前馈网络（GELU）。",
+          "starterCode": "import torch\nimport torch.nn as nn\n\nclass TransformerBlock(nn.Module):\n    def __init__(self, d_model, n_heads, ff_dim):\n        super().__init__()\n        pass\n",
+          "solution": "import torch\nimport torch.nn as nn\n\nclass TransformerBlock(nn.Module):\n    def __init__(self, d_model, n_heads, ff_dim):\n        super().__init__()\n        self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)\n        self.norm1 = nn.LayerNorm(d_model)\n        self.norm2 = nn.LayerNorm(d_model)\n        self.ffn = nn.Sequential(\n            nn.Linear(d_model, ff_dim),\n            nn.GELU(),\n            nn.Linear(ff_dim, d_model),\n        )\n\n    def forward(self, x):\n        attn_out, _ = self.attn(x, x, x)\n        x = self.norm1(x + attn_out)\n        x = self.norm2(x + self.ffn(x))\n        return x\n",
+          "checks": [
+            "self.attn = nn.MultiheadAttention",
+            "nn.LayerNorm",
+            "self.ffn"
+          ],
+          "explanation": "用 MultiheadAttention、两个 LayerNorm 与两层 Linear+GELU 的前馈网络组成标准 Transformer 块。"
+        }
+      ]
+    }
+  ]
+}

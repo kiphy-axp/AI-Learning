@@ -1,0 +1,632 @@
+{
+  "stage": 9,
+  "stageSlug": "llm",
+  "stageTitle": "LLM Engineering",
+  "stageEmoji": "🗣️",
+  "stageDesc": "Prompt、微调、向量库、RAG 与 MCP：把大模型接进真实产品",
+  "category": "进阶",
+  "lessons": [
+    {
+      "slug": "prompt",
+      "title": "Prompt 提示词",
+      "order": 1,
+      "module": "LLM 基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 22,
+      "summary": "Prompt 是你传给大模型的输入指令，好的提示词能显著提升输出的质量与可控性。",
+      "intuition": "大模型像一个知识渊博但不爱主动说话的顾问：你问得越清楚、给的信息越全，它答得越准。Prompt 就是你和它沟通的那张纸条。含糊的问题得到模糊的答案，而明确的目标、角色设定、示例和格式要求，能让模型给出更贴近你需求的回应。",
+      "formal": "一个高质量的 prompt 通常包含：角色设定（role，如'你是资深工程师'）、任务描述（task，明确要做什么）、上下文/输入（context，提供必要的背景或原文）、约束条件（constraints，如输出格式、长度）、以及可选的示例（few-shot examples）来引导输出模式。常用结构化模板如系统提示（system）加用户提示（user），后者又以分隔符区分指令与输入数据。",
+      "formula": "",
+      "aiConnection": "Prompt 是你与大模型交互的第一层工程。同样的模型，提示词不同，效果可能天差地别。后续的 RAG、MCP 也都围绕构建更好的上下文展开——RAG 把检索到的资料塞进 prompt，MCP 把工具描述放进 prompt，因此 prompt 设计是 LLM 应用开发的起点。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "prompt_build.py",
+        "code": "def build_prompt(question, context=None):\n    system = \"你是一名严谨的技术助手，回答要简洁、准确、分点。\"\n    user = f\"请回答以下问题：\\n{question}\\n\"\n    if context:\n        user += f\"\\n参考材料：\\n{context}\\n\"\n    user += \"\\n请在 3 句话以内作答。\"\n    # 用分隔符区分指令与数据，避免被输入内容劫持\n    return [\n        {\"role\": \"system\", \"content\": system},\n        {\"role\": \"user\", \"content\": user},\n    ]\n\nif __name__ == \"__main__\":\n    msgs = build_prompt(\"什么是注意力机制？\")\n    for m in msgs:\n        print(f\"[{m['role']}] {m['content']}\")"
+      },
+      "mistakes": [
+        "把问题问得含糊，导致模型输出与需求不符",
+        "不加约束或格式要求，输出难以直接使用",
+        "把用户输入直接拼接进指令且不区分隔符，易被提示词注入"
+      ],
+      "interviewPoints": [
+        "「Prompt 工程和微调怎么选？」要答到 prompt 不改权重、迭代快成本低，适合引导格式与风格；微调固化领域行为但成本高，能靠 prompt 解决就别微调",
+        "「Few-shot 示例为什么有效？」要答到示例在上下文中充当条件、把任务模式与输出格式显式示范出来，等价于免训练的隐式任务适配",
+        "「提示词注入怎么防？」要答到用分隔符区分指令与数据、把用户输入当不可信内容、配合最小权限与输出校验，而不是只写一句「忽略以上指令」",
+        "「同一个 prompt 换个模型就失效，为什么？」要答到不同模型的对齐数据与 chat 模板不同、system 消息权重不同，prompt 需要按模型重新调"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "prompt-q1",
+          "type": "choice",
+          "prompt": "下列哪种做法最能提升 prompt 输出的稳定性与质量？",
+          "options": [
+            "尽量简短、少给信息",
+            "明确角色、任务、约束与上下文，必要时给示例",
+            "把所有内容塞成一大段且不加结构",
+            "不断重复同一句话"
+          ],
+          "answerIndex": 1,
+          "explanation": "结构化地给出角色、任务、约束、上下文（必要时 few-shot 示例）能让模型准确理解需求，显著提升输出的质量与可控性。"
+        },
+        {
+          "id": "prompt-q2",
+          "type": "short",
+          "prompt": "一个好的 prompt 通常包含哪些要素？",
+          "answer": "参考回答：通常包含角色设定（role）、任务描述（task）、提供的上下文或输入（context）、约束条件（如输出格式、长度），以及可选的示例（few-shot examples）。这些要素帮助模型准确理解要做什么以及如何输出。",
+          "keywords": [
+            "角色",
+            "任务",
+            "约束"
+          ],
+          "explanation": "好的 prompt 一般有角色、任务、上下文、约束与示例等要素。"
+        },
+        {
+          "id": "prompt-q3",
+          "type": "code",
+          "prompt": "实现 build_prompt(question, role, output_format) 返回一个包含 system 和 user 两个消息的列表。",
+          "starterCode": "def build_prompt(question, role, output_format):\n    pass\n",
+          "solution": "def build_prompt(question, role, output_format):\n    system = role\n    user = f\"{question}\\n请按以下格式输出：{output_format}\"\n    return [\n        {\"role\": \"system\", \"content\": system},\n        {\"role\": \"user\", \"content\": user},\n    ]\n",
+          "checks": [
+            "\"system\"",
+            "\"user\""
+          ],
+          "explanation": "构造 system 消息放角色，user 消息放问题与格式要求。"
+        }
+      ]
+    },
+    {
+      "slug": "llm-token",
+      "title": "Token 与分词",
+      "order": 2,
+      "module": "LLM 基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 22,
+      "summary": "分词器把文本切成 token 并映射为 id，是模型处理与计费的基本单位。",
+      "intuition": "模型不认识'字'，只认识数字。分词器就是那个翻译官：它把文本切成若干最小片段（token），再给每个片段一个整数编号。它既决定输入怎么进模型，也决定生成的文本怎么出来，同时还决定了你每段对话要花多少钱。",
+      "formal": "分词器用既定算法（如 BPE、WordPiece、SentencePiece）在给定词表上把文本切分为 token 序列，并映射到整数 id。BPE 通过反复合并训练语料中出现频率最高的相邻字符对来构建子词词表。特殊 token（如 <bos>、<eos>、<pad>）用于标记序列边界。token 数量与字符数、词数均不成正比，不同分词器与语言差异明显。",
+      "formula": "\\text{token\\_count} \\; \\text{(api 计费与上下文长度均以此为单位)}",
+      "aiConnection": "大模型的每条输入输出都先被分词器切分成 token，API 计费、上下文窗口限制都以 token 为单位。理解 token 切分与不同语言/分词的差异，能帮你准确估算发送的内容长度和成本，并避免超长被截断。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "llm_tokenize.py",
+        "code": "from transformers import AutoTokenizer\n\n# 加载一个常见模型的分词器\n# 此处以英文小模型为例；实际可换成本地分词器\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n\ntext = \"Attention is all you need!\"\ntokens = tokenizer.tokenize(text)\nids = tokenizer.encode(text)\nprint(\"token:\", tokens)\nprint(\"id:\", ids)\nprint(\"数量:\", len(ids))\nprint(\"还原:\", tokenizer.decode(ids))\n# 不同文本切分数量差异\nprint(\"英文词数:\", len(text.split()), \"token 数:\", len(ids))"
+      },
+      "mistakes": [
+        "用字符数或词数估算 token 数，导致成本预估偏差",
+        "以为所有模型用同一分词器，换模型后数量与 id 都不同",
+        "未处理特殊 token，导致序列边界或填充错误"
+      ],
+      "interviewPoints": [
+        "「BPE 的训练过程讲一下？」要答到从字符表出发统计并合并最高频相邻对、反复迭代到词表上限，常用词成为整 token、罕见词拆成子词序列",
+        "「特殊 token 有什么用？」要答到 <bos>/<eos>/<pad> 标记序列边界与填充，chat 模板的角色标记也属此类，处理不当会导致 mask 错误",
+        "「token 数和字符数能直接换算吗？」要答到不同语言与分词器比例差异很大，只能实测或粗估，拿它做成本与长度预算会有明显偏差",
+        "「词表大小和显存什么关系？」要答到词表 V 决定 embedding 与 LM head 的 V×d 参数量，大词表省 token 但吃显存，是并行与分片策略的考虑点"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "llm-token-q1",
+          "type": "choice",
+          "prompt": "为什么同一段文本在不同模型下 token 数量可能不同？",
+          "options": [
+            "因为模型权重不同",
+            "因为不同模型使用不同分词器与词表",
+            "因为 token 与文本内容无关",
+            "因为模型输出长度固定"
+          ],
+          "answerIndex": 1,
+          "explanation": "不同模型使用各自训练得到的分词器与词表，因此同一文本的切分粒度和 token id 都会不同，token 数也随之不同。"
+        },
+        {
+          "id": "llm-token-q2",
+          "type": "short",
+          "prompt": "BPE 分词的基本思想是什么？",
+          "answer": "参考回答：BPE（Byte-Pair Encoding）从单字符字典出发，在训练语料上反复统计并合并出现频率最高的相邻字符对，逐步构建出子词（subword）词表。这样常用词可整体成为 token，罕见词则拆成较短的子词序列，兼顾压缩率与词表大小。",
+          "keywords": [
+            "合并",
+            "频率",
+            "子词"
+          ],
+          "explanation": "BPE 不断合并频率最高的相邻字符对来构建子词词表，得到一个平衡压缩与词表大小的分词器。"
+        },
+        {
+          "id": "llm-token-q3",
+          "type": "code",
+          "prompt": "用 tokenizer 把文本编码得到 id 并统计数量，再解码还原。",
+          "starterCode": "from transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n# 在此编码 \"AI transforms coding\"\n",
+          "solution": "from transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\ntext = \"AI transforms coding\"\nids = tokenizer.encode(text)\nprint(len(ids))\nprint(tokenizer.decode(ids))\n",
+          "checks": [
+            "tokenizer.encode",
+            "tokenizer.decode"
+          ],
+          "explanation": "用 tokenizer.encode(text) 得 id 序列与个数，decode 还原文本。"
+        }
+      ]
+    },
+    {
+      "slug": "context-window",
+      "title": "Context Window 上下文窗口",
+      "order": 3,
+      "module": "LLM 基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 22,
+      "summary": "上下文窗口是模型一次能处理的 token 上限，决定输入与输出（含历史）的总长度。",
+      "intuition": "上下文窗口就像模型面前的'桌面大小'。桌上能一次摆下的材料有限——你的问题、历史对话、参考资料和模型的回答都要挤在这张桌子上。桌子越大，能一次性给的背景越多，模型回答就越有依据；一旦超出，最前面的内容就会被挤出去或直接报错。",
+      "formal": "上下文窗口以 token 计，通常表示为 N 个 token 的可利用长度，包含 system 提示、用户输入、历史对话、检索到的文档以及模型生成的部分。超出窗口时，常见的处理策略有：截断（truncate）掉最早的内容、滑动窗口、或者使用长上下文模型扩展窗口。窗口大小是模型的一个固定参数，直接决定可容纳的信息量。",
+      "formula": "\\text{context} = \\text{input\\_tokens} + \\text{history} + \\text{retrieved} + \\text{output\\_tokens} \\le N",
+      "aiConnection": "上下文窗口直接决定了 RAG 能放多少检索文档、Agent 能携带多少历史与工具返回。超长对话被截断是常见问题，因此需要合理的上下文管理（总结、裁剪、检索）。窗口大小还影响 API 的输入成本与能否容纳大段代码/文档。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "context_window.py",
+        "code": "def estimate(context_tokens, limit=4096):\n    \"\"\"粗略估算上下文占用并检查是否超限。\"\"\"\n    # 每一项都消耗 token\n    system = 100\n    history = len(context_tokens)  # 假设每轮约若干 token\n    output_reserve = 500\n    total = system + history + output_reserve\n    print(f\"预计上下文: {total} / {limit} token\")\n    if total > limit:\n        # 超限时丢弃最早的对话，保留最近内容\n        drop = total - limit\n        print(f\"超限 {drop} token，建议截断最早历史或先做摘要\")\n    else:\n        print(\"在窗口内，可安全发送\")\n\nestimate([\"用户1\", \"助手1\", \"用户2\"])\nestimate([\"用户1\", \"助手1\", \"用户2\", \"用户3\", \"用户4\", \"用户5\"])"
+      },
+      "mistakes": [
+        "忽略输出 token 也占用窗口，导致请求被拒",
+        "超长对话不做裁剪或摘要，直接把整个历史塞进去而超限",
+        "误以为窗口足够大就无需管理上下文，实际有效注意力仍可能下降"
+      ],
+      "interviewPoints": [
+        "「上下文窗口里都装了什么？」要答到 system、用户输入、历史对话、检索文档与预留输出共享同一个 N，输出也占额度，否则请求被直接拒绝",
+        "「超长对话怎么处理？」要答到截断最早内容、滑动窗口、摘要压缩、检索回填以及换长上下文模型，并说清每种做法的信息损失",
+        "「窗口够大就没有上下文问题了吗？」要答到 lost in the middle、有效注意力随长度衰减、成本随 token 线性上涨，长窗口不等于被有效利用",
+        "「RAG 和长上下文是什么关系？」要答到长上下文降低检索必要性但成本高，检索能筛噪声并支撑超大知识库，实践中常把两者结合使用"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "context-window-q1",
+          "type": "choice",
+          "prompt": "上下文窗口主要限制了什么？",
+          "options": [
+            "模型的训练数据量",
+            "单次请求中模型可处理的输入与输出 token 总数",
+            "模型可使用的 GPU 数量",
+            "模型的参数量"
+          ],
+          "answerIndex": 1,
+          "explanation": "上下文窗口规定了一次请求里能容纳的 token 总数，包含 system、输入、历史与输出，超限会被截断或拒绝。"
+        },
+        {
+          "id": "context-window-q2",
+          "type": "short",
+          "prompt": "当对话历史超出上下文窗口时，常见处理策略有哪些？",
+          "answer": "参考回答：常见策略包括：截断最早的对话（truncate）只保留最近的；对旧内容做摘要压缩后再放入；使用滑动窗口；以及选择更长上下文的模型。此外，RAG 场景下还可只检索最相关文档以节省窗口。",
+          "keywords": [
+            "截断",
+            "摘要",
+            "滑动窗口"
+          ],
+          "explanation": "常用截断、摘要压缩、滑动窗口、或换用长上下文模型等策略管理超限。"
+        },
+        {
+          "id": "context-window-q3",
+          "type": "code",
+          "prompt": "实现函数 check_budget(token_count, limit=4096, reserve_output=500)，若总占用超过 limit 返回 True。",
+          "starterCode": "def check_budget(token_count, limit=4096, reserve_output=500):\n    pass\n",
+          "solution": "def check_budget(token_count, limit=4096, reserve_output=500):\n    total = token_count + reserve_output\n    return total > limit\n",
+          "checks": [
+            "total =",
+            "return "
+          ],
+          "explanation": "输入 token 数加上为输出预留的 reserve_output，判断是否超限。"
+        }
+      ]
+    },
+    {
+      "slug": "api",
+      "title": "LLM API 调用",
+      "order": 4,
+      "module": "LLM 基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "通过 API 即可在应用中调用大模型能力，掌握 messages 结构、参数与错误处理是工程化第一步。",
+      "intuition": "你不需要自己训练模型，只需按约定的格式发一个网络请求，就能借到千里之外的超强大脑。API 调用就像点外卖：你下订单（发送 prompt），商家（模型服务）做好后送回来（返回文本）。关键是要记住'菜单'——请求要带哪些字段、怎么处理超时和失败。",
+      "formal": "OpenAI 风格 API 使用 chat completion 接口，核心输入是 messages 列表，每个消息含 role（system/user/assistant）与 content。返回内容在 choices[0].message.content。常用参数有 temperature（随机性）、max_tokens（输出上限）、top_p 等。调用需处理网络错误、速率限制（rate limit）、超时与截断，并管理成本与重试策略。",
+      "formula": "",
+      "aiConnection": "几乎所有 LLM 应用（RAG、Agent、聊天机器人）的底层都是对 API 的封装调用。掌握 messages 结构、系统提示注入、参数语义与健壮的异常处理，是把大模型接入真实产品的关键工程能力，也直接影响成本与可用性。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "llm_api.py",
+        "code": "import os\nfrom openai import OpenAI\n\n# 需设置环境变量 OPENAI_API_KEY\nclient = OpenAI(api_key=os.environ.get(\"OPENAI_API_KEY\"))\n\ntry:\n    resp = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[\n            {\"role\": \"system\", \"content\": \"你是简洁的技术助手。\"},\n            {\"role\": \"user\", \"content\": \"用一句话解释什么是 API。\"},\n        ],\n        temperature=0.3,\n        max_tokens=100,\n    )\n    print(resp.choices[0].message.content)\nexcept Exception as e:\n    print(\"调用失败:\", e)  # 需处理超时、限流等错误"
+      },
+      "mistakes": [
+        "把 API key 硬编码进代码，导致泄露风险",
+        "不设置 max_tokens，导致输出超长或成本失控",
+        "忽略错误处理（超时、限流），导致应用崩溃或不稳定"
+      ],
+      "interviewPoints": [
+        "「调用 LLM API 要注意什么？」要答到 messages 与 role 语义、temperature/max_tokens 参数、超时限流重试与 key、成本管理",
+        "「temperature 和 top_p 分别控制什么？」要答到 temperature 缩放 logits 改变分布陡峭度、top_p 做核采样截断概率，通常只调一个",
+        "「线上遇到 429 和超时怎么办？」要答到指数退避重试、设置超时与熔断、并发限流与排队，必要时降级到小模型或走缓存",
+        "「推理成本怎么控？」要答到压缩 prompt 与历史、限制 max_tokens、用缓存与批处理、按任务选小模型，并持续监控 token 用量与单价"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "api-q1",
+          "type": "choice",
+          "prompt": "OpenAI 风格 chat API 的核心请求参数 messages 中，role 通常包含哪些？",
+          "options": [
+            "input/output/hidden",
+            "system/user/assistant",
+            "prompt/response/meta",
+            "start/end/context"
+          ],
+          "answerIndex": 1,
+          "explanation": "OpenAI 风格 API 的 messages 列表里每条消息含 role（system/user/assistant）与 content 字段。"
+        },
+        {
+          "id": "api-q2",
+          "type": "short",
+          "prompt": "调用 LLM API 时通常需要做哪些异常与成本防护？",
+          "answer": "参考回答：需要设置超时、捕获网络错误与速率限制（rate limit）并做重试（带退避）；设置 max_tokens 限制输出以避免成本失控；妥善管理 API key（环境变量而非硬编码）；估算并监控 token 消耗以控制成本。",
+          "keywords": [
+            "超时",
+            "重试",
+            "max_tokens"
+          ],
+          "explanation": "健壮的 API 调用需处理超时、限流重试，并限制 max_tokens、管理 key 与成本。"
+        },
+        {
+          "id": "api-q3",
+          "type": "code",
+          "prompt": "实现一个调用 chat completion 的函数，消息包含 system 与 user 各一条。",
+          "starterCode": "from openai import OpenAI\n\nclient = OpenAI(api_key=\"key\")\n\ndef ask(question):\n    pass\n",
+          "solution": "from openai import OpenAI\n\nclient = OpenAI(api_key=\"key\")\n\ndef ask(question):\n    resp = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[\n            {\"role\": \"system\", \"content\": \"你是助手。\"},\n            {\"role\": \"user\", \"content\": question},\n        ],\n    )\n    return resp.choices[0].message.content\n",
+          "checks": [
+            "messages=",
+            "choices[0]"
+          ],
+          "explanation": "构造 system 与 user 两条消息，调用 create 后从 choices[0].message.content 取返回文本。"
+        }
+      ]
+    },
+    {
+      "slug": "fine-tuning",
+      "title": "Fine-tuning 微调",
+      "order": 5,
+      "module": "微调与向量",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "微调是在预训练模型基础上，用特定任务数据继续训练，让模型适配特定领域或风格。",
+      "intuition": "预训练模型像个读完万卷书但不专精某个岗位的毕业生。微调就像送他去上班：用你公司（领域）的真实资料和标准答案（标注数据）继续培训他，让他在你这个岗位上表现得更专业。相比从头训练，微调花费少很多，又能让模型更贴合你的业务。",
+      "formal": "微调以预训练权重为起点，用任务数据集 D 继续优化，训练目标是 D 上的有监督 loss。常见形式：全参数微调（full fine-tuning）更新所有参数，消耗大；LoRA（Low-Rank Adaptation）只训练两个低秩矩阵 A、B，仅更新 W = W_0 + BA 中新增的部分，显著减少可训练参数量；PEFT 与适配器方法进一步降低成本。指令微调（instruction tuning）让模型学会遵循指令，RLHF 用人类反馈强化学习对齐。",
+      "formula": "W = W_0 + BA, \\;\\; \\text{(LoRA 低秩增量)}",
+      "aiConnection": "当通用大模型在某个专业领域或特定格式上不够好时，微调是提升效果的关键手段。相比 prompt 工程，微调能把领域知识与输出风格'固化'进权重。LoRA 等参数高效微调让中小团队也能低成本定制模型，是 LLM 工程化的常见实践。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "finetune_lora.py",
+        "code": "from transformers import AutoModelForCausalLM, Trainer, TrainingArguments\nfrom peft import LoraConfig, get_peft_model\n\n# 加载预训练模型\nmodel = AutoModelForCausalLM.from_pretrained(\"gpt2\")\n\n# 配置 LoRA：只训练低秩增量\nlora_config = LoraConfig(\n    r=8,\n    lora_alpha=32,\n    target_modules=[\"c_attn\"],\n    lora_dropout=0.1,\n)\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()  # 只有少量参数可训练\n\n# 训练参数\nargs = TrainingArguments(\n    output_dir=\"./lora-out\",\n    num_train_epochs=1,\n    per_device_train_batch_size=2,\n    learning_rate=2e-4,\n)\n# 需提供 dataset，此处仅示意\n# trainer = Trainer(model=model, args=args, train_dataset=dataset)\n# trainer.train()"
+      },
+      "mistakes": [
+        "误以为微调能注入 prompt 无法表达的新知识，二者适用场景不同",
+        "数据集太小或质量差，导致过拟合、模型行为退化",
+        "全参数微调成本高昂，忽视 LoRA 等参数高效方法"
+      ],
+      "interviewPoints": [
+        "「什么时候该微调而不是 RAG？」要答到微调改行为风格与格式、RAG 补事实与私有知识；知识更新频繁选 RAG，固定输出模式选微调",
+        "「LoRA 为什么省显存？」要答到冻结 W_0 只训低秩 A、B，可训练参数与优化器状态大幅下降，无需保存全量梯度与二阶动量",
+        "「LoRA 的 r 和 alpha 怎么设？」要答到 r 控制增量秩与容量、alpha/r 决定缩放强度，常用 r=8~64、alpha 取 2r，需按数据量调",
+        "「微调数据要多少、怎么防过拟合？」要答到几千条高质量指令数据即可见效，需去重与格式统一、留验证集并早停，小数据全参微调极易退化"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "fine-tuning-q1",
+          "type": "choice",
+          "prompt": "LoRA 显著降低微调成本的关键是？",
+          "options": [
+            "减少参数量，用低秩增量矩阵学习新知识",
+            "不需要训练数据",
+            "直接修改模型输出",
+            "丢弃预训练权重"
+          ],
+          "answerIndex": 0,
+          "explanation": "LoRA 冻结原权重，只训练低秩矩阵 A、B 构成的增量 W=W_0+BA，可训练参数量大幅减少，从而显著降低显存与算力成本。"
+        },
+        {
+          "id": "fine-tuning-q2",
+          "type": "short",
+          "prompt": "微调与 prompt 工程的适用场景有何不同？",
+          "answer": "参考回答：prompt 工程不改模型权重，适合轻量地引导模型遵循指令、格式和风格，成本低、可快速迭代；而微调把领域知识或特定输出模式固化进模型权重，适合需要稳定特定风格/领域表现、且样本充足的任务，成本更高。日常能靠 prompt 解决的就无需微调。",
+          "keywords": [
+            "权重",
+            "领域",
+            "成本"
+          ],
+          "explanation": "prompt 不改权重、轻量应用于引导；微调把领域知识固化进权重，适合需稳定特定表现的场景。"
+        },
+        {
+          "id": "fine-tuning-q3",
+          "type": "code",
+          "prompt": "配置一个 LoRA 配置对象，r=8，lora_alpha=32。",
+          "starterCode": "from peft import LoraConfig\n\nlora_config = None\n",
+          "solution": "from peft import LoraConfig\n\nlora_config = LoraConfig(r=8, lora_alpha=32)\nprint(lora_config)\n",
+          "checks": [
+            "LoraConfig",
+            "r=8"
+          ],
+          "explanation": "用 LoraConfig 指定 r 与 lora_alpha 等超参。"
+        }
+      ]
+    },
+    {
+      "slug": "embedding",
+      "title": "Embedding 向量化",
+      "order": 6,
+      "module": "微调与向量",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "Embedding 模型把文本映射成稠密向量，用余弦相似度衡量语义接近的程度。",
+      "intuition": "把每段文字映射成一组数字坐标，意思相近的文字坐标就靠近，意思相差远的就离得远。这样你就可以用'两点距离'来判断'意思像不像'，从而做语义搜索、去重、聚类与推荐，而不用靠生硬的关键词匹配。",
+      "formal": "embedding 模型 f 把文本 x 映射为 d 维向量 v = f(x) ∈ R^d，且语义相似文本的向量在嵌入空间中接近。相似度常用余弦相似度 sim(a,b) = a·b/(‖a‖‖b‖) 或点积。一个 API 调用（如 text-embedding-3-small）即可得到文本向量，不同模型向量维度与语义对齐方式不同。向量常被归一化便于统一比较。",
+      "formula": "\\text{cos\\_sim}(a, b) = \\frac{a \\cdot b}{\\|a\\| \\, \\|b\\|}",
+      "aiConnection": "embedding 是 RAG、向量检索、语义缓存与知识库的核心。把文档切成块、用 embedding 模型向量化，就能在用户提问时找出语义最相关的片段再交给大模型；语义相似度也用于判断用户的重复问题等。不同 embedding 模型的维度与质量直接影响检索效果。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "embedding_api.py",
+        "code": "import os\nfrom openai import OpenAI\n\nclient = OpenAI(api_key=os.environ.get(\"OPENAI_API_KEY\"))\n\n# 把文本向量化\ntexts = [\n    \"cat 在沙发上睡觉\",\n    \"dog 在公园奔跑\",\n    \"今天的天气很好\",\n]\nresp = client.embeddings.create(\n    model=\"text-embedding-3-small\",\n    input=texts,\n)\n\ndef cosine(a, b):\n    import numpy as np\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\n# 取出向量并比较相似度\nv = [r.embedding for r in resp.data]\nprint(\"维度:\", len(v[0]))\nprint(\"cat 与 dog 相似度:\", round(cosine(v[0], v[1]), 3))\nprint(\"cat 与 天气 相似度:\", round(cosine(v[0], v[2]), 3))"
+      },
+      "mistakes": [
+        "用不同 embedding 模型产生的向量直接互相比较，语义不对齐",
+        "忘记对向量归一化，余弦相似度结果不稳",
+        "把纯关键词匹配与语义相似度混为一谈"
+      ],
+      "interviewPoints": [
+        "「embedding 模型怎么选？」要答到看评测榜单与领域适配、维度与存储成本、最大输入长度与中英文支持，且入库和查询必须用同一个模型",
+        "「为什么向量要先归一化？」要答到归一化后余弦相似度等价于点积，可用内积索引加速，同时避免向量模长差异干扰最终排序",
+        "「余弦相似度和点积什么时候不等价？」要答到未归一化时点积受模长影响、会偏向长文本向量，归一化之后两者排序才一致",
+        "「检索 embedding 和生成模型的 embedding 一样吗？」要答到目标不同：检索模型用对比学习对齐语义，生成模型隐状态是上下文相关的，不能直接拿来检索"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "embedding-q1",
+          "type": "choice",
+          "prompt": "embedding 的主要用途是？",
+          "options": [
+            "生成新的文本",
+            "把文本映射为语义向量用于相似度与检索",
+            "压缩模型权重",
+            "训练大模型"
+          ],
+          "answerIndex": 1,
+          "explanation": "embedding 把文本映射成语义向量，度量文本间的语义相似度，广泛用于检索、聚类、去重等。"
+        },
+        {
+          "id": "embedding-q2",
+          "type": "short",
+          "prompt": "为什么向量化后能用余弦相似度判断文本语义是否接近？",
+          "answer": "参考回答：embedding 模型在训练时让语义相近的文本在嵌入空间中靠近、语义相异的远离，因此可以用向量间的夹角或余弦相似度来量化文本语义接近度。余弦相似度只关注方向、不受向量长度影响，适合语义比较。",
+          "keywords": [
+            "语义",
+            "空间",
+            "夹角"
+          ],
+          "explanation": "embedding 让语义相近文本在向量空间靠近，用余弦相似度量化其接近程度。"
+        },
+        {
+          "id": "embedding-q3",
+          "type": "code",
+          "prompt": "实现函数 cosine(a, b) 计算余弦相似度。",
+          "starterCode": "import numpy as np\n\ndef cosine(a, b):\n    pass\n",
+          "solution": "import numpy as np\n\ndef cosine(a, b):\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n",
+          "checks": [
+            "np.dot",
+            "np.linalg.norm"
+          ],
+          "explanation": "余弦相似度 = 点积 / (两个向量模长的乘积)。"
+        }
+      ]
+    },
+    {
+      "slug": "vector-database",
+      "title": "Vector Database 向量数据库",
+      "order": 7,
+      "module": "微调与向量",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "向量数据库存储并高效检索高维向量，支持近似最近邻搜索以加速语义查找。",
+      "intuition": "普通数据库用关键字精确查找，向量数据库用'意思'来查找。你把每段文字都变成一组坐标存进去，来提问时把你的问题也变成坐标，然后它快速找出'坐标最接近'的那些片段。为了在海量向量中不一个个地全比一遍，它用近似最近邻（ANN）索引大幅加速。",
+      "formal": "向量数据库把文本切块后经 embedding 模型向量化，生成 (id, 向量, 原文) 记录并建立索引。常用 HNSW、IVF、PQ 等 ANN 算法做近似最近邻检索，以精度换速度。查询向量 q 通过与库中向量计算距离（如余弦、欧氏）返回 top-k 最近项。部分向量库还支持元数据过滤与混合检索（关键词+向量）。",
+      "formula": "\\text{top-k} = \\arg\\min_{v \\in B} \\, \\text{dist}(q, v)",
+      "aiConnection": "RAG 系统常依赖向量数据库存放企业知识库的向量，在回答前快速检索最相关的片段。主流选择有 Chroma、FAISS、Weaviate、Milvus、Qdrant、pgvector 等。索引选择、分块策略与元数据过滤直接决定检索质量与延时，是 LLM 应用工程化的关键一环。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "vector_db.py",
+        "code": "import chromadb\nfrom openai import OpenAI\nimport numpy as np\n\nclient = OpenAI(api_key=\"key\")\n\n# 建集合\nchroma = chromadb.Client()\ncol = chroma.get_or_create_collection(\"docs\")\n\n# 用 embedding 模型把文本向量化并入库\ndocs = [\"Transformer 使用自注意力\", \"RNN 按时间步处理序列\"]\nembs = [e.embedding for e in client.embeddings.create(\n    model=\"text-embedding-3-small\", input=docs).data]\ncol.add(ids=[\"d1\", \"d2\"], embeddings=embs, documents=docs)\n\n# 查询：找与问题语义最接近的文本\nq_emb = client.embeddings.create(\n    model=\"text-embedding-3-small\",\n    input=[\"什么机制让模型同时看到全文？\"],\n).data[0].embedding\nres = col.query(query_embeddings=[q_emb], n_results=1)\nprint(\"最相关:\", res[\"documents\"][0][0])"
+      },
+      "mistakes": [
+        "用模型 A 的 embedding 向量存入却用模型 B 查询，语义不对齐导致检索失效",
+        "忽视索引与分块策略，导致检索慢或命中不准",
+        "把向量检索当作唯一手段，忽略关键词/混合检索的场景"
+      ],
+      "interviewPoints": [
+        "「ANN 索引为什么能加速检索？」要答到 HNSW 用多层近邻图、IVF 先聚类再局部搜索、PQ 做向量压缩量化，本质都是拿召回率换延迟",
+        "「HNSW 和 IVF 怎么选？」要答到 HNSW 召回高、内存占用大，适合中小规模低延迟；IVF 需训练且要调 nprobe，适合超大规模与内存受限场景",
+        "「检索质量差怎么排查？」要答到先看分块粒度与重叠、embedding 是否匹配领域、top-k 与相似度阈值，再加关键词混合检索与 rerank",
+        "「什么时候不该用向量库？」要答到需要精确匹配、强事务或结果必须可解释时，关键词检索或 SQL 更合适，向量检索只适合语义模糊匹配"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "vector-database-q1",
+          "type": "choice",
+          "prompt": "向量数据库比普通数据库更擅长的操作是？",
+          "options": [
+            "精确字符串匹配",
+            "按语义相似度做近似最近邻检索",
+            "事务处理",
+            "字段求和统计"
+          ],
+          "answerIndex": 1,
+          "explanation": "向量数据库专为高维向量的近似最近邻（ANN）检索设计，用于按语义相似度快速查找。"
+        },
+        {
+          "id": "vector-database-q2",
+          "type": "short",
+          "prompt": "给一段文本建向量检索，通常分哪几步？",
+          "answer": "参考回答：先用 embedding 模型把文本（或切块后的片段）向量化，得到向量与原文的配对；再把这些向量写入向量数据库并建立 ANN 索引；查询时把问题也向量化，用索引检索 top-k 最近邻，返回对应的原文片段。",
+          "keywords": [
+            "向量化",
+            "索引",
+            "top-k"
+          ],
+          "explanation": "流程为：文本向量化、写入并建立索引、查询向量化后进行近似最近邻检索取 top-k。"
+        },
+        {
+          "id": "vector-database-q3",
+          "type": "code",
+          "prompt": "用 chromadb 库获取/创建一个名为 'docs' 的集合。",
+          "starterCode": "import chromadb\n\nchroma = chromadb.Client()\ncol = None\n",
+          "solution": "import chromadb\n\nchroma = chromadb.Client()\ncol = chroma.get_or_create_collection(\"docs\")\nprint(col)\n",
+          "checks": [
+            "chromadb",
+            "get_or_create_collection"
+          ],
+          "explanation": "用 get_or_create_collection(\"docs\") 创建或获取集合。"
+        }
+      ]
+    },
+    {
+      "slug": "rag",
+      "title": "RAG 检索增强生成",
+      "order": 8,
+      "module": "RAG 与 MCP",
+      "difficulty": "进阶",
+      "estimatedMinutes": 27,
+      "summary": "RAG 在模型生成答案前先检索外部知识，把相关内容注入上下文，从而减少幻觉并利用私有数据。",
+      "intuition": "考试时如果让你闭卷答题，难免记错或编造；允许你翻资料，答案就更可靠。RAG 就是让大模型'开卷'：先从你的知识库里检索与问题最相关的资料，把这段资料和问题一起交给模型，让它依据资料作答。这样模型既能用上你的私有知识，又能显著减少瞎编（幻觉）。",
+      "formal": "RAG 分三个阶段：建立阶段把文档切块（chunking），用 embedding 模型向量化并存入向量库；检索阶段把用户查询向量化，检索出 top-k 最相关的文档块；生成阶段把这些块与用户问题一起组装进 prompt（常配一个严格的指令要求依据材料回答），交给 LLM 生成答案。检索质效取决于分块粒度、embedding 模型、top-k 与重排序；生成质量依赖 prompt 的'仅依据检索内容'约束。",
+      "formula": "\\text{answer} = \\text{LLM}\\big(\\text{prompt}(q, \\text{top-k}\\ \\text{retrieved documents})\\big)",
+      "aiConnection": "RAG 是让私有知识、企业文档进入大模型的最主流方式，避免了微调的高成本，且知识可随时更新。它通过向量检索找到相关上下文，是 Agent 与知识库问答系统的标配。参数如 chunk 大小、top-k、相似度阈值与重排序模型共同决定回答质量。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "rag_qa.py",
+        "code": "import os\nfrom openai import OpenAI\n\nclient = OpenAI(api_key=os.environ.get(\"OPENAI_API_KEY\"))\n\ndef embed(text):\n    return client.embeddings.create(\n        model=\"text-embedding-3-small\", input=[text]).data[0].embedding\n\ndef cosine(a, b):\n    import numpy as np\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\n# 一个简易内存向量库\nknowledge = [\"Transformer 使用自注意力\\n\", \"RNN 顺序处理序列\\n\", \"RAG 检索后再生成\\n\"]\nvecs = [embed(t) for t in knowledge]\n\ndef retrieve(question, top_k=2):\n    q = embed(question)\n    scored = sorted(zip(vecs, knowledge), key=lambda x: cosine(q, x[0]), reverse=True)\n    return [k for _, k in scored[:top_k]]\n\ndef answer(question):\n    docs = retrieve(question)\n    prompt = f\"仅依据以下材料回答问题，若材料不足以回答请说明。\\n材料：\\n{' '.join(docs)}\\n问题：{question}\"\n    r = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n    )\n    return r.choices[0].message.content\n\nprint(answer(\"什么机制让模型同时看到全文？\"))"
+      },
+      "mistakes": [
+        "检索质量差时生成也差，忽略分块与 embedding 模型的选择",
+        "prompt 未限定'仅依据材料回答'，模型仍会凭空发挥",
+        "知识库更新后未重新向量化/入库，检索到过期内容"
+      ],
+      "interviewPoints": [
+        "「RAG 的完整链路是什么？」要答到建库分块与向量化、查询向量化与 top-k 检索、拼进 prompt 生成，并能指出每一步的质量瓶颈",
+        "「RAG 什么时候不该用？」要答到知识更新频率、延迟与成本、检索质量上限，以及长上下文模型的替代关系",
+        "「RAG 的幻觉从哪来？」要答到检索没召回相关内容、上下文噪声干扰、prompt 没约束「仅依据材料」，以及模型仍按自身记忆作答",
+        "「chunk 大小怎么定？」要答到太小丢上下文、太大引入噪声并浪费窗口，常用带重叠的语义或标题切分，再靠 rerank 提升精度"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "rag-q1",
+          "type": "choice",
+          "prompt": "RAG 相比把知识全部塞进 prompt 的主要优势是？",
+          "options": [
+            "总是更准确",
+            "只检索相关片段，节省上下文并能利用大规模私有知识库",
+            "不需要 embedding 模型",
+            "彻底消除所有幻觉"
+          ],
+          "answerIndex": 1,
+          "explanation": "RAG 只把与问题最相关的检索片段注入上下文，既节省窗口、又能利用大规模且可更新的私有知识库；但它不能彻底消除幻觉。"
+        },
+        {
+          "id": "rag-q2",
+          "type": "short",
+          "prompt": "RAG 生成阶段为什么要限制模型只依据检索材料回答？",
+          "answer": "参考回答：因为检索到的材料是外部的、可验证的依据。若不限定，模型可能仍依靠自身训练记忆自由发挥，产生与材料矛盾的内容或幻觉。明确的'仅依据材料回答、材料不足则说明'指令能让答案紧扣检索内容，提升可靠性、减少编造。",
+          "keywords": [
+            "依据",
+            "检索",
+            "幻觉"
+          ],
+          "explanation": "限定只依据检索材料能让答案可追溯、与来源一致，减少无依据的猜测与幻觉。"
+        },
+        {
+          "id": "rag-q3",
+          "type": "code",
+          "prompt": "实现 retrieve(question, docs, vecs, top_k) ，按余弦相似度返回最相关的 top_k 个文档。",
+          "starterCode": "import numpy as np\n\n\ndef cosine(a, b):\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\ndef retrieve(question, docs, vecs, top_k):\n    pass\n",
+          "solution": "import numpy as np\n\ndef cosine(a, b):\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\ndef retrieve(question, docs, vecs, top_k):\n    q = question\n    scored = sorted(zip(vecs, docs), key=lambda x: cosine(q, x[0]), reverse=True)\n    return [d for _, d in scored[:top_k]]\n",
+          "checks": [
+            "sorted",
+            "top_k"
+          ],
+          "explanation": "按余弦相似度降序对(向量,文档)排序，取 top_k 个文档。"
+        }
+      ]
+    },
+    {
+      "slug": "mcp",
+      "title": "MCP 模型上下文协议",
+      "order": 9,
+      "module": "RAG 与 MCP",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "MCP 是让大模型通过标准化接口连接外部工具与数据源的开放协议。",
+      "intuition": "模型自己不会用你的数据库、日历或文档库。MCP 就像给模型配备一套通用的'USB 接口'：任何工具只要做成 MCP 服务器，就能被任何 MCP 客户端（如 Claude Desktop、Cursor、Agent 框架）即插即用地接入，从而让模型能真正查询数据、调用工具、读写资源，而不用为每家公司重新写一套对接。",
+      "formal": "MCP（Model Context Protocol）采用客户端-服务器架构：MCP 服务器（server）通过 FastMCP 等 SDK 暴露三类能力——tools（可被调用的函数工具）、resources（可读取的数据）、prompts（可复用的提示模板）；MCP 客户端（client）与宿主应用（host）负责发现并调用这些工具，把描述注入模型上下文。工具有 JSON schema 的参数定义，模型据此知道如何调用。",
+      "formula": "",
+      "aiConnection": "MCP 是让 Agent 真正'动起来'的桥梁：模型通过 MCP 调用数据库、搜索、代码执行等工具，从而不只是问答而是能完成任务。它把 RAG 需要的知识源、Agent 需要的工具统一到一个协议下，大幅降低了把外部能力接入大模型的门槛。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "mc_server.py",
+        "code": "from fastmcp import FastMCP\n\nmcp = FastMCP(\"demo\")\n\n# 定义一个可被模型调用的工具\n@mcp.tool()\ndef search_notes(keyword: str) -> list:\n    \"\"\"按关键词搜索笔记，返回匹配结果。\"\"\"\n    notes = {\n        \"attention\": [\"注意力机制笔记\"],\n        \"rag\": [\"RAG 检索增强生成笔记\"],\n    }\n    return notes.get(keyword.lower(), [])\n\n# 定义可读取的资源\n@mcp.resource(\"notes://rag\")\ndef rag_note() -> str:\n    return \"RAG 先检索再生成，减少幻觉。\"\n\nif __name__ == \"__main__\":\n    # 运行 MCP 服务器（通常用 stdio 或 http 传输）\n    mcp.run()"
+      },
+      "mistakes": [
+        "把 MCP 与单个厂家的闭源工具绑定，误以为它非通用",
+        "工具参数描述不清，导致模型无法正确调用",
+        "忽略安全与权限控制，让模型访问敏感工具或数据",
+        "把 MCP 与函数调用/Native 工具混为一谈，两者定位不同"
+      ],
+      "interviewPoints": [
+        "「MCP 到底解决什么问题？」要答到工具与数据源接入的 M×N 集成问题，用统一协议让 server 实现一次、任意 client 复用",
+        "「MCP 和 function calling 什么关系？」要答到 function calling 是模型侧的输出能力，MCP 是工具的供给与发现协议，两者互补而非替代",
+        "「MCP 服务器暴露的三类能力是什么？」要答到 tools 是带 schema 的可调用函数、resources 是可读数据、prompts 是可复用模板，三者主动性不同",
+        "「接 MCP 有哪些安全风险？」要答到工具权限过大、prompt injection 借工具外泄数据、第三方 server 不可信，需要白名单、最小权限与人工确认"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "mcp-q1",
+          "type": "choice",
+          "prompt": "MCP 的核心目标是？",
+          "options": [
+            "替代大语言模型",
+            "用统一协议让模型接入外部工具与数据源",
+            "压缩模型权重",
+            "替换 embedding 模型"
+          ],
+          "answerIndex": 1,
+          "explanation": "MCP 是一个开放协议，让大模型通过标准化接口接入外部工具与数据，实现跨服务即插即用。"
+        },
+        {
+          "id": "mcp-q2",
+          "type": "short",
+          "prompt": "MCP 服务器通常暴露哪三类能力？",
+          "answer": "参考回答：MCP 服务器主要暴露三类能力：tools（可被模型调用的函数工具，带参数 schema）、resources（可读取的数据或资源）、prompts（可复用的提示模板）。客户端与宿主负责发现并调用它们。",
+          "keywords": [
+            "tools",
+            "resources",
+            "prompts"
+          ],
+          "explanation": "MCP 服务器暴露 tools、resources、prompts 三类能力，供模型发现与调用。"
+        },
+        {
+          "id": "mcp-q3",
+          "type": "code",
+          "prompt": "用 fastmcp 注册一个函数 add_note 作为 MCP 工具。",
+          "starterCode": "from fastmcp import FastMCP\n\nmcp = FastMCP(\"notes\")\n\n@mcp.tool()\ndef add_note(title: str) -> str:\n    pass\n",
+          "solution": "from fastmcp import FastMCP\n\nmcp = FastMCP(\"notes\")\n\n@mcp.tool()\ndef add_note(title: str) -> str:\n    return f\"已添加笔记：{title}\"\n",
+          "checks": [
+            "@mcp.tool()",
+            "add_note"
+          ],
+          "explanation": "用 @mcp.tool() 装饰器把函数注册成 MCP 工具。"
+        }
+      ]
+    }
+  ]
+}

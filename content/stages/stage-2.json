@@ -1,0 +1,913 @@
+{
+  "stage": 2,
+  "stageSlug": "python",
+  "stageTitle": "Python",
+  "stageEmoji": "🐍",
+  "stageDesc": "从语法到类与模块：把 Python 写成能维护的工程代码",
+  "category": "基础",
+  "lessons": [
+    {
+      "slug": "variable",
+      "title": "Variable 变量",
+      "order": 1,
+      "module": "Python 语法基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "变量是对数据对象的命名引用，用等号赋值，Python 中变量只是指向对象的指针。",
+      "intuition": "变量就像给盒子贴上标签。你在盒子里放了一个值，然后写上名字，以后只要喊这个名字就能拿到它。Python 里更准确的说法是：变量是一个'标签'，它贴在某个对象上。你给变量重新赋值，其实不是改变盒子里内容，而是把标签从旧对象撕下来贴到了新对象上。",
+      "formal": "变量（Variable）是绑定到对象的名称。在 Python 中赋值语句 `x = value` 做的事是：先创建 `value` 这个对象，再把 `x` 这个名字指向它。因此变量本质是名字到对象的映射，而非存放值的容器。Python 变量无需声明类型，类型由指向的对象决定，即`动态类型`。使用`=`赋值，`name = 1; name = 'hi'` 是合法的，因为 name 先后指向两个不同类型对象。变量命名需遵循标识符规则：以字母或下划线开头，只能包含字母、数字、下划线，且不能是关键字（如 `if`、`for`）。变量在使用前必须赋值，否则报 `NameError`。",
+      "formula": "",
+      "aiConnection": "在训练脚本里，变量用于保存模型对象、损失值、超参数等。理解变量是'指向对象的引用'，能避免把同一个可变对象（如列表）误当成多个独立副本，这在批量处理数据、缓存中间结果时尤其重要。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "variable.py",
+        "code": "# 变量是名字到对象的引用\nx = 10\nprint(\"x =\", x)\n\n# 重新赋值只是把名字指向另一对象\nx = \"hello\"\nprint(\"x 现在是:\", x)\n\n# 多个变量可指向同一对象（引用语义）\na = [1, 2, 3]\nb = a\nb.append(4)\nprint(\"a 也被改变:\", a)\n\n# 变量名规则\ny_1 = 100\nprint(\"下划线开头合法:\", y_1)"
+      },
+      "mistakes": [
+        "以为变量是装值的容器，其实是引用对象的标签",
+        "使用关键字或数字开头的非法变量名，导致 SyntaxError",
+        "忘记先赋值就使用变量，触发 NameError",
+        "以为 b = a 复制了列表，实际 b 与 a 指向同一个对象"
+      ],
+      "interviewPoints": [
+        "「Python 变量是容器还是引用？」要答到名字绑定对象、赋值即重新绑定，说明 b = a 后改列表为何两边都变",
+        "「函数默认参数为什么不要用可变对象？」要答到默认值在定义时求值一次并被所有调用共享，说明 [] 默认参数累积数据的 bug",
+        "「深拷贝和浅拷贝有什么区别？」要答到嵌套对象的引用层级、copy 与 deepcopy 的开销，联系数据增强时误改原样本的坑"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "variable-q1",
+          "type": "choice",
+          "prompt": "在 Python 中，执行 `b = a`（假设 a 是一个列表）后，b 和 a 的关系是？",
+          "options": [
+            "b 是 a 的独立副本",
+            "b 与 a 都指向同一个列表对象",
+            "b 是 a 的字符串拷贝",
+            "b 与 a 无关"
+          ],
+          "answerIndex": 1,
+          "explanation": "赋值让 b 指向与 a 相同的对象，修改 b 会影响 a，因为它们是同一个列表的引用。"
+        },
+        {
+          "id": "variable-q2",
+          "type": "short",
+          "prompt": "解释为什么说 Python 变量是'指向对象的引用'而不是存放值的容器。",
+          "answer": "Python 中赋值语句创建右侧对象，再让变量名指向它。变量本身不存储值，只是对象的引用。因此重新赋值只是把名字指向另一个对象，而多个变量也可以指向同一个对象，修改共享对象会影响所有引用它的变量。",
+          "keywords": [
+            "引用",
+            "对象",
+            "指针"
+          ],
+          "explanation": "变量是名字到对象的映射，故为引用语义。"
+        },
+        {
+          "id": "variable-q3",
+          "type": "code",
+          "prompt": "写一段代码：定义变量 x 为 5，把 y 赋值为 x，然后打印 y，并证明修改 y 指向的列表会影响 x。",
+          "starterCode": "x = 5\n",
+          "solution": "x = 5\ny = x\nprint(y)\n\na = [1, 2]\nb = a\nb.append(3)\nprint(a)  # [1, 2, 3] 因为 a、b 指向同一列表",
+          "checks": [
+            "y = x",
+            "b = a"
+          ],
+          "explanation": "赋值是引用，修改共享对象会影响所有引用。"
+        }
+      ]
+    },
+    {
+      "slug": "data-type",
+      "title": "Data Type 数据类型",
+      "order": 2,
+      "module": "Python 语法基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 23,
+      "summary": "Python 的基本数据类型包括 int、float、str、bool，以及容器类型 list、tuple、dict、set。",
+      "intuition": "内存里存的都是 0 和 1，但我们希望用不同方式解读它们：有的当作整数，有的当作小数，有的当作一串文字，有的当作真/假判断。Python 替你处理这些区分，只要你告诉它你放进去的是什么类型。就像同样一堆砖头，你可以盖房、铺路或搭围墙，关键看你怎么理解和使用。",
+      "formal": "Python 常用内建类型：`int` 整数（任意精度）、`float` 浮点数（如 3.14）、`str` 字符串（不可变）、`bool` 布尔值（True/False，是 int 的子类）。容器类型：`list` 可变列表、`tuple` 不可变元组、`dict` 键值字典、`set` 集合（去重）。用 `type()` 查看对象类型，用 `isinstance()` 判断类型。类型转换用 `int()`、`float()`、`str()` 等函数。字符串的索引、切片取子串。各类型都有相应方法（如 `str.upper()`、`list.append()`）。我们常提到的差异是`可变`与`不可变`：list、dict、set 可变，int、float、str、tuple 不可变。",
+      "formula": "",
+      "aiConnection": "在 AI 数据处理里，常见类型是 NumPy 数组、Pandas DataFrame、文本字符串与标签整数。理解可变/不可变与类型转换，是正确切分数据集、做特征标签编码、避免在数据清洗时误改共享对象的前提。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "data_type.py",
+        "code": "# 常见数据类型\nx = 10\nprint(type(x))      # int\n\ny = 3.14\nprint(type(y))      # float\n\nname = \"AI\"\nprint(type(name))   # str\n\nflag = True\nprint(type(flag))   # bool\n\n# 容器\nlst = [1, 2, 3]\nprint(type(lst))    # list\n\n# 类型转换\nprint(int(\"42\"))\nprint(str(100))\n\n# 不可变字符串操作\nprint(\"hello\".upper())"
+      },
+      "mistakes": [
+        "以为 Python 需要声明变量类型，其实是动态类型",
+        "混淆字符串与数字，\"123\" 与 123 不同",
+        "把可变类型（list、dict）当作不可变，误改共享数据",
+        "type() 与 isinstance() 混用，type() 不处理继承关系"
+      ],
+      "interviewPoints": [
+        "「可变类型和不可变类型有什么区别？」要答到就地修改还是新建对象、能否作字典键，以及函数传参时的表现差异",
+        "「type() 和 isinstance() 怎么选？」要答到是否考虑继承关系，说明判断 bool 这类 int 子类时顺序带来的坑",
+        "「Python 的 int 和 float 有什么坑？」要答到任意精度整数与浮点二进制表示误差，说明损失值比较为何不能直接用等号"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "data-type-q1",
+          "type": "choice",
+          "prompt": "下列哪个类型是可变（mutable）的？",
+          "options": [
+            "tuple",
+            "str",
+            "list",
+            "int"
+          ],
+          "answerIndex": 2,
+          "explanation": "list 是可变的；tuple、str、int 都是不可变类型。"
+        },
+        {
+          "id": "data-type-q2",
+          "type": "short",
+          "prompt": "简述可变类型与不可变类型的区别，并各举一个例子。",
+          "answer": "可变类型如 list 可以原地增删修改内容；不可变类型如 str、tuple 一旦创建就不能改变，任何看似修改的操作实际会生成新对象。理解这一点可以避免误改共享数据。",
+          "keywords": [
+            "可变",
+            "list",
+            "tuple"
+          ],
+          "explanation": "可变可原地改，不可变产生新对象。"
+        },
+        {
+          "id": "data-type-q3",
+          "type": "code",
+          "prompt": "写一个函数 describe_type(v)，用 type() 返回 v 的类型名并用 isinstance 判断是否为 int。",
+          "starterCode": "def describe_type(v):\n    pass",
+          "solution": "def describe_type(v):\n    print(type(v))\n    return isinstance(v, int)\n\nprint(describe_type(5))\nprint(describe_type(\"x\"))",
+          "checks": [
+            "def describe_type",
+            "type(v)",
+            "isinstance"
+          ],
+          "explanation": "type 给类型，isinstance 判断是否为 int。"
+        }
+      ]
+    },
+    {
+      "slug": "condition",
+      "title": "Condition 条件",
+      "order": 3,
+      "module": "Python 语法基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "条件语句用 if/elif/else 根据布尔表达式分支执行，是程序控制流的基础。",
+      "intuition": "程序经常需要'看情况决定'：如果下雨就带伞，否则就不带。条件语句就是给程序装上这种判断能力。你在路口停下，看信号灯是红是绿，决定走还是停。Python 里用 `if` 说'如果满足条件就做这件事'，用 `elif` 表示'否则假如'，用 `else` 表示'都不满足就做这个'。",
+      "formal": "条件语句由 `if`、可选的一个或多个 `elif`、可选的 `else` 组成。`if` 后的表达式会被求值并转成布尔：非零、非空对象为真，`0`、`None`、空容器为假。语句块以缩进表示，同为 4 个空格。`elif` 是多分支的简写；条件自上而下判断，命中即执行并跳过其余。逻辑运算符 `and`、`or`、`not` 组合多个条件，比较运算符有 `==`、`!=`、`<`、`>` 等。注意 `==` 是比较值，`is` 是判断对象身份。",
+      "formula": "",
+      "aiConnection": "模型推理时常用条件控制流决定输出：比如根据模型置信度高于阈值还是走拒绝路径、根据结果分数选择不同回复策略。在数据清洗和训练脚本中，if/else 也用于过滤异常样本、按类别分发数据。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "condition.py",
+        "code": "# 条件分支\nscore = 85\n\nif score >= 90:\n    grade = \"优秀\"\nelif score >= 80:\n    grade = \"良好\"\nelif score >= 60:\n    grade = \"及格\"\nelse:\n    grade = \"不及格\"\n\nprint(f\"分数 {score} 的成绩等级: {grade}\")\n\n# 逻辑运算\nage = 20\nis_student = True\nif age >= 18 and is_student:\n    print(\"成年且是学生\")"
+      },
+      "mistakes": [
+        "遗漏冒号或缩进错误导致 SyntaxError",
+        "用 `=` 赋值而非 `==` 比较，造成逻辑错误",
+        "把多分支都写成一串 if，忽略 elif 的互斥语义",
+        "把空列表、0 当假，忽略 Python 的真值规则"
+      ],
+      "interviewPoints": [
+        "「Python 的真值规则是什么？」要答到 0、None、空容器为假，说明为何不能用 if x 直接判断 numpy 数组或张量",
+        "「== 和 is 有什么区别？」要答到值相等与对象身份，说明用 is 判断 None 是惯例而比较数字会踩小整数缓存的坑",
+        "「elif 和一串独立 if 有什么差别？」要答到互斥分支命中即跳出，说明多分支写成一串 if 会带来重复执行与逻辑错误"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "condition-q1",
+          "type": "choice",
+          "prompt": "在 Python 中下列哪个表达式会被判断为真（True）？",
+          "options": [
+            "0",
+            "空列表 []",
+            "非空字符串 \"a\"",
+            "None"
+          ],
+          "answerIndex": 2,
+          "explanation": "非空字符串为非零真值；0、空容器、None 均为假。"
+        },
+        {
+          "id": "condition-q2",
+          "type": "short",
+          "prompt": "为什么 elif 比一连串独立 if 更适合表达互斥分支？",
+          "answer": "elif 自顶向下判断，一旦某个条件成立就执行并跳过后续所有分支，保证互斥且避免重复判断。而一连串独立 if 会全部执行各自判断，可能出现多个分支同时被触发、逻辑不互斥的问题。",
+          "keywords": [
+            "elif",
+            "互斥",
+            "跳过"
+          ],
+          "explanation": "elif 命中即停，天然互斥且高效。"
+        },
+        {
+          "id": "condition-q3",
+          "type": "code",
+          "prompt": "写一个函数 get_grade(score)，根据分数返回等级（90 以上优秀，80 以上良好，60 以上及格，否则不及格）。",
+          "starterCode": "def get_grade(score):\n    pass",
+          "solution": "def get_grade(score):\n    if score >= 90:\n        return \"优秀\"\n    elif score >= 80:\n        return \"良好\"\n    elif score >= 60:\n        return \"及格\"\n    else:\n        return \"不及格\"\n\nprint(get_grade(85))",
+          "checks": [
+            "def get_grade",
+            "elif",
+            "return"
+          ],
+          "explanation": "用 if/elif/else 分档返回等级。"
+        }
+      ]
+    },
+    {
+      "slug": "loop",
+      "title": "Loop 循环",
+      "order": 4,
+      "module": "Python 语法基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "循环用 for 与 while 对序列迭代或重复执行，配合 range、break、continue 控制流程。",
+      "intuition": "循环就是让程序'重复做一件事'。如果你要打印 100 遍'你好'，何必写 100 行？用循环两行搞定。`for` 适合'我知道要遍历这堆东西几次'，比如遍历一个列表或一个范围；`while` 适合'我不确定要多少次，但条件满足就继续'，比如直到用户输入正确密码。",
+      "formal": "Python 有两种循环：`for item in iterable:` 遍历可迭代对象（list、tuple、str、dict、range 等）；`while condition:` 在条件为真时反复执行。`range(n)` 生成 0 到 n-1 的整数序列。控制语句：`break` 立即跳出整个循环，`continue` 跳过当前迭代进入下一轮。`else` 子句在循环未被 break 正常结束时不执行。注意死循环：若 while 条件永不假会无限循环。迭代字典时 `for k in d` 返回键，`d.items()` 返回键值对。",
+      "formula": "",
+      "aiConnection": "训练一个 epoch 就是循环遍历全部批次，每个 batch 前向传播、反向传播并更新参数。理解 for/while 循环和 break 条件，是写好训练循环、提前终止与学习率调度的基础。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "loop.py",
+        "code": "# 用 for 遍历 range\nfor i in range(3):\n    print(\"第\", i, \"次\")\n\n# 遍历列表\nfor fruit in [\"apple\", \"banana\"]:\n    print(fruit)\n\n# while 循环 + break\nn = 0\nwhile n < 10:\n    n += 1\n    if n == 3:\n        continue   # 跳过 3 这一轮\n    if n >= 6:\n        break      # 到 5 就停止\n    print(\"n =\", n)\n\nprint(\"结束\")"
+      },
+      "mistakes": [
+        "忘记循环变量递增或更新条件，导致死循环",
+        "混淆 break 与 continue，前者跳出循环、后者跳过本轮",
+        "修改迭代中的列表导致元素被跳过或出错",
+        "把 for 与 while 用错场景，遍历用 for、按条件重复用 while"
+      ],
+      "interviewPoints": [
+        "「for 和 while 分别适合什么场景？」要答到遍历序列与条件驱动，说明训练循环里 epoch 与 early stop 的写法",
+        "「break 和 continue 有什么区别？」要答到跳出整个循环与跳过本轮，并说明 for-else 与循环里改列表的坑",
+        "「遍历大列表要注意什么？」要答到内存占用与生成器惰性求值，说明数据管线为何用 yield 而不是一次返回全部样本"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "loop-q1",
+          "type": "choice",
+          "prompt": "`break` 语句在循环中的作用是？",
+          "options": [
+            "跳过当前这一轮继续下一轮",
+            "立即终止整个循环",
+            "抛出异常",
+            "重新开始循环"
+          ],
+          "answerIndex": 1,
+          "explanation": "break 立即退出整个循环；continue 才跳过当前轮继续下一轮。"
+        },
+        {
+          "id": "loop-q2",
+          "type": "short",
+          "prompt": "for 循环与 while 循环分别适合什么场景？",
+          "answer": "for 适合已知要遍历的可迭代对象（如 range、列表），次数通常已知；while 适合条件驱动、次数不确定的重复，如直到满足某个停止条件。",
+          "keywords": [
+            "for",
+            "while",
+            "迭代"
+          ],
+          "explanation": "按遍历 vs 按条件重复来选用。"
+        },
+        {
+          "id": "loop-q3",
+          "type": "code",
+          "prompt": "写一个函数 sum_up_to(n)，用循环计算 1 到 n 的和并返回。",
+          "starterCode": "def sum_up_to(n):\n    pass",
+          "solution": "def sum_up_to(n):\n    total = 0\n    for i in range(1, n + 1):\n        total += i\n    return total\n\nprint(sum_up_to(10))",
+          "checks": [
+            "def sum_up_to",
+            "range(1",
+            "total"
+          ],
+          "explanation": "用 for 遍历 range 累加求和。"
+        }
+      ]
+    },
+    {
+      "slug": "function",
+      "title": "Function 函数",
+      "order": 5,
+      "module": "Python 语法基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "函数是对一段可复用逻辑的封装，用 def 定义、参数传数据、return 返回结果。",
+      "intuition": "把重复的代码装进一个盒子，起个名字，以后只要喊名字就能执行，不用重新写一遍。函数就像一台'自动售货机'：你投入原料（参数），它按既定流程加工，最后吐出一个结果（返回值）。把逻辑切分成小函数，程序变得清晰、可复用、好调试。",
+      "formal": "函数用 `def function_name(param1, param2=默认值):` 定义，函数体必须缩进。参数分`位置参数`、`关键字参数`、`默认参数`、`可变参数 *args` 与 `**kwargs`。用 `return` 返回值；若没有 return，默认返回 `None`。函数内部变量是`局部`的，函数外定义的变量是`全局`的。Python 函数是一等公民，可作为参数传递、可返回函数（高阶函数、闭包）。`lambda` 表达式可定义匿名小函数。函数通过返回多个值（实际上一个元组）实现多返回值。",
+      "formula": "",
+      "aiConnection": "AI 代码几乎都由大量函数组成：数据加载函数、模型定义、损失计算、训练步进函数。良好封装的函数便于复用和测试，例如把损失函数单独抽出，就能轻松切换不同目标函数做实验，这正是大模型训练脚本的核心组织方式。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "function.py",
+        "code": "# 定义函数\ndef add(a, b):\n    \"\"\"返回两数之和\"\"\"\n    return a + b\n\n# 默认参数与关键字参数\ndef greet(name, greeting=\"你好\"):\n    return f\"{greeting}, {name}\"\n\n# 可变参数\ndef total(*nums):\n    return sum(nums)\n\nprint(add(2, 3))\nprint(greet(\"AI\"))\nprint(greet(\"AI\", greeting=\"早上好\"))\nprint(total(1, 2, 3, 4))\n\n# 没有 return 时返回 None\nprint(add(1, 1))"
+      },
+      "mistakes": [
+        "忘记写 return，函数返回 None",
+        "把参数顺序搞错，尤其位置参数与关键字参数混用",
+        "在函数内修改全局变量却没有声明，产生局部遮蔽",
+        "逻辑过于冗长，缺少拆分成小函数导致难维护"
+      ],
+      "interviewPoints": [
+        "「*args 和 **kwargs 有什么用？」要答到可变位置与关键字参数的打包解包，说明装饰器与封装训练步进函数时为何常用",
+        "「位置参数、关键字参数和默认参数的规则？」要答到默认值必须靠后、关键字可乱序，以及参数传错导致的隐蔽 bug",
+        "「函数是一等公民意味着什么？」要答到函数可作参数与返回值、闭包与 lambda，说明损失函数为何能像变量一样切换"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "function-q1",
+          "type": "choice",
+          "prompt": "一个没有 return 语句的 Python 函数默认返回什么？",
+          "options": [
+            "0",
+            "True",
+            "None",
+            "空字符串"
+          ],
+          "answerIndex": 2,
+          "explanation": "没有 return 的函数默认返回 None。"
+        },
+        {
+          "id": "function-q2",
+          "type": "short",
+          "prompt": "位置参数和关键字参数有什么区别？",
+          "answer": "位置参数按函数定义中的顺序逐个传入；关键字参数用 参数名=值 传入，顺序可以打乱。关键字参数更可读，可与默认参数结合实现可选参数。",
+          "keywords": [
+            "位置",
+            "关键字",
+            "默认"
+          ],
+          "explanation": "位置按顺序，关键字按名字传，可带默认值。"
+        },
+        {
+          "id": "function-q3",
+          "type": "code",
+          "prompt": "写一个函数 multiply(a, b)，返回两数之积，并调用打印结果。",
+          "starterCode": "def multiply(a, b):\n    pass",
+          "solution": "def multiply(a, b):\n    return a * b\n\nprint(multiply(3, 4))",
+          "checks": [
+            "def multiply",
+            "return"
+          ],
+          "explanation": "用 def 定义并 return 乘积。"
+        }
+      ]
+    },
+    {
+      "slug": "list",
+      "title": "List 列表",
+      "order": 6,
+      "module": "Python 语法基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 23,
+      "summary": "list 是可变、有序、可容纳任意类型元素的容器，支持索引、切片与增删改查。",
+      "intuition": "列表就像一格接一格的抽屉柜，每格可以放任意东西（甚至混合类型），而且可以随时往里加、删、改。因为是有序的，你可以按'第几格'（索引）定位；索引从 0 开始，倒数用负数。切片就像从抽屉柜里取出一段连续的格子。",
+      "formal": "list 用方括号 `[ ]` 创建，元素用逗号分隔。它是`可变`、`有序`的容器，可存放任意类型。基本操作：索引 `lst[i]`（从 0 开始，负索引从后往前）、切片 `lst[start:stop:step]`、`append`/`insert` 添加、`remove`/`pop` 删除、`len()` 长度、`in` 成员判断。`sort()`/`sorted()` 排序，`reverse()` 翻转。列表推导式 `[expr for x in iterable if cond]` 简洁生成列表。因是可变类型，拷贝要用 `list.copy()` 或 `切片`，直接赋值只是引用。",
+      "formula": "",
+      "aiConnection": "数据集的样本列表、一批 batch、预测结果列表都常用 list 存储。列表推导式可高效地批量预处理数据，比如把文本列表统一转小写、把标签转整数。理解切片与拷贝，有助于正确切分训练/验证集，避免误改原数据。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "list.py",
+        "code": "# 创建列表\nfruits = [\"apple\", \"banana\", \"cherry\"]\n\n# 索引与切片\nprint(fruits[0])          # apple\nprint(fruits[-1])         # cherry\nprint(fruits[1:])         # ['banana', 'cherry']\n\n# 增删改\nfruits.append(\"orange\")\nfruits.insert(0, \"mango\")\nprint(fruits)\nfruits.remove(\"banana\")\nprint(fruits)\n\n# 排序\nnums = [3, 1, 2]\nnums.sort()\nprint(nums)\n\n# 列表推导式\nsquares = [x * x for x in range(5)]\nprint(squares)"
+      },
+      "mistakes": [
+        "混淆 list 与 tuple，list 可变、tuple 不可变",
+        "用 b = a 复制列表，实际共享同一对象",
+        "索引越界报 IndexError，忘了边界检查",
+        "在遍历列表时直接删除元素导致跳过，应收集待删项或倒序删除"
+      ],
+      "interviewPoints": [
+        "「列表切片是拷贝还是引用？」要答到切片返回新列表但元素仍是引用，说明切分训练集时改元素会污染原数据",
+        "「列表和元组怎么选？」要答到可变性、能否作字典键与内存开销，说明张量 shape 这类固定结构为何常用元组",
+        "「遍历列表时删除元素为什么会漏？」要答到索引前移导致跳过，说明倒序删除或列表推导式过滤的正确写法"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "list-q1",
+          "type": "choice",
+          "prompt": "Python 列表的下列说法正确的一项是？",
+          "options": [
+            "列表是不可变类型",
+            "列表可以存放任意类型的元素",
+            "列表元素只能是数字",
+            "列表不支持索引"
+          ],
+          "answerIndex": 1,
+          "explanation": "list 可变、有序，可存放任意类型元素，支持索引。"
+        },
+        {
+          "id": "list-q2",
+          "type": "short",
+          "prompt": "如何正确复制一个列表而不让两份共享同一对象？",
+          "answer": "用切片 lst[:] 或 lst.copy() 可创建浅拷贝；若列表里还有嵌套的可变对象需深拷贝，可用 copy.deepcopy。直接赋值 b = a 只复制引用，两者指向同一对象。",
+          "keywords": [
+            "copy",
+            "切片",
+            "深拷贝"
+          ],
+          "explanation": "用 copy() 或切片做浅拷贝，深层则深拷贝。"
+        },
+        {
+          "id": "list-q3",
+          "type": "code",
+          "prompt": "写一个函数 square_each(nums)，用列表推导式返回每个元素平方组成的新列表。",
+          "starterCode": "def square_each(nums):\n    pass",
+          "solution": "def square_each(nums):\n    return [x * x for x in nums]\n\nprint(square_each([1, 2, 3]))",
+          "checks": [
+            "def square_each",
+            "for x in nums"
+          ],
+          "explanation": "用列表推导式批量生成平方。"
+        }
+      ]
+    },
+    {
+      "slug": "dictionary",
+      "title": "Dictionary 字典",
+      "order": 7,
+      "module": "Python 语法基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "dict 是键值对映射，以不可变键快速查找值，是 Python 中最常用的关联容器。",
+      "intuition": "字典就像一个通讯录：每个联系人（键）对应一个号码（值）。你报出名字，就能立刻翻到号码，不需要从头翻到尾。正因为按'名字'直接定位，查找极快。字典里的键必须是不可变的（字符串、数字、元组），值可以是任何东西。",
+      "formal": "dict 用花括号 `{key: value}` 创建，或 `dict()`。它是`可变`的键值映射，键不可变且唯一。操作：`d[key]` 取值（键不存在报 KeyError）、`d.get(key, default)` 安全取值、`d[key]=v` 赋值、`d.pop(key)` 删除、`in` 判断键是否存在。遍历：`for k in d` 得到键，`d.items()` 得到键值对，`d.keys()`、`d.values()`。字典推导式 `{k: v for ...}`。Python 3.7+ 保证字典保持插入顺序。",
+      "formula": "",
+      "aiConnection": "模型配置、超参、API 请求体、词表映射 token→id、评估指标统计都用字典存储。字典的 O(1) 查找让词表检索、结果聚合非常高效，理解它是处理大量键值型数据（如 token 到 embedding 的映射）的关键。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "dictionary.py",
+        "code": "# 创建字典\nperson = {\"name\": \"AI\", \"age\": 18, \"city\": \"北京\"}\n\n# 取值\nprint(person[\"name\"])\nprint(person.get(\"job\", \"未知\"))   # 键不存在给默认值\n\n# 添加与修改\nperson[\"age\"] = 19\nperson[\"job\"] = \"engineer\"\nprint(person)\n\n# 遍历键值\nfor key, value in person.items():\n    print(key, \"->\", value)\n\n# 成员判断\nprint(\"name\" in person)"
+      },
+      "mistakes": [
+        "用不存在的键取值且不 get，触发 KeyError",
+        "用可变类型（列表、字典）当键，触发 TypeError",
+        "混淆键与值，遍历时忘记 items() 只拿到键",
+        "以为字典无序，其实 3.7+ 保持插入顺序"
+      ],
+      "interviewPoints": [
+        "「字典为什么查找是 O(1)？」要答到哈希表、哈希冲突与扩容，说明键必须可哈希以及最坏情况会退化到 O(n)",
+        "「d[key] 和 d.get(key) 有什么区别？」要答到键不存在时抛 KeyError 还是返回默认值，说明统计词频与读配置时的选择",
+        "「Python 3.7+ 字典有序吗？」要答到插入顺序保证与底层紧凑存储，说明为何可以依赖配置和 API 请求体的字段顺序"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "dictionary-q1",
+          "type": "choice",
+          "prompt": "下列哪种类型不能作为字典的键（key）？",
+          "options": [
+            "字符串",
+            "整数",
+            "元组",
+            "列表"
+          ],
+          "answerIndex": 3,
+          "explanation": "键必须是不可变类型；list 可变，不能作为键。"
+        },
+        {
+          "id": "dictionary-q2",
+          "type": "short",
+          "prompt": "d.get(key) 和 d[key] 在键不存在时有什么区别？",
+          "answer": "d[key] 在键不存在时抛出 KeyError；d.get(key) 返回 None，或传入默认值 d.get(key, default) 返回该默认值，更加安全。",
+          "keywords": [
+            "get",
+            "keyerror",
+            "默认"
+          ],
+          "explanation": "get 安全可给默认值，d[key] 会抛 KeyError。"
+        },
+        {
+          "id": "dictionary-q3",
+          "type": "code",
+          "prompt": "写一个函数 count_words(words)，用字典统计每个单词出现的次数并返回。",
+          "starterCode": "def count_words(words):\n    pass",
+          "solution": "def count_words(words):\n    counter = {}\n    for w in words:\n        counter[w] = counter.get(w, 0) + 1\n    return counter\n\nprint(count_words([\"a\", \"b\", \"a\"]))",
+          "checks": [
+            "def count_words",
+            "get(w",
+            "counter"
+          ],
+          "explanation": "用字典累加计数，get 提供默认 0。"
+        }
+      ]
+    },
+    {
+      "slug": "module",
+      "title": "Module 模块",
+      "order": 8,
+      "module": "Python 进阶",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "模块是组织 Python 代码的基本单元，用 import 引入其它文件或包中的函数与类。",
+      "intuition": "把很多功能写在一个文件里会越来越乱。模块就是'分工'：每个文件是一个模块，负责一类功能。就像公司分了很多部门，你要用财务功能就去财务部（import 那个模块），不用把整个公司搬过来。模块让代码可复用、可维护、便于多人协作。",
+      "formal": "一个 `.py` 文件就是一个模块（module）。用 `import module_name` 导入整个模块，`from module import name` 导入具体成员，`import ... as alias` 起别名。多个相关模块可组织成`包`（package，含 `__init__.py` 的目录）。`import` 执行模块顶层代码并缓存，多次导入只执行一次。特殊变量 `__name__`：当模块被直接运行时为 `\"__main__\"`，被导入时为模块名，常用 `if __name__ == \"__main__\":` 保护测试代码。标准库如 `os`、`sys`、`json`、`math` 均可直接导入。",
+      "formula": "",
+      "aiConnection": "大型 AI 项目通常会拆成多个模块：data.py 处理数据、model.py 定义模型、train.py 负责训练、utils.py 放工具函数。合理分层模块让代码清晰、便于复用和测试，也是团队协作与复现实验的基础。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "module.py",
+        "code": "# 导入标准库模块\nimport math\nimport os\nfrom math import sqrt   # 导入具体函数\n\n# 使用模块内的功能\nprint(\"sqrt(16) =\", sqrt(16))\nprint(\"pi =\", math.pi)\nprint(\"当前目录 =\", os.getcwd())\n\n# 模块的 __name__ 保护模式\nif __name__ == \"__main__\":\n    print(\"本文件被直接运行\")"
+      },
+      "mistakes": [
+        "用 import 导入后直接当模块名用时报错，如 import sqrt 后再 sqrt()",
+        "命名文件与标准库同名（如 json.py）导致遮蔽",
+        "模块顶层就执行副作用代码，导入时意外运行",
+        "忽略 __name__ 保护，把测试代码直接写在模块顶层"
+      ],
+      "interviewPoints": [
+        "「if __name__ == '__main__' 有什么用？」要答到直接运行与被导入时 __name__ 的差异，说明测试代码要放进去",
+        "「import 时模块代码会执行几次？」要答到模块缓存与 sys.modules、顶层副作用，说明循环导入为何容易报错",
+        "「包和模块有什么区别？」要答到 .py 文件与含 __init__.py 的目录，说明大型项目为何按 data/model/train 分层"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "module-q1",
+          "type": "choice",
+          "prompt": "`from math import sqrt` 这句的作用是？",
+          "options": [
+            "导入整个 math 模块",
+            "只导入 math 模块中的 sqrt 函数",
+            "重新定义 sqrt 函数",
+            "运行 math 模块的全部代码并导入到当前命名空间"
+          ],
+          "answerIndex": 1,
+          "explanation": "该语法只把 math 里的 sqrt 名称导入当前命名空间，而非整个模块。"
+        },
+        {
+          "id": "module-q2",
+          "type": "short",
+          "prompt": "为什么常用 `if __name__ == \"__main__\":` 包裹测试代码？",
+          "answer": "当模块被直接运行时 __name__ 为 \"__main__\"，包裹的代码会执行；当被其它模块 import 时 __name__ 为模块名，代码不执行。这样既能在运行时做测试，又不会在导入时触发副作用。",
+          "keywords": [
+            "__main__",
+            "导入",
+            "测试"
+          ],
+          "explanation": "区分直接运行 vs 被导入，避免导入时执行测试代码。"
+        },
+        {
+          "id": "module-q3",
+          "type": "code",
+          "prompt": "写一段代码：导入 math 模块并用它计算 25 的平方根。",
+          "starterCode": "import math\n",
+          "solution": "import math\nprint(math.sqrt(25))",
+          "checks": [
+            "import math",
+            "math.sqrt"
+          ],
+          "explanation": "import 后用 math.sqrt 求平方根。"
+        }
+      ]
+    },
+    {
+      "slug": "file",
+      "title": "File 文件操作",
+      "order": 9,
+      "module": "Python 进阶",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "Python 用 open 打开文件、读写内容，用 with 语句自动确保资源关闭。",
+      "intuition": "文件操作就像打开一本书：先打开（open），读几页或写几页，最后合上（close）。如果忘了合上，书会被别人占用，甚至丢失内容。Python 的 `with` 语句像一把'自动合上的书签'，离开代码块就自动关闭文件，非常省心。",
+      "formal": "用 `open(filename, mode)` 打开文件，`mode` 有 `'r'` 读、`'w'` 覆盖写、`'a'` 追加写、`'b'` 二进制、`'x'` 独占创建。文本模式需指定编码（常用 `encoding='utf-8'`）。`read()` 读全部、`readline()` 读一行、`readlines()` 读所有行，`write()` 写入。推荐使用 `with open(...) as f:` 上下文管理器，离开时自动关闭文件。写文件返回字符数，需注意 `w` 会清空原内容。读取不存在的文件抛 `FileNotFoundError`。",
+      "formula": "",
+      "aiConnection": "数据集常以文本或 JSON 文件存储，训练前要读取、清洗、切分并写回。用 with open 正确读写数据文件，是数据预处理管线的核心。理解编码与覆盖写模式，能避免中文乱码或误清空重要数据文件。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "file.py",
+        "code": "# 写入文件\nwith open(\"hello.txt\", \"w\", encoding=\"utf-8\") as f:\n    f.write(\"第一行\\n\")\n    f.write(\"第二行\\n\")\n\n# 读取文件\nwith open(\"hello.txt\", \"r\", encoding=\"utf-8\") as f:\n    content = f.read()\n    print(\"全部内容:\\n\", content)\n\n# 追加写入\nwith open(\"hello.txt\", \"a\", encoding=\"utf-8\") as f:\n    f.write(\"追加的一行\\n\")\n\n# 逐行读取\nwith open(\"hello.txt\", \"r\", encoding=\"utf-8\") as f:\n    for line in f:\n        print(\"行:\", line.strip())"
+      },
+      "mistakes": [
+        "忘记用 with close 文件导致资源泄漏或数据未刷新",
+        "用 'w' 模式误以为追加，实际清空原文件",
+        "不指定编码，读写中文出现乱码",
+        "读不存在的文件不处理 FileNotFoundError"
+      ],
+      "interviewPoints": [
+        "「为什么推荐用 with open？」要答到上下文管理器保证异常时也关闭文件、避免句柄泄漏与缓冲未刷盘",
+        "「'w' 和 'a' 模式有什么区别？」要答到覆盖清空与追加写入，说明训练日志用追加而 checkpoint 用覆盖写的选择",
+        "「读写中文文件为什么要指定 encoding？」要答到默认编码随平台变化导致乱码，说明 UTF-8 与二进制模式在数据管线中的取舍"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "file-q1",
+          "type": "choice",
+          "prompt": "`open('f.txt', 'w')` 这个模式下打开已存在的文件会发生什么？",
+          "options": [
+            "追加内容",
+            "报错",
+            "清空原文件内容",
+            "以只读方式打开"
+          ],
+          "answerIndex": 2,
+          "explanation": "'w' 是覆盖写模式，会清空已存在文件的内容。"
+        },
+        {
+          "id": "file-q2",
+          "type": "short",
+          "prompt": "为什么推荐用 `with open(...) as f:` 而不是手动 open/close？",
+          "answer": "with 是上下文管理器，离开代码块时自动调用 close 关闭文件，即使出现异常也能保证关闭，避免资源泄漏和数据没有刷新。手动 open/close 若中途出错容易漏写 close。",
+          "keywords": [
+            "with",
+            "close",
+            "上下文"
+          ],
+          "explanation": "with 自动关闭，异常安全，避免泄漏。"
+        },
+        {
+          "id": "file-q3",
+          "type": "code",
+          "prompt": "写一个函数 read_file(path)，用 with 打开并返回文件全部内容。",
+          "starterCode": "def read_file(path):\n    pass",
+          "solution": "def read_file(path):\n    with open(path, \"r\", encoding=\"utf-8\") as f:\n        return f.read()\n\nprint(read_file(\"hello.txt\"))",
+          "checks": [
+            "def read_file",
+            "open(",
+            "return f.read"
+          ],
+          "explanation": "with 打开读取并返回内容。"
+        }
+      ]
+    },
+    {
+      "slug": "exception",
+      "title": "Exception 异常",
+      "order": 10,
+      "module": "Python 进阶",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "异常处理用 try/except 捕获错误，保证程序优雅处理失败而非直接崩溃。",
+      "intuition": "程序运行时遇到意外（除零、文件不存在、类型不对）不能直接'摔倒在地'，而要'接住'这个错误。try/except 就是一张安全网：在 try 里尝试可能出错的代码，一旦出错就跳到 except 去处理，而不是让整个程序崩溃。就像驾驶时遇到突发情况，你要握稳方向盘而不是撒手不管。",
+      "formal": "用 `try:` 包裹可能引发异常的代码，`except SomeError:` 捕获特定异常，`else:`（无异常时执行）、`finally:`（无论是否异常都执行，常用于资源清理）。多个 `except` 可捕获不同异常，`except Exception` 捕获所有（需谨慎）。用 `raise` 主动抛出异常，异常有类型与消息。常见异常：`ValueError`、`TypeError`、`KeyError`、`IndexError`、`ZeroDivisionError`、`FileNotFoundError`。`traceback` 模块可打印详细堆栈，`assert` 用于断言。",
+      "formula": "",
+      "aiConnection": "AI 训练与推理中经常遇到异常：数据缺失（KeyError）、shape 不匹配（ValueError）、显存不足（RuntimeError）。良好的错误处理让训练在某批次失败时能跳过或日志记录而继续，而不是整个训练崩溃。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "exception.py",
+        "code": "# 捕获异常\ndef safe_divide(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return \"错误：不能除以零\"\n    except TypeError:\n        return \"错误：类型不对\"\n\nprint(safe_divide(10, 2))\nprint(safe_divide(10, 0))\n\n# 主动抛异常\nif __name__ == \"__main__\":\n    try:\n        value = int(\"abc\")\n    except ValueError as e:\n        print(\"捕获到 ValueError:\", e)"
+      },
+      "mistakes": [
+        "捕获异常后不做任何处理就 silent 吞掉，掩盖了真实 bug",
+        "except 范围过大，用 except Exception 吞掉所有错误",
+        "漏掉 finally 清理资源，异常时资源未释放",
+        "把 except 写成 except:（无类型）过于宽泛"
+      ],
+      "interviewPoints": [
+        "「try/except/else/finally 何时执行？」要答到异常、无异常与必定执行三个分支，说明 finally 释放资源的意义",
+        "「为什么不建议裸 except 吞掉异常？」要答到掩盖真实 bug、无法区分错误类型，说明训练中应只捕获可恢复的异常",
+        "「raise 和 assert 分别用在什么场景？」要答到主动抛错与调试断言，说明 assert 在 -O 下会被移除不能做参数校验"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "exception-q1",
+          "type": "choice",
+          "prompt": "`finally` 子句的执行时机是？",
+          "options": [
+            "只有 try 成功时执行",
+            "只有发生异常时执行",
+            "无论是否异常都会执行",
+            "只在 except 缺失时执行"
+          ],
+          "answerIndex": 2,
+          "explanation": "finally 无论是否发生异常都会执行，常用于释放资源。"
+        },
+        {
+          "id": "exception-q2",
+          "type": "short",
+          "prompt": "为什么不建议用宽泛的 `except Exception` 吞掉所有异常？",
+          "answer": "宽泛捕获会掩盖具体错误类型与根本原因，让 bug 难以排查，甚至把本该让程序失败的错误静默跳过，导致数据错误或逻辑错乱。应尽量捕获具体异常类型。",
+          "keywords": [
+            "except",
+            "泛",
+            "捕获"
+          ],
+          "explanation": "针对性捕获，避免掩盖真正错误。"
+        },
+        {
+          "id": "exception-q3",
+          "type": "code",
+          "prompt": "写一个函数 safe_divide(a, b)，在除数为 0 时返回错误提示字符串而不是崩溃。",
+          "starterCode": "def safe_divide(a, b):\n    pass",
+          "solution": "def safe_divide(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return \"不能除以零\"\n\nprint(safe_divide(10, 0))",
+          "checks": [
+            "def safe_divide",
+            "except ZeroDivisionError"
+          ],
+          "explanation": "用 try/except 捕获除零异常。"
+        }
+      ]
+    },
+    {
+      "slug": "class",
+      "title": "Class 类",
+      "order": 11,
+      "module": "Python 进阶",
+      "difficulty": "基础",
+      "estimatedMinutes": 23,
+      "summary": "类是对对象的数据与行为的封装，通过实例化对象的属性和方法构建面向对象编程。",
+      "intuition": "类就像工厂的'设计蓝图'，描述某种东西长什么样、能做什么。蓝图本身不是产品，但按蓝图能造出一个个具体的产品（对象/实例）。比如'狗'是一个类：它定义了有名字、能叫唤；'汪汪'就是一条具体的狗对象。对象拥有各自的数据（属性），又共享同一套行为（方法）。",
+      "formal": "用 `class ClassName:` 定义类，`__init__` 是构造方法（初始化实例属性），`self` 指向实例自身。类内定义的函数是方法。实例化用 `obj = ClassName(args)`，通过 `obj.attribute` 访问属性、`obj.method()` 调用方法。类属性 vs 实例属性：类属性所有实例共享，实例属性各自独立。`继承`用 `class Child(Parent)` 复用父类方法，可重写方法。`封装`用下划线约定（`_name` 保护、`__name` 私有）。`__str__`/`__repr__` 定制字符串表示。静态方法 `@staticmethod`、类方法 `@classmethod`。",
+      "formula": "",
+      "aiConnection": "深度学习框架中模型常以类封装：class Model(nn.Module)，其 forward 定义前向传播，__init__ 定义各层。数据集也可封装成 Dataset 类。理解类的封装与继承，是掌握 PyTorch 建模与组织大型 AI 代码的基础。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "class.py",
+        "code": "# 定义类\nclass Dog:\n    # 类属性\n    species = \"犬科\"\n\n    def __init__(self, name, age):\n        self.name = name   # 实例属性\n        self.age = age\n\n    def bark(self):\n        return f\"{self.name} 汪汪叫\"\n\n    def __str__(self):\n        return f\"狗({self.name}, {self.age}岁)\"\n\n\n# 实例化\nd = Dog(\"汪汪\", 3)\nprint(d)\nprint(d.bark())\nprint(\"物种:\", d.species)"
+      },
+      "mistakes": [
+        "忘记在方法里写 self，调用时参数不匹配",
+        "把类属性与实例属性搞混，修改实例属性却期望全体共享",
+        "构造函数名写成 __init__ 之外的拼写（如 init）",
+        "混淆 __str__ 与 __repr__，前者面向用户、后者面向开发者"
+      ],
+      "interviewPoints": [
+        "「类属性和实例属性有什么区别？」要答到共享与各自独立、可变类属性被所有实例共享的坑，说明模型层列表不该放类属性",
+        "「self 到底是什么？」要答到实例自身的显式传参、绑定方法的机制，说明忘记写 self 时报参数不匹配的原因",
+        "「继承和组合怎么选？」要答到复用方式与耦合度，说明 PyTorch 中 nn.Module 继承与层组合的惯例"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "class-q1",
+          "type": "choice",
+          "prompt": "在 Python 类的方法中，第一个参数通常是什么？",
+          "options": [
+            "cls",
+            "this",
+            "self",
+            "obj"
+          ],
+          "answerIndex": 2,
+          "explanation": "实例方法第一个参数约定为 self，代指实例自身。"
+        },
+        {
+          "id": "class-q2",
+          "type": "short",
+          "prompt": "类属性和实例属性有什么区别？",
+          "answer": "类属性定义在类体中，由所有实例共享；实例属性定义在 __init__ 中，通过 self 绑定，每个实例独立。修改实例属性只影响该实例，而类属性是所有实例共享的。",
+          "keywords": [
+            "类属性",
+            "实例属性",
+            "self"
+          ],
+          "explanation": "类属性共享，实例属性独立于 self。"
+        },
+        {
+          "id": "class-q3",
+          "type": "code",
+          "prompt": "定义一个类 Person，包含 name 与 age 属性，以及一个 describe 方法返回自我介绍字符串。",
+          "starterCode": "class Person:\n    pass",
+          "solution": "class Person:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n\n    def describe(self):\n        return f\"我是{self.name}，{self.age}岁\"\n\np = Person(\"小明\", 20)\nprint(p.describe())",
+          "checks": [
+            "class Person",
+            "__init__",
+            "self"
+          ],
+          "explanation": "通过 __init__ 与 self 绑定属性。"
+        }
+      ]
+    },
+    {
+      "slug": "pip",
+      "title": "pip 包管理",
+      "order": 12,
+      "module": "Python 进阶",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "pip 是 Python 的包管理工具，用于安装、卸载和查看第三方库及其依赖。",
+      "intuition": "pip 就像一个'应用商店'。你想用某个库（比如 numpy、torch），不用自己写，直接去商店里搜出来装上即可。pip 会自动下载这个库和它需要的其它库（依赖），还会记住你的环境里已装了哪些版本。这样你就能站在巨人的肩膀上，复用别人写好的成熟代码。",
+      "formal": "`pip`（Pip Installs Packages）是 Python 的包管理器。`pip install package` 安装，`pip uninstall package` 卸载，`pip list` 列出已装包，`pip show package` 查看详情，`pip freeze` 导出当前环境的所有包与版本。可用 `pip install package==1.2.3` 指定版本，`-U` 升级，`-r requirements.txt` 批量安装。默认从 `PyPI`（Python Package Index）下载。安装失败常因网络、权限、依赖冲突，建议使用虚拟环境隔离，避免污染全局环境。requirements.txt 常用于复现依赖。",
+      "formula": "",
+      "aiConnection": "AI 项目离不开第三方库（numpy、pandas、torch、transformers 等），都通过 pip 安装。用 requirements.txt 固定版本，保证实验可复现；用虚拟环境隔离不同项目依赖，是 AI 工程实践的基本要求。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "pip.sh",
+        "code": "#!/bin/bash\n# 安装一个包\npip install requests\n\n# 指定版本安装\npip install numpy==1.24.0\n\n# 查看已安装并导出依赖\npip list\npip freeze > requirements.txt\n\n# 根据 requirements.txt 安装\npip install -r requirements.txt"
+      },
+      "mistakes": [
+        "直接装到全局环境污染系统，未用虚拟环境",
+        "不固定版本，升级后依赖不兼容导致报错",
+        "混淆 pip install 与 import，装完还需重新打开环境",
+        "依赖冲突时报错却忽视 requirements 与系统版本差异"
+      ],
+      "interviewPoints": [
+        "「requirements.txt 有什么用？」要答到固定依赖版本以保证可复现，说明不锁版本导致升级后训练结果变化的问题",
+        "「pip install 和 import 是什么关系？」要答到安装进环境与运行时导入的区别，说明装完包仍需重启进程或刷新环境",
+        "「依赖冲突怎么排查？」要答到版本约束求解、pip check 与隔离环境，说明 CUDA 与 torch 版本必须匹配"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "pip-q1",
+          "type": "choice",
+          "prompt": "用 pip 导出当前环境所有已安装包及版本的命令是？",
+          "options": [
+            "pip list",
+            "pip install",
+            "pip freeze",
+            "pip show"
+          ],
+          "answerIndex": 2,
+          "explanation": "pip freeze 导出所有包与精确版本，常用于生成 requirements.txt。"
+        },
+        {
+          "id": "pip-q2",
+          "type": "short",
+          "prompt": "为什么在 AI 项目中推荐用 requirements.txt 固定依赖版本？",
+          "answer": "requirements.txt 记录了每个包及其确切版本，能让环境可复现，避免因依赖版本差异导致实验结果或运行行为不一致，也便于团队和机器之间保持一致。",
+          "keywords": [
+            "requirements",
+            "版本",
+            "复现"
+          ],
+          "explanation": "固定版本保证可复现性。"
+        },
+        {
+          "id": "pip-q3",
+          "type": "code",
+          "prompt": "使用 bash 补全：用 pip 安装 requests，然后安装 numpy 的 1.24.0 版本。",
+          "starterCode": "#!/bin/bash\n# 安装包\n",
+          "solution": "#!/bin/bash\npip install requests\npip install numpy==1.24.0",
+          "checks": [
+            "pip install",
+            "numpy==1.24"
+          ],
+          "explanation": "两条 pip install 分别装包与指定版本。"
+        }
+      ]
+    },
+    {
+      "slug": "virtual-environment",
+      "title": "Virtual Environment 虚拟环境",
+      "order": 13,
+      "module": "Python 进阶",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "虚拟环境为每个项目提供独立的 Python 解释器与依赖空间，避免全局包冲突。",
+      "intuition": "假设你同时做两个项目：一个用 numpy 1.24，另一个要用 numpy 2.0，装在同一台电脑的全局环境里就会互相打架。虚拟环境就像给每个项目单独租一个'工作间'，里面放着它自己的 Python 和依赖，互不干扰。你在这个房间装什么，都不会影响别的房间。",
+      "formal": "虚拟环境（virtual environment）创建一个独立的 Python 运行目录，内含自己的解释器与 site-packages。用 `python -m venv myenv` 创建，激活后使用：Linux/macOS 用 `source myenv/bin/activate`，Windows 用 `myenv\\Scripts\\activate`，退出用 `deactivate`。激活后 `pip install` 只影响该环境。工具还有 `virtualenv` 与更高级的 `conda`、`poetry`、`uv`。虚拟环境隔离了不同项目的依赖版本，是保证可复现、避免冲突的标准做法。每个项目建议独立环境并配合 requirements.txt。",
+      "formula": "",
+      "aiConnection": "深度学习项目依赖复杂且版本敏感（torch、cuda 版本等），强烈建议每个项目建独立虚拟环境。这能避免 GPU 驱动、torch 版本冲突，也便于针对不同实验切换依赖，是 AI 工程落地必不可少的技能。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "venv.sh",
+        "code": "#!/bin/bash\n# 创建虚拟环境\npython -m venv myenv\n\n# 激活（Linux/macOS）\nsource myenv/bin/activate\n\n# 现在安装在独立环境中\npip install numpy\n\n# 验证解释器位置\nwhich python\n\n# 退出虚拟环境\ndeactivate"
+      },
+      "mistakes": [
+        "没有激活环境就安装，实际装进了全局",
+        "忘了退出换环境，导致版本错乱",
+        "用 pip 装到全局污染系统而非虚拟环境",
+        "为每个项目都装，却不用 requirements.txt 记录，无法复现"
+      ],
+      "interviewPoints": [
+        "「虚拟环境解决了什么问题？」要答到项目间依赖版本隔离，说明两个项目需要不同 numpy 版本时全局环境为何打架",
+        "「怎么保证实验可复现？」要答到每个项目独立环境加 requirements.txt 锁版本，以及记录 CUDA 与 torch 的版本",
+        "「conda 和 venv 有什么区别？」要答到是否管理非 Python 依赖与二进制包，说明安装 CUDA 相关库时 conda 的优势"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "venv-q1",
+          "type": "choice",
+          "prompt": "在 Linux/macOS 中激活虚拟环境的命令是？",
+          "options": [
+            "myenv/activate",
+            "source myenv/bin/activate",
+            "run myenv",
+            "activate myenv"
+          ],
+          "answerIndex": 1,
+          "explanation": "用 source myenv/bin/activate 激活虚拟环境，Windows 是 Scripts\\activate。"
+        },
+        {
+          "id": "venv-q2",
+          "type": "short",
+          "prompt": "虚拟环境解决了什么问题？",
+          "answer": "虚拟环境为每个项目创建独立的 Python 与依赖空间，使不同项目可以安装不同版本的同名包而互不冲突，同时隔离全局环境，保证项目依赖干净、可复现，避免版本冲突与环境污染。",
+          "keywords": [
+            "隔离",
+            "独立",
+            "依赖"
+          ],
+          "explanation": "独立空间隔离依赖版本，避免冲突。"
+        },
+        {
+          "id": "venv-q3",
+          "type": "code",
+          "prompt": "写出创建名为 myenv 的虚拟环境并激活它的连续两条命令。",
+          "starterCode": "#!/bin/bash\n# 创建虚拟环境\n",
+          "solution": "#!/bin/bash\npython -m venv myenv\nsource myenv/bin/activate",
+          "checks": [
+            "venv myenv",
+            "activate"
+          ],
+          "explanation": "venv 创建 + source 激活。"
+        }
+      ]
+    }
+  ]
+}

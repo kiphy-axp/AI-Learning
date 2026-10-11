@@ -1,0 +1,360 @@
+{
+  "stage": 5,
+  "stageSlug": "data-science",
+  "stageTitle": "数据处理",
+  "stageEmoji": "📊",
+  "stageDesc": "NumPy、Pandas 与可视化：把脏数据变成可训练的数据集",
+  "category": "基础",
+  "lessons": [
+    {
+      "slug": "numpy",
+      "title": "NumPy",
+      "order": 1,
+      "module": "Python 数据处理",
+      "difficulty": "基础",
+      "estimatedMinutes": 24,
+      "summary": "NumPy 是 Python 的数值计算库，提供高效的多维数组 ndarray 与向量化运算，是数据科学的底层基石。",
+      "intuition": "Python 原生 list 处理大量数字很慢，因为每个元素都是独立对象。NumPy 把一组同类型数字放进连续内存的数组，并对整块数据一次性做运算，速度更快、写法更简洁。你能写下 a * 2 而不是循环每个元素去乘。",
+      "formal": "核心对象是 `ndarray`，一个同质、定长的多维数组，支持广播（broadcast）。常见创建：`np.array(...)`、`np.zeros(n)`、`np.arange(...)`、`np.linspace(...)`。向量化运算（`+ - * /`、`np.dot`、`np.sum`)作用于整数组而非逐元素循环。`.shape`、`.reshape`、`.dtype` 常用。在数据处理中，一列特征常是一个一维数组，而批量样本是一个二维矩阵。",
+      "formula": "\\mathbf{A} \\in \\mathbb{R}^{m\\times n}, \\quad \\mathbf{C} = \\mathbf{A}\\odot\\mathbf{B} \\ (\\text{逐元素}) , \\quad \\mathbf{Z} = \\mathbf{A}@\\mathbf{B} \\ (\\text{矩阵乘})",
+      "aiConnection": "几乎所有机器学习库都建立在 NumPy 数组之上：sklearn、PyTorch 的 tensor 概念也与 ndarray 同源。批量喂给模型的数据、embedding 矩阵、权重矩阵都是 NumPy 数组。掌握它才能高效地准备与预处理数据。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "numpy.py",
+        "code": "import numpy as np\n\n# 创建数组\narr = np.array([1, 2, 3, 4, 5])\nprint('arr =', arr, 'shape =', arr.shape)\n\n# 向量化运算（无需循环）\nprint('arr * 2 =', arr * 2)\nprint('arr + 10 =', arr + 10)\n\n# 常用创建\nprint('zeros =', np.zeros(3))          # [0. 0. 0.]\nprint('arange =', np.arange(0, 10, 2)) # [0 2 4 6 8]\nprint('linspace =', np.linspace(0, 1, 5))\n\n# 二维矩阵与运算\nX = np.array([[1, 2], [3, 4]])\nprint('X shape =', X.shape)\nprint('X.T =', X.T)\nprint('sum(axis=0) =', X.sum(axis=0))  # 按列求和\n\n# 广播：形状不同的数组也能运算\nprint('row + [10, 20] =', X + np.array([10, 20]))"
+      },
+      "mistakes": [
+        "用 Python list 代替 ndarray，导致不支持向量化或造成性能问题",
+        "混淆逐元素乘 `*` 与矩阵乘 `@`（或 np.dot）",
+        "忽略形状不匹配导致的广播错误（broadcast）",
+        "把 `np.reshape` 与就地修改 `.shape` 混用"
+      ],
+      "interviewPoints": [
+        "「ndarray 和 Python list 的本质区别是什么？」要答到同质定长、内存连续、免去对象装箱开销，以及向量化把循环下沉到 C 层",
+        "「广播（broadcast）的对齐规则是什么？」要答到从尾部维度对齐、长度为 1 的维度可扩展，形状不兼容时抛 ValueError",
+        "「`*`、`@`、np.dot 有什么区别？」要答到逐元素乘 vs 内积求和，并说清线性层必须用矩阵乘，用错不会报错但会静默算错",
+        "「为什么 NumPy 是深度学习的地基？」要答到 tensor 与 ndarray 同源，权重与 embedding 是数组，布局决定速度"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "numpy-q1",
+          "type": "choice",
+          "prompt": "np.array([1,2,3]) * np.array([4,5,6]) 的结果是？",
+          "options": [
+            "[4,10,18]",
+            "[32]",
+            "[4,5,6]",
+            "报错"
+          ],
+          "answerIndex": 0,
+          "explanation": "`*` 是逐元素乘，得到 [1*4, 2*5, 3*6]=[4,10,18]；矩阵乘才用 @。"
+        },
+        {
+          "id": "numpy-q2",
+          "type": "short",
+          "prompt": "为什么在数据处理中要用 NumPy 数组而不是 Python list？",
+          "answer": "参考回答：因为 ndarray 是内存连续、同质的数组，支持向量化运算与广播，能显著减少循环、提高性能；同时提供 reshape、数学函数等便捷操作，且是众多机器学习库的底层数据结构。",
+          "keywords": [
+            "向量化",
+            "ndarray",
+            "广播"
+          ],
+          "explanation": "ndarray 内存紧凑且向量化，运算快、写法简洁，是数据科学及 ML 库的根基。"
+        },
+        {
+          "id": "numpy-q3",
+          "type": "code",
+          "prompt": "用 numpy 创建数组 x=[1,2,3,4,5]，打印它的 shape，并计算 x 乘以 2 的结果。",
+          "starterCode": "import numpy as np\n\nx = np.array([1, 2, 3, 4, 5])\n",
+          "solution": "import numpy as np\n\nx = np.array([1, 2, 3, 4, 5])\nprint(x.shape)\nprint(x * 2)",
+          "checks": [
+            "shape",
+            "* 2"
+          ],
+          "explanation": "用 .shape 查看维度，用 `* 2` 做向量化数乘。"
+        }
+      ]
+    },
+    {
+      "slug": "pandas",
+      "title": "Pandas",
+      "order": 2,
+      "module": "Python 数据处理",
+      "difficulty": "基础",
+      "estimatedMinutes": 23,
+      "summary": "Pandas 提供 DataFrame 这种行列式表格结构，用于读写、筛选、分组与聚合表格数据，是数据清洗分析的核心。",
+      "intuition": "把 Pandas 想成 Python 里的电子表格/Excel。数据以一列列和一行的方式存在 DataFrame 里，每列有名字，你能像操作数据库一样按条件筛选、排序、分组聚合。它把繁琐的表格操作浓缩成一行方法调用。",
+      "formal": "核心结构是 `Series`（一列）与 `DataFrame`（多列表格）。常用：`df.head()`、`df['col']`、`df.loc[]`/`df.iloc[]`、`df.groupby('col').agg()`、`df.sort_values()`、`pd.read_csv()`。它依赖 NumPy 存储底层数据，擅长处理有缺失值、混合类型、带索引的表格数据，是数据清洗与特征工程的主力工具。",
+      "formula": "",
+      "aiConnection": "任何机器学习任务的第一步几乎都是用 Pandas 读入 CSV、探查分布、处理缺失值、做特征选择与编码。清洗后的 DataFrame 再转成 NumPy 数组或喂给模型。掌握 Pandas 是数据工程师与 ML 工程师的必备技能。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "pandas.py",
+        "code": "import pandas as pd\n\n# 构造 DataFrame\ndf = pd.DataFrame({\n    'name': ['alice', 'bob', 'carol', 'dave'],\n    'score': [85, 92, 78, 88],\n    'city': ['bj', 'sh', 'bj', 'sh'],\n})\n\nprint(df)\nprint(df['score'].mean())   # 平均分\n\n# 筛选分数 > 85 的行\nprint(df[df['score'] > 85])\n\n# 按城市分组求平均分\nprint(df.groupby('city')['score'].mean())\n\n# 排序\nprint(df.sort_values('score', ascending=False))\n\n# 读/写 CSV（此处简化为内存演示）\n# df.to_csv('out.csv', index=False)"
+      },
+      "mistakes": [
+        "混用 `df['col']`（位置/标签访问）与 `df.loc`/`df.iloc` 的语义",
+        "用 `df.col` 属性访问列，遇到列名含空格或为关键字时出错",
+        "对 `groupby` 结果不了解，误以为它返回 DataFrame 而非分组对象",
+        "读入数据时忘记处理缺失值 NA/NaN"
+      ],
+      "interviewPoints": [
+        "「Series 和 DataFrame 是什么关系？」要答到 Series 是一维带索引数组，DataFrame 是共享行索引的二维表",
+        "「loc 和 iloc 的区别是什么？」要答到 loc 按标签、iloc 按整数位置，两者切片语义不同，混用是常见 bug 来源",
+        "「groupby 返回的是 DataFrame 吗？」要答到它返回惰性分组对象，须接 agg/mean 才落地，本质是先分组再聚合",
+        "「Pandas 在真实 ML pipeline 里做什么？」要答到读 CSV、探查分布、处理缺失与类别编码，最后转成 NumPy 数组喂模型"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "pandas-q1",
+          "type": "choice",
+          "prompt": "df.groupby('city')['score'].mean() 会返回什么？",
+          "options": [
+            "每个城市得分的平均",
+            "每行得分的平均",
+            "所有数据的平均",
+            "一个普通 DataFrame 不需分组"
+          ],
+          "answerIndex": 0,
+          "explanation": "先按'city'分组，再对每组的'score'列求平均，得到每个城市的平均分。"
+        },
+        {
+          "id": "pandas-q2",
+          "type": "short",
+          "prompt": "DataFrame 与 Series 的区别是什么？",
+          "answer": "参考回答：Series 是一维带标签的数据结构，相当于一列；DataFrame 是二维表格，由多个 Series 列组成，每列可有不同数据类型，并有行索引与列名，类似于电子表格或关系表。",
+          "keywords": [
+            "Series",
+            "一维",
+            "二维"
+          ],
+          "explanation": "Series 是一维列，DataFrame 是多列的二维表格。"
+        },
+        {
+          "id": "pandas-q3",
+          "type": "code",
+          "prompt": "用 pandas 构造一个含 name 与 score 两列的 DataFrame，打印 score 列的平均值，并筛出 score>85 的行。",
+          "starterCode": "import pandas as pd\n\ndf = pd.DataFrame({\n    'name': ['a', 'b', 'c'],\n    'score': [80, 90, 70],\n})\n",
+          "solution": "import pandas as pd\n\ndf = pd.DataFrame({\n    'name': ['a', 'b', 'c'],\n    'score': [80, 90, 70],\n})\n\nprint(df['score'].mean())\nprint(df[df['score'] > 85])",
+          "checks": [
+            "mean",
+            "> 85"
+          ],
+          "explanation": "用 df['score'].mean() 求均值，用布尔条件 df[df['score']>85] 筛选行。"
+        }
+      ]
+    },
+    {
+      "slug": "matplotlib",
+      "title": "Matplotlib",
+      "order": 3,
+      "module": "Python 数据处理",
+      "difficulty": "基础",
+      "estimatedMinutes": 24,
+      "summary": "Matplotlib 是 Python 最常用的绘图库，用折线图、散点图、直方图等把数据可视化，帮助快速理解数据形态。",
+      "intuition": "Matplotlib 画图就像在一块画布上作画：先建一个图（figure），拿到坐标轴（ax），然后把数据点画上去（plot、scatter、hist），最后显示或保存。图表能让你一眼看出分布、趋势与异常，比只看表格更有洞察力。",
+      "formal": "核心接口：`plt.plot`（折线）、`plt.scatter`（散点）、`plt.bar`（柱状）、`plt.hist`（直方图）。用 `fig, ax = plt.subplots()` 获得画布与坐标轴，`ax.set_xlabel/set_title` 加标签。`plt.show()` 显示，`plt.savefig()` 保存。在 Python 环境中常需 `%matplotlib inline` 或用 `plt.show()`。它支持多个子图 `plt.subplots(nrows, ncols)`，是探索性分析（EDA）与汇报的关键工具。",
+      "formula": "",
+      "aiConnection": "在训练前后，我们会用 matplotlib 画出损失下降曲线、数据分布直方图、特征散点图，来判断收敛、发现异常与过拟合，并向团队汇报模型效果。可视化学会了数据说话，是数据科学的通用语言。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "matplotlib.py",
+        "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 10, 100)\ny = np.sin(x)\n\n# 折线图\nplt.figure(figsize=(6, 4))\nplt.plot(x, y, label='sin(x)')\nplt.xlabel('x')\nplt.ylabel('y')\nplt.title('y = sin(x)')\nplt.legend()\nplt.show()\n\n# 直方图：查看分布\nnp.random.seed(0)\ndata = np.random.normal(0, 1, 1000)\nplt.hist(data, bins=30, alpha=0.7)\nplt.title('normal distribution')\nplt.show()\n\n# 散点图\nplt.scatter(x, np.cos(x), s=10, c='red')\nplt.savefig('demo.png')\nprint('saved demo.png')"
+      },
+      "mistakes": [
+        "忘了调用 plt.show() 导致绘图不显示",
+        "在窗口环境下用 plt 作图却未启用 inline 后端",
+        "把所有数据画进同一坐标轴而混淆了不同尺度",
+        "忘记加标题、xlabel/ylabel 导致图表无法解读"
+      ],
+      "interviewPoints": [
+        "「plt.plot 和 fig, ax 接口该用哪个？」要答到 pyplot 依赖全局状态、脚本里够用，多子图与函数复用必须显式传 ax",
+        "「训练时画损失曲线的目的是什么？」要答到判断是否收敛、看 train/val 是否分叉以识别过拟合，并据此调学习率与正则强度",
+        "「直方图的 bins 该怎么选？」要答到 bins 过少会掩盖双峰等结构、过多则只剩采样噪声，它估计的是密度形状而非精确概率值",
+        "「画完图为什么不显示？backend 是什么？」要答到 show 与 inline/agg 后端的区别，无显示环境要用 savefig"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "matplotlib-q1",
+          "type": "choice",
+          "prompt": "要在图形上显示散点，应该用哪个函数？",
+          "options": [
+            "plt.plot",
+            "plt.scatter",
+            "plt.hist",
+            "plt.subplots"
+          ],
+          "answerIndex": 1,
+          "explanation": "plt.scatter 用于散点图，plt.plot 用于折线，plt.hist 用于直方图。"
+        },
+        {
+          "id": "matplotlib-q2",
+          "type": "short",
+          "prompt": "在训练模型时，为什么常画损失下降曲线？",
+          "answer": "参考回答：因为损失曲线能直观反映训练是否收敛、是否过拟合或欠拟合。若损失持续下降并稳定说明训练正常；若在验证集上升而训练集下降则可能过拟合，从而指导如何调整学习率或正则化。",
+          "keywords": [
+            "损失",
+            "收敛",
+            "过拟合"
+          ],
+          "explanation": "损失曲线帮助判断收敛情况、是否过拟合，指导调参。"
+        },
+        {
+          "id": "matplotlib-q3",
+          "type": "code",
+          "prompt": "用 numpy 生成 x=linspace(0,10,50) 与 y=sin(x)，用 matplotlib 画折线图并加标题。",
+          "starterCode": "import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 10, 50)\ny = np.sin(x)\n",
+          "solution": "import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 10, 50)\ny = np.sin(x)\n\nplt.plot(x, y)\nplt.title('y = sin(x)')\nplt.show()",
+          "checks": [
+            "plot",
+            "title"
+          ],
+          "explanation": "用 plt.plot(x,y) 画折线，plt.title 加标题，最后 plt.show() 显示。"
+        }
+      ]
+    },
+    {
+      "slug": "data-cleaning",
+      "title": "Data Cleaning 数据清洗",
+      "order": 4,
+      "module": "Python 数据处理",
+      "difficulty": "基础",
+      "estimatedMinutes": 24,
+      "summary": "数据清洗处理缺失值、重复行、异常值与格式不一致，是保证模型质量的第一步。",
+      "intuition": "真实数据总是\"脏\"的：有空缺、有重复、有写错的格式、有夸张的异常点。如果不清理就直接喂给模型，模型会学到错误规律。数据清洗就是把这些\"灰尘\"扫掉，让数据可信、可用。",
+      "formal": "常见清洗操作：检测缺失值 `df.isna().sum()`；处理缺失（删除 `dropna()` 或填充 `fillna(value)`）；去重 `drop_duplicates()`；检查异常值（用 IQR 或 z-score 识别）；统一类型与格式（如日期解析、字符串去除空格、类别编码 `get_dummies`）。好的清洗要记录每次修改，保证可复现，并检查清洗前后的行数与统计量。",
+      "formula": "",
+      "aiConnection": "生成模型的输出、RAG 的文档、训练数据都来自真实且脏的数据。在把数据交给模型前做清洗与标准化，能显著提升模型稳定性和效果。数据清洗也是数据工程与 ML pipeline 中耗时最多的一环。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "data_cleaning.py",
+        "code": "import pandas as pd\nimport numpy as np\n\ndf = pd.DataFrame({\n    'name': ['a', 'b', 'b', 'c', np.nan],\n    'score': [80, 90, 90, 300, 70],   # 300 是异常值\n})\n\n# 1) 查看缺失\nprint('缺失情况:')\nprint(df.isna().sum())\n\n# 2) 处理缺失：删除\nclean = df.dropna()\n\n# 3) 去重\nclean = clean.drop_duplicates()\n\n# 4) 处理异常值（用 IQR）\nq1 = clean['score'].quantile(0.25)\nq3 = clean['score'].quantile(0.75)\niqr = q3 - q1\nclean = clean[(clean['score'] >= q1 - 1.5*iqr) & (clean['score'] <= q3 + 1.5*iqr)]\n\nprint('清洗后:')\nprint(clean)\nprint('行数:', len(clean), '原始:', len(df))"
+      },
+      "mistakes": [
+        "直接删除含缺失值的行，导致样本数骤减或引入偏差",
+        "忽略异常值，让极端点主导统计量与模型训练",
+        "没有记录清洗步骤，导致结果不可复现",
+        "把所有缺失都用均值填充而不考虑场景（会压缩方差）"
+      ],
+      "interviewPoints": [
+        "「缺失值的处理策略有哪些？代价分别是什么？」要答到删除会丢样本且可能引入偏差、均值填充会压缩方差、模型插补更准但更复杂",
+        "「为什么均值填充会压缩方差？」要答到所有缺失位置被同一常数替代、降低了变量离散度与相关性，从而低估不确定性",
+        "「IQR 和 z-score 判异常值各适合什么场景？」要答到 IQR 基于四分位、对偏态稳健；z-score 假设正态且自身会被异常值污染",
+        "「怎么保证数据清洗可复现？」要答到把每步写成代码或管道、固定随机种子、记录清洗前后的行数与统计量，绝不手工改数据"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "data-cleaning-q1",
+          "type": "choice",
+          "prompt": "判断某列是否有缺失值，最合适的是？",
+          "options": [
+            "df.isna().sum()",
+            "df.dropna()",
+            "df.head()",
+            "df.groupby()"
+          ],
+          "answerIndex": 0,
+          "explanation": "df.isna().sum() 统计每列缺失值个数；dropna 是删除而非检测。"
+        },
+        {
+          "id": "data-cleaning-q2",
+          "type": "short",
+          "prompt": "处理缺失值有哪些常见策略？各自的代价是什么？",
+          "answer": "参考回答：常见有删除含缺失的行（简单但会丢数据、可能引入偏差）、用均值/中位数/众数或前向填充填补（保留样本但会压缩方差或引入偏差）、用模型预测缺失值（较准但复杂）。应结合缺失比例与业务场景选择。",
+          "keywords": [
+            "删除",
+            "填充",
+            "均值"
+          ],
+          "explanation": "常用删除或各类填充，各有丢失数据或引入偏差的取舍，需按场景选择。"
+        },
+        {
+          "id": "data-cleaning-q3",
+          "type": "code",
+          "prompt": "对含缺失与重复行的 DataFrame 用 dropna() 和 drop_duplicates() 清洗，打印行数。",
+          "starterCode": "import pandas as pd\n\ndf = pd.DataFrame({'x': [1, 1, None], 'y': [2, 2, 3]})\n",
+          "solution": "import pandas as pd\n\ndf = pd.DataFrame({'x': [1, 1, None], 'y': [2, 2, 3]})\n\nclean = df.dropna().drop_duplicates()\nprint(len(clean))",
+          "checks": [
+            "dropna",
+            "drop_duplicates"
+          ],
+          "explanation": "链式调用 dropna() 去掉缺失、drop_duplicates() 去掉重复。"
+        }
+      ]
+    },
+    {
+      "slug": "visualization",
+      "title": "Visualization 可视化",
+      "order": 5,
+      "module": "Python 数据处理",
+      "difficulty": "基础",
+      "estimatedMinutes": 26,
+      "summary": "可视化借助图表（散点、箱线、热力图等）揭示数据分布与变量间关系，是探索与传达结论的桥梁。",
+      "intuition": "一张好图胜过一张表。散点图看两个变量的关系，直方图看分布形态，箱线图看离群点与四分位，热力图看特征间的相关性。可视化把枯燥的数字变成直观的形状，让你一眼发现结构、趋势与异常。",
+      "formal": "按目的选图：分布用 `hist`；两变量关系用 `scatter`；类别比较用 `bar`；数据集中趋势与离群用 `boxplot`；特征相关性用热力图（如 `seaborn.heatmap(df.corr())`）。做好可视化要做：合适图表、清晰坐标轴与单位、明确标题、合理配色与图例，避免误导（如截断坐标轴夸大差异）。",
+      "formula": "",
+      "aiConnection": "探索性分析（EDA）通过可视化发现数据质量问题与特征关系，为建模与特征工程指明方向；训练后也用图表评估与解释模型，并给非技术受众讲清楚结论。可视化是数据工作者传达洞察的核心能力。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "visualization.py",
+        "code": "import numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\n\nnp.random.seed(0)\nx = np.random.normal(0, 1, 200)\ny = 2 * x + np.random.normal(0, 0.3, 200)\n\n# 散点图：看线性关系\nplt.subplot(2, 2, 1)\nplt.scatter(x, y, alpha=0.6)\nplt.xlabel('x')\nplt.ylabel('y')\nplt.title('scatter (关系)')\n\n# 直方图：看分布\nplt.subplot(2, 2, 2)\nplt.hist(x, bins=20)\nplt.title('hist (分布)')\n\n# 箱线图：看离群\nplt.subplot(2, 2, 3)\nsns.boxplot(y=x)\nplt.title('boxplot (离群)')\n\n# 热力图：看相关性\nplt.subplot(2, 2, 4)\ndata = np.vstack([x, y]).T\nsns.heatmap(np.corrcoef(data.T), annot=True, cmap='coolwarm')\nplt.title('heatmap (相关性)')\n\nplt.tight_layout()\nplt.show()"
+      },
+      "mistakes": [
+        "选错图表类型，用折线图表示类别数据或直方图表示时间序列",
+        "隐藏或截断坐标轴，夸大视觉差异误导读者",
+        "忽略图例与坐标轴标签，导致图不可读",
+        "图表过于复杂，塞入过多信息而难以理解"
+      ],
+      "interviewPoints": [
+        "「怎么按目的选图？」要答到分布用 hist、关系用 scatter、类别比较用 bar、离群用 boxplot、相关性用热力图",
+        "「截断坐标轴为什么会误导读者？」要答到视觉差异被比例放大、读者会得出错误结论，柱状图原则上必须从 0 开始",
+        "「相关性热力图能得出因果结论吗？」要答到不能，相关只反映线性共变关系，还可能被混杂变量掩盖，因果需要实验设计",
+        "「EDA 可视化在建模流程里解决什么问题？」要答到提前发现数据质量、量纲差异、偏态与标签泄漏，为特征工程定方向"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "visualization-q1",
+          "type": "choice",
+          "prompt": "想观察两个连续变量之间的关系，应优先用哪种图？",
+          "options": [
+            "散点图",
+            "直方图",
+            "饼图",
+            "箱线图"
+          ],
+          "answerIndex": 0,
+          "explanation": "散点图把每对 (x,y) 画成点，最适合观察两连续变量的关系与趋势。"
+        },
+        {
+          "id": "visualization-q2",
+          "type": "short",
+          "prompt": "在可视化时，为什么不应随意截断坐标轴的起始值？",
+          "answer": "参考回答：因为截断或调整坐标轴范围会歪曲比例，使差异看起来比实际更大或更小，容易误导读者得出错误结论。应保证坐标轴起点与刻度真实反映数据。",
+          "keywords": [
+            "坐标轴",
+            "误导",
+            "真实"
+          ],
+          "explanation": "截断坐标轴会夸大/缩小差异，误导解读，应真实呈现。"
+        },
+        {
+          "id": "visualization-q3",
+          "type": "code",
+          "prompt": "用 matplotlib 对数组 x=linspace(0,1,50)、y=x² 画散点图并加轴标签。",
+          "starterCode": "import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 1, 50)\ny = x ** 2\n",
+          "solution": "import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 1, 50)\ny = x ** 2\n\nplt.scatter(x, y)\nplt.xlabel('x')\nplt.ylabel('y')\nplt.show()",
+          "checks": [
+            "scatter",
+            "xlabel"
+          ],
+          "explanation": "用 plt.scatter(x,y) 画散点，plt.xlabel/ylabel 加轴标签。"
+        }
+      ]
+    }
+  ]
+}

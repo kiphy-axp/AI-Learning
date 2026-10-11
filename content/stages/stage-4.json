@@ -1,0 +1,759 @@
+{
+  "stage": 4,
+  "stageSlug": "mathematics",
+  "stageTitle": "数学基础",
+  "stageEmoji": "📐",
+  "stageDesc": "线性代数、微积分与概率统计：读懂模型公式的最小数学集",
+  "category": "基础",
+  "lessons": [
+    {
+      "slug": "vector",
+      "title": "Vector 向量",
+      "order": 1,
+      "module": "线性代数",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "向量是一组按顺序排列的数字，是描述方向与大小的基本工具，也是机器学习中表示单个样本的标准方式。",
+      "intuition": "你可以把向量想象成坐标轴上的一支箭头：它既有长度也有方向。在机器学习里，一个学生有多门课的成绩、一首歌有不同的特征，都可以打包成一个向量。当我们说\"这个样本是一个 10 维向量\"时，意思是它由 10 个数字组成，计算机就能用统一的方式去处理它。",
+      "formal": "一个向量可以写成列向量 $\\mathbf{x} = [x_1, x_2, \\dots, x_n]^T$。向量加法是逐元素相加：$\\mathbf{x} + \\mathbf{y} = [x_1+y_1, \\dots, x_n+y_n]$。数乘是每个元素乘以同一个标量。向量在机器学习中常表示单个数据样本（特征向量），一组样本排成矩阵后一次运算即可处理整批数据。",
+      "formula": "\\mathbf{x} = \\begin{bmatrix} x_1 \\\\ x_2 \\\\ \\vdots \\\\ x_n \\end{bmatrix}, \\quad \\mathbf{x} + \\mathbf{y} = \\begin{bmatrix} x_1 + y_1 \\\\ \\vdots \\\\ x_n + y_n \\end{bmatrix}, \\quad c\\mathbf{x} = \\begin{bmatrix} c x_1 \\\\ \\vdots \\\\ c x_n \\end{bmatrix}",
+      "aiConnection": "大模型把每个 token 都表示成一个高维向量（embedding），方向相近的向量在语义上也相近。理解\"数字列表 = 样本\"的视角，是理解 embedding、相似度检索和注意力机制的基础。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "vector.py",
+        "code": "import numpy as np\n\n# 两个样本向量\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n\n# 向量加法（逐元素）\nprint('x + y =', x + y)      # [5 7 9]\n\n# 数乘\nprint('2x =', 2 * x)         # [2 4 6]\n\n# 向量的模（长度）\nprint('len(x) =', np.linalg.norm(x))  # sqrt(14)\n\n# 一个\"样本\"由多个特征组成\nsample = np.array([70.5, 165, 25])  # 体重/身高/年龄\nprint('sample =', sample)"
+      },
+      "mistakes": [
+        "把向量相加写成把所有元素求和（得到一个标量），而是逐元素相加",
+        "混淆向量与标量，把向量当成单个数字直接做运算",
+        "忘记用 numpy array 而不是 Python list，导致不支持逐元素算术"
+      ],
+      "interviewPoints": [
+        "「为什么样本要用向量表示？」要答到统一维度与批量矩阵运算，说明 embedding 把 token 映射成高维向量后为何能算相似度",
+        "「向量加法和数乘有什么几何意义？」要答到平移与缩放、线性组合，说明特征归一化与权重缩放对模型的影响",
+        "「向量的长度和方向哪个更重要？」要答到范数衡量大小、方向承载语义，说明检索时为何常先归一化再比相似度"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "vector-q1",
+          "type": "choice",
+          "prompt": "向量 x=[1,2,3] 与 y=[4,5,6] 相加的结果是？",
+          "options": [
+            "[5,7,9]",
+            "21",
+            "[4,10,18]",
+            "[1,2,3,4,5,6]"
+          ],
+          "answerIndex": 0,
+          "explanation": "向量加法是逐元素相加：1+4=5, 2+5=7, 3+6=9，得到 [5,7,9]。"
+        },
+        {
+          "id": "vector-q2",
+          "type": "short",
+          "prompt": "说说在机器学习中，为什么我们常用向量来表示一个数据样本？",
+          "answer": "参考回答：因为一个样本通常有多个特征（如身高、体重、年龄等），可以按固定顺序放入一个向量，从而用统一的数学运算（加法、数乘、点积）来批量处理和分析这些样本，同时 embedding 也让文本等非数值数据能被机器处理。",
+          "keywords": [
+            "向量",
+            "特征",
+            "样本"
+          ],
+          "explanation": "关键在于\"多个特征打包成一个有序数字组\"，这样便于统一计算并支撑 embedding 表示。"
+        },
+        {
+          "id": "vector-q3",
+          "type": "code",
+          "prompt": "用 numpy 创建向量 a=[1,2,3]、b=[4,5,6]，计算它们的逐元素相加并打印结果。",
+          "starterCode": "import numpy as np\n\na = np.array([1, 2, 3])\nb = np.array([4, 5, 6])\n",
+          "solution": "import numpy as np\n\na = np.array([1, 2, 3])\nb = np.array([4, 5, 6])\n\nprint(a + b)",
+          "checks": [
+            "np.array",
+            "+"
+          ],
+          "explanation": "用 np.array 构造向量，用 + 做逐元素相加并打印。"
+        }
+      ]
+    },
+    {
+      "slug": "matrix",
+      "title": "Matrix 矩阵",
+      "order": 2,
+      "module": "线性代数",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "矩阵是按行和列排列的数字表格，可表示一组数据，也可表示对向量的线性变换。",
+      "intuition": "如果说向量是一行数据，那么矩阵就是很多行数据叠在一起，或是一次对空间中所有点做同一种\"操作\"。想象把一张表格里的每行都做同样的处理，矩阵乘法就是在高效地一举完成这件事。",
+      "formal": "矩阵 $\\mathbf{A} \\in \\mathbb{R}^{m \\times n}$ 有 $m$ 行、$n$ 列。矩阵与向量相乘 $\\mathbf{A}\\mathbf{x}$ 把向量线性变换到新空间。两个矩阵相乘时，结果 $\\mathbf{C} = \\mathbf{A}\\mathbf{B}$ 的第 $(i,j)$ 项是 $\\mathbf{A}$ 第 $i$ 行与 $\\mathbf{B}$ 第 $j$ 列的点积，故要求 $\\mathbf{A}$ 的列数等于 $\\mathbf{B}$ 的行数。在机器学习中，$X$ 常攒多条样本，$W$ 是权重矩阵，前向传播即一次矩阵乘。",
+      "formula": "\\mathbf{C} = \\mathbf{A}\\mathbf{B}, \\quad c_{ij} = \\sum_{k} a_{ik} b_{kj} \\\\ \\mathbf{y} = \\mathbf{W}\\mathbf{x} + \\mathbf{b}, \\quad \\mathbf{W}\\in\\mathbb{R}^{m\\times n}",
+      "aiConnection": "神经网络的每一层本质上就是一个矩阵乘法 + 偏置 + 非线性激活。一次前向传播把整批样本一次性通过权重矩阵变换，GPU 之所以擅长这类计算，正是因为矩阵乘法可以被高度并行化。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "matrix.py",
+        "code": "import numpy as np\n\n# 2x3 权重矩阵 和 3维向量\nW = np.array([[1, 2, 3],\n              [4, 5, 6]])\nx = np.array([1, 1, 1])\n\n# 矩阵乘向量：结果维度 = (2,) 即 2 行\nprint('W @ x =', W @ x)  # [ 6 15]\n\n# 多条样本排成矩阵，一次算完\nX = np.array([[1, 1, 1],\n              [2, 0, 0]])\nprint('W @ X =', W @ X.T)  # 2x2\n\n# 形状要求：A 的列数 == B 的行数\nprint('W shape =', W.shape, 'x shape =', x.shape)"
+      },
+      "mistakes": [
+        "忽略维度匹配：A 的列数必须等于 B 的行数，否则报错",
+        "用 * 做矩阵乘法（那是逐元素乘），应该用 @ 或 np.dot",
+        "忘记矩阵乘法不满足交换律，A@B 与 B@A 通常不同"
+      ],
+      "interviewPoints": [
+        "「矩阵乘法的维度规则是什么？」要答到内维必须相等、结果形状由外维决定，说明 shape 报错时该怎么定位",
+        "「为什么神经网络一层就是矩阵乘法？」要答到线性变换语义与批量样本并行处理，说明 GPU 为何擅长这类运算",
+        "「* 和 @ 有什么区别？」要答到逐元素乘与矩阵乘，说明广播机制导致的静默错误以及维度检查的习惯"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "matrix-q1",
+          "type": "choice",
+          "prompt": "矩阵 A 形状为 (m, n)，要与 B 相乘得到 A@B，B 的行数应当是？",
+          "options": [
+            "m",
+            "n",
+            "任意",
+            "m×n"
+          ],
+          "answerIndex": 1,
+          "explanation": "矩阵乘法要求 A 的列数等于 B 的行数，即 B 的行数必须为 n。"
+        },
+        {
+          "id": "matrix-q2",
+          "type": "short",
+          "prompt": "为什么神经网络的每一层可以用一次矩阵乘法来表示？",
+          "answer": "参考回答：因为一层中的每个输出神经元都是对输入向量做一次加权求和（点积），并把所有权重组装成矩阵 W，再加上偏置 b，就能用 y = Wx + b 一次完成对所有神经元的计算，也便于并行和批量处理。",
+          "keywords": [
+            "矩阵",
+            "权重",
+            "点积"
+          ],
+          "explanation": "核心是把每个神经元的加权求和写成矩阵乘，用 Wx+b 一次表达整层变换。"
+        },
+        {
+          "id": "matrix-q3",
+          "type": "code",
+          "prompt": "用 numpy 定义矩阵 A=[[1,2],[3,4]] 和向量 x=[1,0]，计算 A@x 并打印形状。",
+          "starterCode": "import numpy as np\n\nA = np.array([[1, 2], [3, 4]])\nx = np.array([1, 0])\n",
+          "solution": "import numpy as np\n\nA = np.array([[1, 2], [3, 4]])\nx = np.array([1, 0])\n\nprint(A @ x)\nprint((A @ x).shape)",
+          "checks": [
+            "@",
+            "shape"
+          ],
+          "explanation": "用 @ 做矩阵乘，A@x 结果为一维向量，形状为 (2,)。"
+        }
+      ]
+    },
+    {
+      "slug": "dot-product",
+      "title": "Dot Product 点积",
+      "order": 3,
+      "module": "线性代数",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "点积把两个同长向量映射成一个标量，度量它们方向上的相似程度，是相似度与注意力的核心运算。",
+      "intuition": "点积回答\"这两个向量有多像\"。如果两个向量方向一致，点积很大；如果互相垂直，点积为 0；如果方向相反，点积为负。把两个 embedding 向量做点积，就能得到一个表示语义相似程度的分数，这正是注意力和向量检索背后的引擎。",
+      "formal": "两个 $n$ 维向量的点积为 $\\mathbf{x}\\cdot\\mathbf{y} = \\sum_{i=1}^{n} x_i y_i = \\mathbf{x}^T\\mathbf{y}$。点积与夹角有关：$\\mathbf{x}\\cdot\\mathbf{y} = \\|\\mathbf{x}\\|\\|\\mathbf{y}\\|\\cos\\theta$。因此余弦相似度为 $\\cos\\theta = \\frac{\\mathbf{x}\\cdot\\mathbf{y}}{\\|\\mathbf{x}\\|\\|\\mathbf{y}\\|}$，它只关心方向而忽略长度，常用于文本向量相似度比较。",
+      "formula": "\\mathbf{x}\\cdot\\mathbf{y} = \\sum_{i=1}^{n} x_i y_i = \\|\\mathbf{x}\\|\\|\\mathbf{y}\\|\\cos\\theta, \\quad \\cos\\theta = \\frac{\\mathbf{x}\\cdot\\mathbf{y}}{\\|\\mathbf{x}\\|\\|\\mathbf{y}\\|}",
+      "aiConnection": "Transformer 的注意力分数就是 query 向量与 key 向量的点积（再除以 $\\sqrt{d_k}$ 归一化）。向量数据库检索相似内容时，也常常用 embedding 的点积或余弦相似度来排序。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "dot_product.py",
+        "code": "import numpy as np\n\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n\n# 点积\nprint('dot =', np.dot(x, y))         # 32\nprint('x @ y =', x @ y)             # 32\n\n# 余弦相似度\ncos = np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y))\nprint('cosine =', round(cos, 4))\n\n# 两个完全相同的向量相似度为 1\nprint('self cos =', np.dot(x, x) / np.linalg.norm(x) ** 2)\n\n# 垂直向量点积为 0\na = np.array([1, 0])\nb = np.array([0, 1])\nprint('orthogonal dot =', np.dot(a, b))"
+      },
+      "mistakes": [
+        "把点积当作逐元素乘（那是 *），点积得到的是标量",
+        "混淆点积与余弦相似度，余弦相似度额外除以各自长度",
+        "用长度不同的向量做点积，导致不匹配或错误"
+      ],
+      "interviewPoints": [
+        "「点积为什么能衡量相似度？」要答到投影与夹角余弦、模长带来的影响，说明余弦相似度为何要先做归一化",
+        "「注意力里的点积是怎么算的？」要答到 QK^T 得到分数矩阵、除以 sqrt(d_k) 防止梯度消失，以及 softmax 归一化",
+        "「点积和逐元素乘有什么区别？」要答到一个得标量一个得向量、维度必须相同，说明两者在代码里的不同写法"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "dot-product-q1",
+          "type": "choice",
+          "prompt": "向量 x=[1,2,3] 与 y=[4,5,6] 的点积是多少？",
+          "options": [
+            "32",
+            "15",
+            "96",
+            "21"
+          ],
+          "answerIndex": 0,
+          "explanation": "点积 = 1*4 + 2*5 + 3*6 = 4 + 10 + 18 = 32。"
+        },
+        {
+          "id": "dot-product-q2",
+          "type": "short",
+          "prompt": "两个互相垂直（正交）的向量的点积是多少？这说明什么？",
+          "answer": "参考回答：点积为 0。因为点积为 |x||y|cosθ，且 cos90°=0。这说明点积为零意味着两个向量方向完全不相关（正交），常用于特征去相关性或\"无关\"语义的表示。",
+          "keywords": [
+            "0",
+            "正交",
+            "垂直"
+          ],
+          "explanation": "正交向量点积为 0，反映了它们方向上的独立性。"
+        },
+        {
+          "id": "dot-product-q3",
+          "type": "code",
+          "prompt": "用 numpy 计算 x=[1,2,3] 与 y=[4,5,6] 的点积，并计算其余弦相似度。",
+          "starterCode": "import numpy as np\n\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n",
+          "solution": "import numpy as np\n\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n\ndot = np.dot(x, y)\ncos = dot / (np.linalg.norm(x) * np.linalg.norm(y))\nprint(dot)\nprint(round(cos, 4))",
+          "checks": [
+            "np.dot",
+            "norm"
+          ],
+          "explanation": "用 np.dot 求点积，再用向量模长归一化得到余弦相似度。"
+        }
+      ]
+    },
+    {
+      "slug": "eigenvalue",
+      "title": "Eigenvalue 特征值",
+      "order": 4,
+      "module": "线性代数",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "特征值和特征向量刻画一个线性变换在特定方向上的放大倍数与不变方向，用于降维与数据主成分分析。",
+      "intuition": "想象矩阵是一种\"拉伸\"操作。大多数方向被拉伸后方向都会改变，但某些特殊方向被拉伸时方向保持不变，只是长度变了——那个缩放倍数就是特征值，那个方向就是特征向量。找到这些特殊方向，就能理解变换的本质。",
+      "formal": "对矩阵 $\\mathbf{A}$，若存在非零向量 $\\mathbf{v}$ 与标量 $\\lambda$ 使得 $\\mathbf{A}\\mathbf{v} = \\lambda\\mathbf{v}$，则 $\\lambda$ 是特征值，$\\mathbf{v}$ 是对应特征向量。特征值由特征多项式 $\\det(\\mathbf{A} - \\lambda\\mathbf{I}) = 0$ 求得。在 PCA 中，数据协方差矩阵的特征向量给出主成分方向，特征值大小表示该方向上的方差（信息量）。",
+      "formula": "\\mathbf{A}\\mathbf{v} = \\lambda\\mathbf{v}, \\quad \\det(\\mathbf{A} - \\lambda\\mathbf{I}) = 0",
+      "aiConnection": "PCA 用协方差矩阵的特征分解找出数据方差最大的方向来降维，是模型训练前常见的特征压缩手段。理解特征值大小 = 信息量，能帮你判断该保留几个主成分。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "eigenvalue.py",
+        "code": "import numpy as np\n\nA = np.array([[2, 1],\n              [1, 2]])\n\n# 特征值分解\nw, v = np.linalg.eig(A)\n\nprint('特征值:', np.round(w, 3))   # [3. 1.]\nprint('特征向量(每列):')\nprint(np.round(v, 3))\n\n# 验证 Av = lambda * v\nfor i in range(len(w)):\n    lhs = A @ v[:, i]\n    rhs = w[i] * v[:, i]\n    print('check', i, np.allclose(lhs, rhs))\n\n# 用特征值排序可近似降维\nprint('largest eig =', np.max(w))"
+      },
+      "mistakes": [
+        "把 np.linalg.eig 返回的 v 的每一列当成特征向量，而非每行",
+        "混淆特征值与特征向量，误以为它们是同一个矩阵的属性",
+        "用非方阵做特征分解（只有方阵才有标准特征值）"
+      ],
+      "interviewPoints": [
+        "「特征值和特征向量的几何意义？」要答到变换中方向不变、只被缩放的向量，缩放倍数就是特征值",
+        "「PCA 为什么用特征分解？」要答到协方差矩阵、特征值代表方差即信息量，说明保留几个主成分的判断依据",
+        "「特征值在模型稳定性里有什么用？」要答到正定性与 Hessian 特征值决定曲率，说明学习率过大为何导致震荡发散"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "eigenvalue-q1",
+          "type": "choice",
+          "prompt": "对矩阵 A 和特征向量 v，满足关系的等式是？",
+          "options": [
+            "Av = λv",
+            "Av = v",
+            "A·v = 0",
+            "Av = λ·v⁻¹"
+          ],
+          "answerIndex": 0,
+          "explanation": "特征向量的定义是 A·v = λ·v，即变换后方向不变、长度缩放 λ 倍。"
+        },
+        {
+          "id": "eigenvalue-q2",
+          "type": "short",
+          "prompt": "在 PCA 中，特征值的大小代表什么含义？",
+          "answer": "参考回答：特征值大小代表对应特征向量方向上的方差（信息量）。特征值越大，说明数据在该主成分方向上的变化越显著，因此应优先保留特征值大的方向实现降维。",
+          "keywords": [
+            "方差",
+            "信息",
+            "降维"
+          ],
+          "explanation": "特征值 = 该主成分方向上保留的方差/信息量，越大越值得保留。"
+        },
+        {
+          "id": "eigenvalue-q3",
+          "type": "code",
+          "prompt": "对矩阵 A=[[2,1],[1,2]] 用 numpy 求特征值与特征向量并打印。",
+          "starterCode": "import numpy as np\n\nA = np.array([[2, 1], [1, 2]])\n",
+          "solution": "import numpy as np\n\nA = np.array([[2, 1], [1, 2]])\n\nw, v = np.linalg.eig(A)\nprint(w)\nprint(v)",
+          "checks": [
+            "np.linalg.eig",
+            "w, v"
+          ],
+          "explanation": "用 np.linalg.eig(A) 返回特征值数组 w 与特征向量矩阵 v。"
+        }
+      ]
+    },
+    {
+      "slug": "derivative",
+      "title": "Derivative 导数",
+      "order": 5,
+      "module": "微积分",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "导数衡量函数在某一点的瞬时变化率，是梯度下降更新权重的基础。",
+      "intuition": "把函数想成一座山坡，导数就是某一点的山坡有多陡。为负时往下走，为正时往上走，越陡变化越快。训练模型时我们想知道：稍微改一点权重，损失会变大还是变小？导数正好给出这个答案。",
+      "formal": "函数 $f(x)$ 在 $x_0$ 处的导数定义为 $f'(x_0) = \\lim_{h\\to 0}\\frac{f(x_0+h)-f(x_0)}{h}$。常用规则：$\\frac{d}{dx}x^n=nx^{n-1}$、$\\frac{d}{dx}\\sin x=\\cos x$、$\\frac{d}{dx}\\ln x=\\frac{1}{x}$。导数为 0 且符号变化的地方是极值点。在机器学习中用梯度下降，权重更新 $w \\leftarrow w - \\eta\\,\\nabla L$，负号表示向损失下降方向走。",
+      "formula": "f'(x) = \\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}, \\quad \\frac{d}{dx}x^n = nx^{n-1}, \\quad w \\leftarrow w - \\eta\\frac{\\partial L}{\\partial w}",
+      "aiConnection": "模型的训练过程就是反复计算损失对每个权重的导数（梯度），然后反向更新。解释机器学习为何能\"学会\"，最核心的就是导数告诉我们往哪个方向调参能减小误差。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "derivative.py",
+        "code": "import numpy as np\n\n# 用中心差分数值求导逼近 f'(x)\ndef f(x):\n    return x ** 2  # f'(x) = 2x\n\ndef numerical_derivative(f, x, h=1e-6):\n    return (f(x + h) - f(x - h)) / (2 * h)\n\nprint('f\\'(2) ≈', numerical_derivative(f, 2))  # ≈ 4\nprint('f\\'(3) ≈', numerical_derivative(f, 3))  # ≈ 6\n\n# 用导数做一步梯度下降找最小值\nx = 5.0\neta = 0.1\nfor _ in range(10):\n    x = x - eta * numerical_derivative(f, x)\nprint('min at x ≈', round(x, 3))  # 接近 0"
+      },
+      "mistakes": [
+        "把导数的符号弄反，导致梯度下降反而推向损失变大的方向",
+        "把导数当作函数值本身，而不是变化率",
+        "数值求导时步长 h 取太大导致近似不准确"
+      ],
+      "interviewPoints": [
+        "「导数为什么能指导参数更新？」要答到变化率、符号决定下降方向与负梯度更新公式，说明学习率的作用",
+        "「导数为 0 就一定是极值点吗？」要答到驻点与拐点、二阶导判断，说明深度学习中鞍点比局部极小更常见",
+        "「数值求导和解析求导有什么区别？」要答到差分近似与误差、精度和速度的权衡，说明梯度检查为何用中心差分"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "derivative-q1",
+          "type": "choice",
+          "prompt": "函数 f(x)=x² 的导数是？",
+          "options": [
+            "x",
+            "2x",
+            "x²",
+            "2"
+          ],
+          "answerIndex": 1,
+          "explanation": "由幂法则 d/dx x^n = n·x^(n-1)，f'(x) = 2x。"
+        },
+        {
+          "id": "derivative-q2",
+          "type": "short",
+          "prompt": "在梯度下降里，为什么要用权重的导数来决定更新方向？",
+          "answer": "参考回答：因为导数（梯度）指示了损失随权重变化的瞬时方向与快慢，损失函数在当前点的梯度指向增长最快的方向，因此我们朝梯度的反方向移动（w ← w - η·∇L）就能减小损失。",
+          "keywords": [
+            "梯度",
+            "损失",
+            "反方向"
+          ],
+          "explanation": "导数给出最陡上升方向，取反则是下降方向，故用 w-η∇L 更新。"
+        },
+        {
+          "id": "derivative-q3",
+          "type": "code",
+          "prompt": "用中心差分数值求 f(x)=x² 在 x=2 处的导数并打印结果。",
+          "starterCode": "def f(x):\n    return x ** 2\n\ndef numerical_derivative(f, x, h=1e-6):\n    pass\n",
+          "solution": "def f(x):\n    return x ** 2\n\ndef numerical_derivative(f, x, h=1e-6):\n    return (f(x + h) - f(x - h)) / (2 * h)\n\nprint(numerical_derivative(f, 2))",
+          "checks": [
+            "numerical_derivative",
+            "2 * h"
+          ],
+          "explanation": "用中心差分 (f(x+h)-f(x-h))/(2h) 求近似导数。"
+        }
+      ]
+    },
+    {
+      "slug": "gradient",
+      "title": "Gradient 梯度",
+      "order": 6,
+      "module": "微积分",
+      "difficulty": "基础",
+      "estimatedMinutes": 23,
+      "summary": "梯度是多元函数在每个自变量方向上的偏导数组成的向量，指向函数增长最快的方向。",
+      "intuition": "一元函数有导数，多元函数把每个方向的导数排成一个向量就是梯度。想象你站在一座浓雾里的山上，梯度向量指着最陡的上坡方向。训练时我们偏要反着走（朝梯度反方向），因为那样损失下降最快。",
+      "formal": "对 $f:\\mathbb{R}^n\\to\\mathbb{R}$，梯度为 $\\nabla f = \\left[\\frac{\\partial f}{\\partial x_1}, \\dots, \\frac{\\partial f}{\\partial x_n}\\right]^T$。梯度指向函数上升最快的方向，其反方向指向下降最快的方向，因此梯度下降更新为 $\\mathbf{w} \\leftarrow \\mathbf{w} - \\eta\\,\\nabla_{\\mathbf{w}} L$。每一步移动的幅度是学习率 $\\eta$。在神经网络中，梯度向量的每个分量表示某个权重对损失的贡献，反向传播高效算出梯度。",
+      "formula": "\\nabla f = \\begin{bmatrix} \\frac{\\partial f}{\\partial x_1} \\\\ \\vdots \\\\ \\frac{\\partial f}{\\partial x_n} \\end{bmatrix}, \\quad \\mathbf{w} \\leftarrow \\mathbf{w} - \\eta\\,\\nabla_{\\mathbf{w}} L",
+      "aiConnection": "训练大规模模型时，反向传播专门高效地算出损失相对每个参数的梯度，再用梯度下降更新。学习率过大会震荡不收敛，过小则训练极慢，这正是实践中调参的核心。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "gradient.py",
+        "code": "import numpy as np\n\n# 损失函数 L(w) = (w - 3)^2，梯度为 2*(w-3)\ndef loss(w):\n    return (w - 3) ** 2\n\ndef grad(w):\n    return 2 * (w - 3)\n\n# 梯度下降\nw = 0.0\neta = 0.1\nhistory = []\nfor i in range(20):\n    g = grad(w)\n    w = w - eta * g\n    history.append(round(w, 3))\n\nprint('w after 20 steps =', w)  # 接近 3\nprint('first few:', history[:5])\n\n# 用数值梯度做对比\nh = 1e-6\nnumerical = (loss(w + h) - loss(w - h)) / (2 * h)\nprint('numerical grad ≈', numerical)"
+      },
+      "mistakes": [
+        "把梯度方向当成下降方向，实际应取负梯度才是下降",
+        "学习率设置过大导致发散或震荡，过小导致收敛慢",
+        "把梯度（向量）与偏导数（单个标量）混为一谈"
+      ],
+      "interviewPoints": [
+        "「梯度指向哪个方向？」要答到函数增长最快的方向、负梯度下降最快，说明更新为何是 w 减去学习率乘梯度",
+        "「学习率太大或太小会怎样？」要答到震荡发散与收敛过慢，说明 warmup 与学习率调度为何必要",
+        "「梯度消失和爆炸是什么原因？」要答到连乘导致指数衰减或放大、深层网络与激活函数选择，说明残差连接与梯度裁剪"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "gradient-q1",
+          "type": "choice",
+          "prompt": "梯度向量∇L 指向的是哪个方向？",
+          "options": [
+            "函数下降最快方向",
+            "函数上升最快方向",
+            "函数值恒定的方向",
+            "随机方向"
+          ],
+          "answerIndex": 1,
+          "explanation": "梯度指向函数上升最快的方向，因此下降要取负梯度方向。"
+        },
+        {
+          "id": "gradient-q2",
+          "type": "short",
+          "prompt": "梯度下降中把学习率设得太大或太小各自会怎样？",
+          "answer": "参考回答：学习率过大会导致每次更新跨过最低点，在最优解附近震荡甚至发散；学习率过小会让收敛非常缓慢，需要很多步才能接近最优解。",
+          "keywords": [
+            "震荡",
+            "收敛",
+            "学习率"
+          ],
+          "explanation": "大学习率易震荡发散，小学习率收敛慢，需要折中并配合调度。"
+        },
+        {
+          "id": "gradient-q3",
+          "type": "code",
+          "prompt": "对损失 L(w)=(w-3)²，其梯度为 2*(w-3)，实现一次 10 步、学习率 0.1 的梯度下降。",
+          "starterCode": "def grad(w):\n    return 2 * (w - 3)\n\nw = 0.0\neta = 0.1\n",
+          "solution": "def grad(w):\n    return 2 * (w - 3)\n\nw = 0.0\neta = 0.1\nfor _ in range(10):\n    w = w - eta * grad(w)\nprint(w)",
+          "checks": [
+            "eta",
+            "grad"
+          ],
+          "explanation": "循环中用 w = w - eta*grad(w) 更新，10 步后接近 3。"
+        }
+      ]
+    },
+    {
+      "slug": "chain-rule",
+      "title": "Chain Rule 链式法则",
+      "order": 7,
+      "module": "微积分",
+      "difficulty": "基础",
+      "estimatedMinutes": 23,
+      "summary": "链式法则给出复合函数求导的方法，是反向传播算法从输出层逐层回传梯度的数学原理。",
+      "intuition": "模型是一层套一层的函数组合：输入经过很多层才得到输出。链式法则告诉我们，想求最外层对最内层输入的导数，就把一路上每一段的导数乘起来。反向传播正是从误差出发，一路乘回去，算出每个权重的梯度。",
+      "formal": "若 $y = f(g(x))$，则 $\\frac{dy}{dx} = \\frac{dy}{du}\\cdot\\frac{du}{dx}$，其中 $u = g(x)$。对多层复合 $L = f_N(\\dots f_1(x))$，梯度按链式逐层累计：$\\frac{\\partial L}{\\partial x_i} = \\frac{\\partial L}{\\partial x_{i+1}}\\frac{\\partial x_{i+1}}{\\partial x_i}$。反向传播用动态规划从最后一层往前，避免重复计算，这正是它能高效训练深层网络的数学基础。",
+      "formula": "\\frac{dy}{dx} = \\frac{dy}{du}\\cdot\\frac{du}{dx}, \\quad \\frac{\\partial L}{\\partial w_1} = \\frac{\\partial L}{\\partial x_2}\\cdot\\frac{\\partial x_2}{\\partial w_1}",
+      "aiConnection": "神经网络反向传播就是链式法则的工程化：从损失层回传，逐层乘上局部导数，高效得到所有权重的梯度。理解链式法则是理解为什么深层网络能训练、以及为什么需要自动求导框架（如 PyTorch autograd）的关键。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "chain_rule.py",
+        "code": "# 用数值微分验证链式法则\n# y = f(g(x)), f(u)=u^2, g(x)=2x+1\ndef g(x):\n    return 2 * x + 1\n\ndef f(u):\n    return u ** 2\n\n# 由链式法则 dy/dx = f'(g(x)) * g'(x) = 2*g(x) * 2\ndef chain_derivative(x):\n    return 2 * g(x) * 2\n\n# 数值验证\ndef numeric(fn, x, h=1e-6):\n    return (fn(x + h) - fn(x - h)) / (2 * h)\n\ndef full(x):\n    return f(g(x))\n\nx = 3.0\nprint('chain =', chain_derivative(x))   # 2*(7)*2 = 28\nprint('numeric =', round(numeric(full, x), 6))  # ≈ 28"
+      },
+      "mistakes": [
+        "把复合函数当成单层直接求导，漏掉中间层导数",
+        "记反内外层，把 f'(g(x)) 和 g'(x) 的顺序搞错",
+        "误以为链式法则只适用于单变量，不理解它在层间传播的含义"
+      ],
+      "interviewPoints": [
+        "「链式法则和反向传播是什么关系？」要答到复合函数逐层求导连乘、从后往前复用中间结果，说明动态规划为何高效",
+        "「为什么深层网络需要自动求导？」要答到手工推导易错、计算图记录算子，说明 PyTorch autograd 的 backward 机制",
+        "「梯度消失和链式法则有什么关系？」要答到连乘中小于 1 的因子指数衰减，说明激活函数与归一化层的作用"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "chain-rule-q1",
+          "type": "choice",
+          "prompt": "y=f(g(x))，则 dy/dx 等于？",
+          "options": [
+            "f'(x)·g'(x)",
+            "f'(g(x))·g'(x)",
+            "f(g(x))·g'(x)",
+            "f'(g'(x))"
+          ],
+          "answerIndex": 1,
+          "explanation": "链式法则 dy/dx = f'(g(x)) * g'(x)，先对外层求导、代入内层，再乘内层导数。"
+        },
+        {
+          "id": "chain-rule-q2",
+          "type": "short",
+          "prompt": "为什么说反向传播就是链式法则的工程应用？",
+          "answer": "参考回答：因为神经网络是层层复合函数，损失对某层权重的梯度需要由链式法则逐层累计求得；反向传播从最后一层往前、复用已算梯度，高效地对每层应用链式法则，从而得到所有权重的梯度。",
+          "keywords": [
+            "链式",
+            "逐层",
+            "梯度"
+          ],
+          "explanation": "反向传播自后向前逐层乘局部导数，正是链式法则的体现。"
+        },
+        {
+          "id": "chain-rule-q3",
+          "type": "code",
+          "prompt": "设 g(x)=2x+1，f(u)=u²，用链式法则求 y=f(g(x)) 在 x=3 处的导数。",
+          "starterCode": "def g(x):\n    return 2 * x + 1\n\ndef f(u):\n    return u ** 2\n\nx = 3.0\n",
+          "solution": "def g(x):\n    return 2 * x + 1\n\ndef f(u):\n    return u ** 2\n\nx = 3.0\n# dy/dx = f'(g(x)) * g'(x) = 2*g(x) * 2\nprint(2 * g(x) * 2)",
+          "checks": [
+            "g(x)",
+            "2"
+          ],
+          "explanation": "链式法则得到 2·g(x)·g'(x)，g'(x)=2，x=3 时结果为 28。"
+        }
+      ]
+    },
+    {
+      "slug": "distribution",
+      "title": "Distribution 分布",
+      "order": 8,
+      "module": "概率统计",
+      "difficulty": "基础",
+      "estimatedMinutes": 24,
+      "summary": "分布描述随机变量取各个值（或落在某个区间）的概率，是理解数据来源与生成模型的基石。",
+      "intuition": "分布就是\"数据可能怎么出现\"的说明书。它告诉你哪个结果更常见、哪些很少见。抛硬币是二项分布，身高近似正态分布。在语言模型里，下一个词会按什么概率出现，也叫一个概率分布，模型输出常常就是这个分布。",
+      "formal": "离散随机变量用概率质量函数 $P(X=x)$，连续随机变量用概率密度函数 $f(x)$，满足归一化 $\\sum_x P(X=x)=1$ 或 $\\int f(x)dx=1$。常见分布：均匀、伯努利、二项、正态 $N(\\mu,\\sigma^2)$、泊松等。正态分布密度 $f(x)=\\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-(x-\\mu)^2/(2\\sigma^2)}$。语言模型的输出层是一个离散概率分布。",
+      "formula": "\\sum_x P(X=x)=1, \\quad \\int_{-\\infty}^{\\infty} f(x)dx=1, \\quad f(x)=\\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}",
+      "aiConnection": "大模型输出层 softmax 会产生一个词表上的概率分布，采样/解码就是从该分布里挑词。理解分布帮助我们解释\"模型在预测概率\"，也用于生成、评估困惑度等任务。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "distribution.py",
+        "code": "import numpy as np\n\nnp.random.seed(0)\n\n# 采样：正态分布 N(mean=0, std=1)\nsamples = np.random.normal(0, 1, size=100000)\nprint('mean ≈', round(samples.mean(), 3))    # ≈ 0\nprint('std ≈', round(samples.std(), 3))      # ≈ 1\n\n# 均匀分布 [0,1)\nuni = np.random.uniform(0, 1, 100000)\nprint('uniform mean ≈', round(uni.mean(), 3))\n\n# 模拟抛硬币（伯努利）\ncoin = np.random.binomial(1, 0.5, 100000)\nprint('P(heads) ≈', round(coin.mean(), 3))   # ≈ 0.5\n\n# 归一化的\"概率分布\"：softmax 的输出和为 1\nlogits = np.array([2.0, 1.0, 0.1])\nexp = np.exp(logits - logits.max())\nprobs = exp / exp.sum()\nprint('prob sum =', round(probs.sum(), 6))\nprint('probs =', np.round(probs, 3))"
+      },
+      "mistakes": [
+        "混淆概率质量函数（离散）与概率密度函数（连续）",
+        "忘记概率密度可 >1（密度不是概率），而离散概率必须 ≤1",
+        "把采样得到的经验分布直接当成精确理论分布"
+      ],
+      "interviewPoints": [
+        "「大模型的输出为什么是概率分布？」要答到 softmax 归一化到词表、概率和为 1，说明采样与解码策略都基于它",
+        "「概率密度可以大于 1 吗？」要答到密度不是概率、必须积分才得概率，说明连续与离散分布的区别",
+        "「temperature 是怎么改变分布的？」要答到对 logits 缩放后再 softmax，说明高温更随机、低温更确定的原因"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "distribution-q1",
+          "type": "choice",
+          "prompt": "关于概率分布的归一化条件，正确说法是？",
+          "options": [
+            "离散概率之和必须为 1",
+            "连续密度可以为任意值无需归一化",
+            "概率值都可以大于 1",
+            "只有正态分布需要归一化"
+          ],
+          "answerIndex": 0,
+          "explanation": "所有概率分布都要满足求和（离散）或积分（连续）等于 1 的归一化。"
+        },
+        {
+          "id": "distribution-q2",
+          "type": "short",
+          "prompt": "为什么说大模型的输出可以看成一个概率分布？",
+          "answer": "参考回答：模型在词表上给每个词一个分数，经 softmax 归一化后得到一组和为 1 的概率，表示每个词作为下一个词的可能性，因此输出可视为一个离散概率分布，解码就是从这个分布中选取词。",
+          "keywords": [
+            "softmax",
+            "概率",
+            "归一化"
+          ],
+          "explanation": "softmax 把词表分数转成和为 1 的概率，即一个离散概率分布。"
+        },
+        {
+          "id": "distribution-q3",
+          "type": "code",
+          "prompt": "用 numpy 生成 10000 个 N(0,1) 正态样本，打印它们的均值与标准差。",
+          "starterCode": "import numpy as np\n\nnp.random.seed(0)\n",
+          "solution": "import numpy as np\n\nnp.random.seed(0)\nsamples = np.random.normal(0, 1, size=10000)\nprint(samples.mean())\nprint(samples.std())",
+          "checks": [
+            "np.random.normal",
+            "mean",
+            "std"
+          ],
+          "explanation": "用 np.random.normal(0,1,size=10000) 采样，再用 .mean() 与 .std() 打印统计量。"
+        }
+      ]
+    },
+    {
+      "slug": "expectation",
+      "title": "Expectation 期望",
+      "order": 9,
+      "module": "概率统计",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "期望是随机变量取值的加权平均，权重为对应概率，描述\"平均而言会发生什么\"。",
+      "intuition": "期望就是\"长期平均\"。今天可能得 1 块，明天得 5 块，但机会有多大概率，平均下来是多少？期望就是把每个可能结果乘以它发生的概率，再全部加起来。它不等于是最可能出现的结果，而是平均表现。",
+      "formal": "离散随机变量期望为 $E[X]=\\sum_x x\\,P(X=x)$；连续为 $E[X]=\\int x f(x)dx$。期望是线性的：$E[aX+b]=aE[X]+b$，$E[X+Y]=E[X]+E[Y]$，但一般 $E[XY]\\ne E[X]E[Y]$（仅当独立时成立）。样本均值 $\\bar{x}=\\frac{1}{n}\\sum x_i$ 是期望的无偏估计。在机器学习中，损失的风险常取期望。",
+      "formula": "E[X] = \\sum_x x\\,P(X=x) = \\int x f(x)\\,dx, \\quad E[aX+b] = aE[X]+b, \\quad E[X+Y] = E[X]+E[Y]",
+      "aiConnection": "评估一个模型/策略的好坏常看期望性能：预期损失、期望奖励等。强化学习中的回报、决策的预期收益都建立在期望之上；训练时的批内平均损失也是期望的一种经验估计。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "expectation.py",
+        "code": "import numpy as np\n\n# 掷公平骰子的期望 E[X] = (1+2+3+4+5+6)/6 = 3.5\nvalues = np.array([1, 2, 3, 4, 5, 6])\nprobs = np.full(6, 1 / 6)\nexp = np.sum(values * probs)\nprint('骰子期望 =', exp)\n\n# 用大量采样逼近期望\nnp.random.seed(1)\nrolls = np.random.choice(values, size=100000, p=probs)\nprint('采样均值 ≈', round(rolls.mean(), 3))\n\n# 线性性质 E[aX+b] = a*E[X] + b\na, b = 3, 5\nprint('E[3X+5] =', a * exp + b)\n\n# 模拟不均匀(作弊)骰子\np2 = np.array([0.4, 0.1, 0.1, 0.1, 0.1, 0.2])\nprint('偏置骰子期望 =', round(np.sum(values * p2), 3))"
+      },
+      "mistakes": [
+        "把期望等同于最可能出现的值（众数）",
+        "误以为 E[XY] 恒等于 E[X]E[Y]，其实仅独立时成立",
+        "用样本均值时未考虑是否为无偏/有偏估计"
+      ],
+      "interviewPoints": [
+        "「期望和平均值有什么区别？」要答到理论加权平均与样本估计，说明批内平均损失为何是期望的经验近似",
+        "「期望的线性性质有什么用？」要答到 E[aX+b] 与 E[X+Y] 可以拆开，说明它不要求独立而 E[XY] 才需要",
+        "「为什么用期望来评估模型？」要答到风险即期望损失、单次结果波动大，说明交叉验证取平均的意义"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "expectation-q1",
+          "type": "choice",
+          "prompt": "偶数个均匀骰子（点数为 1..6）的期望值是多少？",
+          "options": [
+            "3",
+            "3.5",
+            "6",
+            "2.5"
+          ],
+          "answerIndex": 1,
+          "explanation": "E = (1+2+3+4+5+6)/6 = 3.5，是各点数按 1/6 概率的加权平均。"
+        },
+        {
+          "id": "expectation-q2",
+          "type": "short",
+          "prompt": "期望的线性性质是什么？E[aX+b] 等于什么？",
+          "answer": "参考回答：期望是线性的，E[aX+b] = a·E[X] + b。常数可以提出来，加上一个常数 b 只会让期望偏移 b。特别地，一般情况下 E[XY] ≠ E[X]·E[Y]，仅在 X、Y 独立时成立。",
+          "keywords": [
+            "线性",
+            "aE",
+            "独立"
+          ],
+          "explanation": "E[aX+b]=aE[X]+b；乘积仅在独立时等于二者期望之积。"
+        },
+        {
+          "id": "expectation-q3",
+          "type": "code",
+          "prompt": "用 numpy 计算骰子 [1..6] 等概率的期望，并抽样 100000 次逼近。",
+          "starterCode": "import numpy as np\n\nnp.random.seed(1)\nvalues = np.array([1, 2, 3, 4, 5, 6])\nprobs = np.full(6, 1 / 6)\n",
+          "solution": "import numpy as np\n\nnp.random.seed(1)\nvalues = np.array([1, 2, 3, 4, 5, 6])\nprobs = np.full(6, 1 / 6)\n\nprint(np.sum(values * probs))\nrolls = np.random.choice(values, size=100000, p=probs)\nprint(rolls.mean())",
+          "checks": [
+            "np.sum",
+            "mean"
+          ],
+          "explanation": "期望用 values*probs 求和，再用随机抽样 .mean() 逼近。"
+        }
+      ]
+    },
+    {
+      "slug": "variance",
+      "title": "Variance 方差",
+      "order": 10,
+      "module": "概率统计",
+      "difficulty": "基础",
+      "estimatedMinutes": 23,
+      "summary": "方差衡量随机变量取值围绕期望的波动程度，标准差是其平方根。",
+      "intuition": "期望告诉你平均在哪，方差告诉你\"漂移\"有多大。同样平均分 80 的班上，一个班人人都 80，另一个班一半 0 分一半 100 分，后者的方差大得多。训练数据、模型预测都有方差，理解它能帮你判断稳定与过拟合。",
+      "formal": "方差定义为 $\\text{Var}(X)=E[(X-E[X])^2]=E[X^2]-E[X]^2$，标准差 $\\sigma=\\sqrt{\\text{Var}(X)}$。方差性质：$\\text{Var}(aX+b)=a^2\\text{Var}(X)$（平移不变、缩放按平方），$\\text{Var}(X+Y)=\\text{Var}(X)+\\text{Var}(Y)$ 当且仅当 $X,Y$ 不相关。样本方差 $s^2=\\frac{1}{n-1}\\sum(x_i-\\bar{x})^2$ 是无偏估计（除以 $n-1$）。在偏差-方差权衡中，方差反映模型对训练数据的敏感度。",
+      "formula": "\\text{Var}(X) = E[(X-E[X])^2] = E[X^2]-E[X]^2, \\quad \\text{Var}(aX+b) = a^2\\text{Var}(X), \\quad \\text{Var}(X+Y)=\\text{Var}(X)+\\text{Var}(Y)",
+      "aiConnection": "统计学与机器学习常谈偏差-方差权衡：过大方差意味着模型对训练数据过拟合、泛化差。归一化（标准化）时除以标准差，正是为了让各特征方差一致，从而更稳定地训练。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "variance.py",
+        "code": "import numpy as np\n\n# 两组均值相同但离散度不同的数据\na = np.array([80, 80, 80, 80, 80])\nb = np.array([60, 70, 80, 90, 100])\n\nprint('a mean/std =', a.mean(), a.std())\nprint('b mean/std =', b.mean(), b.std())\n\n# numpy 默认方差是总体方差（除以 n），样本方差需 ddof=1\nx = np.array([1, 2, 3, 4, 5])\nprint('var (population) =', np.var(x))\nprint('var (sample)     =', np.var(x, ddof=1))\n\n# 标准化 (x - mean)/std\nstd_x = (x - x.mean()) / x.std()\nprint('standardized mean/std =', round(std_x.mean(), 6), round(std_x.std(), 6))\n\n# 常数平移不改变方差\nprint('var(x+10) =', np.var(x + 10))"
+      },
+      "mistakes": [
+        "混淆总体方差（除以 n）与样本方差（除以 n-1）",
+        "把标准差与方差混用，标准差是方差的平方根",
+        "误以为平移数据会改变方差（平移不变，缩放才改变）"
+      ],
+      "interviewPoints": [
+        "「方差和标准差有什么区别？」要答到平方根关系与量纲，说明数据标准化时为什么要除以标准差",
+        "「偏差-方差权衡是什么？」要答到欠拟合与过拟合、模型复杂度的影响，说明正则化如何降低方差",
+        "「样本方差为什么除以 n-1？」要答到无偏估计与自由度，说明 ddof 参数写错会导致指标出现偏差"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "variance-q1",
+          "type": "choice",
+          "prompt": "关于方差，下列哪个说法正确？",
+          "options": [
+            "Var(aX+b) = a²Var(X)",
+            "Var(aX+b) = a·Var(X)",
+            "平移数据会改变方差",
+            "方差一定等于标准差"
+          ],
+          "answerIndex": 0,
+          "explanation": "方差满足 Var(aX+b)=a²Var(X)：平移 b 不变，缩放按系数平方改变。"
+        },
+        {
+          "id": "variance-q2",
+          "type": "short",
+          "prompt": "数据标准化 (x-mean)/std 的作用是什么？",
+          "answer": "参考回答：标准化让每个特征的均值变为 0、标准差变为 1，即方差归一到相同尺度，避免某个量纲大的特征主导训练，从而让模型更稳定、收敛更快，尤其在神经网络的梯度下降中很重要。",
+          "keywords": [
+            "均值",
+            "标准差",
+            "尺度"
+          ],
+          "explanation": "标准化消除量纲差异，使各特征方差一致，利于稳定训练。"
+        },
+        {
+          "id": "variance-q3",
+          "type": "code",
+          "prompt": "用 numpy 计算数组 x=[1,2,3,4,5] 的样本方差（ddof=1）并打印。",
+          "starterCode": "import numpy as np\n\nx = np.array([1, 2, 3, 4, 5])\n",
+          "solution": "import numpy as np\n\nx = np.array([1, 2, 3, 4, 5])\nprint(np.var(x, ddof=1))",
+          "checks": [
+            "np.var",
+            "ddof=1"
+          ],
+          "explanation": "样本方差用 np.var(x, ddof=1)，即除以 n-1。"
+        }
+      ]
+    },
+    {
+      "slug": "bayes",
+      "title": "Bayes 贝叶斯",
+      "order": 11,
+      "module": "概率统计",
+      "difficulty": "基础",
+      "estimatedMinutes": 27,
+      "summary": "贝叶斯公式在已知先验与似然的情况下更新对某假设的信任程度，是推断与分类的重要框架。",
+      "intuition": "贝叶斯思考的是\"在得到新证据后，我该多相信原来那个假设\"。先有个先验看法，看到数据后用似然去修正，得到后验看法。比如先觉得某病患病率低，但如果检测阳性（证据），就应上调概率。它是一个把新信息融入判断的朴素而强大的规则。",
+      "formal": "贝叶斯公式 $P(A|B)=\\frac{P(B|A)P(A)}{P(B)}$，其中 $P(A)$ 是先验、$P(B|A)$ 是似然、$P(B)$ 是归一化常数、$P(A|B)$ 是后验。分类器做预测时，选最大后验类：$\\hat{y}=\\arg\\max_c P(c|x)\\propto P(x|c)P(c)$。朴素贝叶斯假设特征在给定类下条件独立，从而将 $P(x|c)$ 分解为各特征概率之积，训练简单、常用于文本分类。",
+      "formula": "P(A|B) = \\frac{P(B|A)P(A)}{P(B)}, \\quad \\hat{y} = \\arg\\max_c P(x|c)P(c) = \\arg\\max_c P(c)\\prod_i P(x_i|c)",
+      "aiConnection": "分类模型（如垃圾邮件判断、医学诊断）本质是在做后验推断。朴素贝叶斯因其简单高效，常被当作文本分类基线；理解\"先验+似然=后验\"也能帮你推理大模型在给定上下文下的输出偏好。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "bayes.py",
+        "code": "import numpy as np\nfrom collections import Counter\n\n# 简易朴素贝叶斯文本分类：根据单词判断是否\"垃圾邮件\"\ntrain = [\n    ('buy now cheap', 'spam'),\n    ('win free money', 'spam'),\n    ('meeting tomorrow', 'ham'),\n    ('report due friday', 'ham'),\n]\n\ndef tokenize(s):\n    return s.lower().split()\n\n# 统计先验与条件概率\nvocab = set()\nfor text, _ in train:\n    vocab |= set(tokenize(text))\n\ncls_counts = Counter(lbl for _, lbl in train)\nword_counts = Counter()\nfor text, lbl in train:\n    for w in tokenize(text):\n        word_counts[(w, lbl)] += 1\n\nspam_p = cls_counts['spam'] / len(train)\nham_p = cls_counts['ham'] / len(train)\nprint('P(spam) =', spam_p, 'P(ham) =', ham_p)\n\n# 预测 \"cheap\" 的邮件\nnew = tokenize('cheap offer')\nps = np.prod([word_counts.get((w, 'spam'), 0) + 1 for w in new])\nph = np.prod([word_counts.get((w, 'ham'), 0) + 1 for w in new])\nprint('spam score =', ps, 'ham score =', ph)\nprint('predict =', 'spam' if ps > ph else 'ham')"
+      },
+      "mistakes": [
+        "把 P(A|B) 与 P(B|A) 混淆（错误地把条件概率对称化）",
+        "忘记分母 P(B) 是归一化常数，比较时只看分子即可",
+        "朴素贝叶斯里把\"条件独立假设\"当成现实一定成立"
+      ],
+      "interviewPoints": [
+        "「先验、似然、后验分别是什么？」要答到 P(A)、P(B|A)、P(A|B) 的含义与更新逻辑，说明观测越多后验越贴近数据",
+        "「朴素贝叶斯的朴素指什么？」要答到给定类别下特征条件独立的假设，说明它在文本分类里为何简单高效",
+        "「P(A|B) 和 P(B|A) 为什么不能混？」要答到条件概率不对称与基率谬误，说明医学检测阳性率与大模型幻觉的类比"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "bayes-q1",
+          "type": "choice",
+          "prompt": "贝叶斯公式 P(A|B) = ？",
+          "options": [
+            "P(B|A)·P(A)/P(B)",
+            "P(A)·P(B)/P(A|B)",
+            "P(B|A)/P(A)",
+            "P(A|B)=P(A)+P(B)"
+          ],
+          "answerIndex": 0,
+          "explanation": "贝叶斯公式为 P(A|B)=P(B|A)·P(A)/P(B)，用似然和先验更新后验。"
+        },
+        {
+          "id": "bayes-q2",
+          "type": "short",
+          "prompt": "朴素贝叶斯中的\"朴素\"指什么？",
+          "answer": "参考回答：指\"朴素\"地假设各特征在给定类别下条件独立，从而把 P(x|c) 分解为各特征概率之积，简化计算。尽管这个假设现实中常不成立，模型仍常表现良好且训练极快。",
+          "keywords": [
+            "独立",
+            "条件",
+            "特征"
+          ],
+          "explanation": "\"朴素\"指特征条件独立假设，使似然可分解为乘积。"
+        },
+        {
+          "id": "bayes-q3",
+          "type": "code",
+          "prompt": "实现函数，用贝叶斯公式计算 P(A|B)：给定 P(B|A)=0.9, P(A)=0.01, P(B)=0.05。",
+          "starterCode": "def bayes(p_ba, p_a, p_b):\n    pass\n\nprint(bayes(0.9, 0.01, 0.05))\n",
+          "solution": "def bayes(p_ba, p_a, p_b):\n    return p_ba * p_a / p_b\n\nprint(bayes(0.9, 0.01, 0.05))",
+          "checks": [
+            "p_ba * p_a",
+            "p_b"
+          ],
+          "explanation": "按公式 P(A|B)=P(B|A)*P(A)/P(B) 返回 0.18。"
+        }
+      ]
+    }
+  ]
+}

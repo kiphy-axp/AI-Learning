@@ -1,0 +1,24 @@
+# ---------- 依赖与构建产物 ----------
+node_modules/
+dist/
+tsconfig.tsbuildinfo
+.wrangler/
+
+# ---------- 本地数据（含加密后的 API Key、学习进度、笔记）----------
+# 绝不能提交：data/.secret 是解密密钥，data/learning.db 含全部个人数据
+data/
+
+# ---------- 敏感配置 ----------
+# .env 里放模型 API Key，只保留 .env.example 模板
+.env
+.env.local
+.env.*.local
+
+# ---------- 其他 ----------
+*.log
+logs/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

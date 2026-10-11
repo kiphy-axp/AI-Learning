@@ -1,0 +1,564 @@
+{
+  "stage": 3,
+  "stageSlug": "linux-git",
+  "stageTitle": "Linux + Git",
+  "stageEmoji": "🐧",
+  "stageDesc": "终端、Shell 与 Git 工作流：算法工程师每天都在用的协作底座",
+  "category": "基础",
+  "lessons": [
+    {
+      "slug": "terminal",
+      "title": "Terminal 终端",
+      "order": 1,
+      "module": "Linux 基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 20,
+      "summary": "终端是用户通过文本命令与系统交互的入口，是服务器与开发环境的主要操作方式。",
+      "intuition": "图形界面是'点鼠标'，终端是'敲命令'。你在屏幕上输入一行文字，回车，系统就按你的文字去执行动作。对服务器、远程机器和 AI 训练来说，往往没有图形界面，一切都要靠终端完成。终端就像你和系统之间的一根电话线，你说一句，它回一句。",
+      "formal": "终端（Terminal）是命令行界面（CLI）的载体，用户输入文本命令，`shell` 解释并交给操作系统执行，结果以文本输出。常见的终端模拟器有 iTerm2、GNOME Terminal 等。`$` 提示符表示普通用户，`#` 表示 root。终端的核心是`命令 + 参数 + 选项`的结构。工作流包括查看当前目录（`pwd`）、切换目录（`cd`）、列出文件（`ls`）。在 AI/服务器场景，终端常通过 SSH 远程使用，或作为容器、GPU 集群的唯一交互入口。掌握终端是高效运维与开发的基础。",
+      "formula": "",
+      "aiConnection": "训练大模型几乎都在 Linux 服务器的终端里进行：激活环境、运行训练脚本、查看 GPU 占用、监控日志。终端是你与远程 GPU 集群对话的唯一窗口，熟练掌握 shell 命令是面向前沿 AI 开发的必备前提。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "terminal.sh",
+        "code": "#!/bin/bash\n# 终端基本命令\npwd                      # 打印当前目录\nls -la                   # 列出所有文件（含隐藏）\ncd /tmp                  # 切换目录\necho \"你好，终端\"        # 打印文本\n# 查看当前用户与主机名\nwhoami\nhostname"
+      },
+      "mistakes": [
+        "把终端和 shell 混为一谈，终端是界面、shell 是解释器",
+        "在 `#` root 提示符下随意执行危险命令",
+        "盲目运行不认识的命令，忽略其可能造成的破坏",
+        "误以为终端有图形界面，实际只能靠文本命令"
+      ],
+      "interviewPoints": [
+        "「终端和 shell 有什么区别？」要答到终端是交互界面、shell 是命令解释器，说明 SSH 到 GPU 服务器后你在和谁对话",
+        "「为什么 AI 工程师必须会命令行？」要答到服务器无图形界面、批量运维与远程调试，说明查 GPU 和日志的常用操作",
+        "「$ 和 # 提示符代表什么？」要答到普通用户与 root 的权限差异，说明在 root 下误执行破坏性命令的风险"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "terminal-q1",
+          "type": "choice",
+          "prompt": "显示当前所在工作目录的命令是？",
+          "options": [
+            "ls",
+            "pwd",
+            "cd",
+            "echo"
+          ],
+          "answerIndex": 1,
+          "explanation": "pwd（print working directory）打印当前工作目录；ls 列文件、cd 切换、echo 打印文本。"
+        },
+        {
+          "id": "terminal-q2",
+          "type": "short",
+          "prompt": "终端和 shell 有什么区别？",
+          "answer": "终端（terminal）是用户输入命令的界面/程序；shell 是解释命令的程序，接收终端输入的命令并交给内核执行。终端负责显示与输入，shell 负责解析与执行。",
+          "keywords": [
+            "终端",
+            "shell",
+            "命令"
+          ],
+          "explanation": "终端是界面，shell 是命令解释器。"
+        },
+        {
+          "id": "terminal-q3",
+          "type": "code",
+          "prompt": "依次写出三条命令：打印当前目录、列出所有文件（含隐藏）、切换到 /tmp。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\npwd\nls -la\ncd /tmp",
+          "checks": [
+            "pwd",
+            "ls -la",
+            "cd /tmp"
+          ],
+          "explanation": "三条基础命令分别查看目录、列出文件、切换目录。"
+        }
+      ]
+    },
+    {
+      "slug": "shell",
+      "title": "Shell",
+      "order": 2,
+      "module": "Linux 基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "Shell 是解释并执行命令的程序，支持变量、管道、重定向与脚本，是操作系统的命令语言。",
+      "intuition": "shell 就是那个'听懂人话'的翻译官。你在终端敲 `ls`，shell 把它翻译成系统能执行的请求，再把结果翻译回给你。它不只是逐个翻译命令，还能把多个命令串起来：用管道（|）把前一个的输出喂给后一个，用重定向把输出写进文件。写一个 shell 脚本，就像写一份'给系统的工作清单'，按顺序执行一串动作。",
+      "formal": "shell 是命令解释器。`bash`、`zsh` 是常用 shell。功能包括：`变量`（`name=value`，取用用 `$name`）、`管道`（`|` 把前一个命令的标准输出传给下一个）、`重定向`（`>` 覆盖写文件、`>>` 追加、`<` 读取）、`通配符`（`*`、`?`）、`命令替换`（`$(cmd)`）。环境变量如 `PATH`、`HOME` 由 shell 维护。shell 脚本以 `#!/bin/bash`（shebang）开头，用 `chmod +x` 赋予执行权限。`echo $?` 查看上一条命令退出码（0 表示成功）。",
+      "formula": "",
+      "aiConnection": "AI 工程里常用 shell 脚本封装训练流程：激活虚拟环境、设置环境变量、启动训练、处理输出日志。管道与重定向让你能批量处理文件、把训练日志写盘、用 grep 过滤错误信息，是自动化运维与实验脚本的核心。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "shell.sh",
+        "code": "#!/bin/bash\n# 变量\nname=\"AI\"\necho \"你好, $name\"\n\n# 命令替换\nnow=$(date)\necho \"当前时间: $now\"\n\n# 管道：把 ls 结果过滤\nls -la / | head -n 3\n\n# 重定向：写文件\necho \"写入的内容\" > output.txt\necho \"追加内容\" >> output.txt\ncat output.txt\n\n# 查看退出码\necho \"退出码: $?\""
+      },
+      "mistakes": [
+        "赋值时有空格 `name = a` 会报错，应为 `name=a`",
+        "取变量忘加 $，如 echo name 只打印字面 name",
+        "混淆 `>`（覆盖）与 `>>`（追加）",
+        "脚本未加执行权限或 shebang 导致无法运行"
+      ],
+      "interviewPoints": [
+        "「管道和重定向有什么区别？」要答到进程间数据流与文件读写，说明用 grep 过滤训练日志、用 >> 追加日志的写法",
+        "「> 和 >> 有什么区别？」要答到覆盖与追加，说明误用 > 清空日志的事故以及 nohup 重定向的实践",
+        "「shell 脚本怎么封装训练流程？」要答到 shebang、chmod +x、环境变量与 set -e，说明退出码 $? 在自动化里的作用"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "shell-q1",
+          "type": "choice",
+          "prompt": "把上一条命令的标准输出写入文件的符号是？",
+          "options": [
+            "|",
+            ">>",
+            ">",
+            "<"
+          ],
+          "answerIndex": 2,
+          "explanation": "`>` 把输出重定向并覆盖写入文件；`>>` 追加；`|` 管道传给下一条命令。"
+        },
+        {
+          "id": "shell-q2",
+          "type": "short",
+          "prompt": "管道 `|` 的作用是什么？",
+          "answer": "管道把前一条命令的标准输出作为后一条命令的标准输入，实现命令串联处理，如 `ls -la | grep .txt` 先列出文件再过滤出 txt 文件，无需中间文件。",
+          "keywords": [
+            "管道",
+            "输出",
+            "grep"
+          ],
+          "explanation": "管道用于串接命令，传递输出作为输入。"
+        },
+        {
+          "id": "shell-q3",
+          "type": "code",
+          "prompt": "写一段 shell：定义变量 name 为 AI，然后把它输出到文件 greeting.txt。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\nname=\"AI\"\necho \"$name\" > greeting.txt",
+          "checks": [
+            "name=\"AI\"",
+            "> greeting"
+          ],
+          "explanation": "赋值变量并用重定向写文件。"
+        }
+      ]
+    },
+    {
+      "slug": "command",
+      "title": "Command 常用命令",
+      "order": 3,
+      "module": "Linux 基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "Linux 常用命令覆盖文件、目录、进程、查看与权限管理，是日常操作的必备集合。",
+      "intuition": "Linux 命令就像工具箱里的各种工具：有的管文件（ls、cp、mv、rm），有的管目录（mkdir、cd），有的看进程（ps、top），有的查内容（cat、grep）。你不必一次记住所有，但掌握最常用的十几个，就足以在大多数场景下高效工作。",
+      "formal": "常用 Linux 命令分组：`文件与目录`：`ls` 列出、`cd` 切换、`pwd` 当前位置、`mkdir` 建目录、`cp` 复制、`mv` 移动/重命名、`rm` 删除、`cat` 查看、`find` 查找；`查看与过滤`：`grep` 按模式搜索、`head/tail` 看头尾、`wc` 计数；`权限`：`chmod` 改权限、`chown` 改拥有者；`进程`：`ps` 查看进程、`top` 动态监控、`kill` 结束；`系统`：`df` 磁盘、`free` 内存。命令常用组合，如 `grep -rn \"keyword\" dir` 递归搜索。注意 `rm`、`mv` 等有破坏性，需谨慎。",
+      "formula": "",
+      "aiConnection": "AI 开发常要批量处理数据集、查日志、杀进程（如显存占用卡死的训练）等，都靠这套命令。尤其 `grep` 过滤日志、`nvidia-smi` 查看 GPU、`df` 看磁盘是否装满，是训练与排障的高频操作。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "command.sh",
+        "code": "#!/bin/bash\n# 创建目录与文件\nmkdir -p data\ncd data\n\n# 创建与查看文件\nprintf \"apple\\nbanana\\napple\\n\" > fruits.txt\ncat fruits.txt\n\n# 过滤与统计\ngrep \"apple\" fruits.txt\nwc -l fruits.txt\n\n# 复制与移动\ncp fruits.txt fruits_backup.txt\nmv fruits_backup.txt renamed.txt\n\n# 查看进程与磁盘\nps aux | head -n 3\ndf -h | head -n 3"
+      },
+      "mistakes": [
+        "用 rm -rf 不注意路径导致误删重要文件",
+        "混淆 cp 与 mv，mv 会移动/重命名",
+        "忘了 chmod 加执行权限导致脚本无法运行",
+        "混淆 `grep`（过滤内容）与 `find`（按路径查找）"
+      ],
+      "interviewPoints": [
+        "「怎么在日志里快速定位错误？」要答到 grep -rn、tail -f 与管道组合，说明训练崩溃时查 traceback 的常用套路",
+        "「cp、mv、rm 有哪些坑？」要答到移动即重命名、删除不可恢复，说明 rm -rf 配合通配符误删数据的风险",
+        "「怎么排查 GPU 和磁盘问题？」要答到 nvidia-smi 看显存占用、df -h 看磁盘写满，说明 OOM 与磁盘满导致训练中断的区别"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "command-q1",
+          "type": "choice",
+          "prompt": "在文件中按关键字搜索的行命令是？",
+          "options": [
+            "find",
+            "grep",
+            "ls",
+            "ps"
+          ],
+          "answerIndex": 1,
+          "explanation": "grep 用于在文件内容中按模式搜索；find 按路径/属性找文件。"
+        },
+        {
+          "id": "command-q2",
+          "type": "short",
+          "prompt": "`cp` 与 `mv` 有什么区别？",
+          "answer": "cp 复制文件到新位置，原文件保留；mv 移动或重命名，原路径上的文件消失。mv 同时具备重命名功能（目标路径为同目录新名）。",
+          "keywords": [
+            "cp",
+            "mv",
+            "重命名"
+          ],
+          "explanation": "cp 复制保留原文件，mv 移动/重命名。"
+        },
+        {
+          "id": "command-q3",
+          "type": "code",
+          "prompt": "写出连续命令：创建目录 data，进入后创建一个文件 info.txt，再用 grep 搜索它。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\nmkdir data\ncd data\necho \"hello world\" > info.txt\ngrep \"hello\" info.txt",
+          "checks": [
+            "mkdir",
+            "grep"
+          ],
+          "explanation": "建目录、写文件、grep 搜索。"
+        }
+      ]
+    },
+    {
+      "slug": "git",
+      "title": "Git",
+      "order": 4,
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "Git 是分布式版本控制系统，记录文件的每次变更，支持多分支、协作与回滚。",
+      "intuition": "Git 就像给代码拍'时光机快照'。每次你提交（commit），Git 就帮整个项目拍一张完整的照片，并存起来。以后无论改了多少、想回哪一步，都能一键跳回任意快照。而且这照片不是存在某台电脑上，而是你本地就有一份完整的历史，所以叫'分布式'——所有人都有完整版本库。",
+      "formal": "Git 是分布式版本控制系统（DVCS）。核心概念：`working directory`（工作区，当前修改）、`staging area`（暂存区，`git add` 后的变更）、`repository`（仓库，`git commit` 后的历史）。`git init` 初始化仓库。基本流程：`git add` 暂存变更，`git commit -m \"msg\"` 提交本地历史，`git status` 查看状态，`git log` 查看提交历史，`git diff` 查看差异。`git clone` 克隆远程仓库，`git pull` 拉取，`git push` 推送。分支用 `git branch`、`git checkout`/`git switch` 切换。Git 记录的是每次提交的完整快照与父子关系，因而支持灵活回滚。",
+      "formula": "",
+      "aiConnection": "AI 项目的代码、模型配置、实验脚本都靠 Git 管理版本，便于复现与回滚。训练代码任何改动都提交 Git，能清楚追踪实验变更，也方便与团队协作和回溯导致结果变化的原因。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "git.sh",
+        "code": "#!/bin/bash\n# 初始化仓库\nmkdir myproj && cd myproj\ngit init\n\n# 配置（首次）\ngit config user.name \"你的名字\"\ngit config user.email \"you@example.com\"\n\n# 添加并提交\necho \"hello\" > README.md\ngit add README.md\ngit commit -m \"初始化项目\"\n\n# 查看状态与历史\ngit status\ngit log"
+      },
+      "mistakes": [
+        "直接用 git commit 而忘记 git add，导致变更未被提交",
+        "混淆 git push（推送）与 git pull（拉取）方向",
+        "在提交信息里写不清楚，难以回溯变更意图",
+        "以为 commit 会自动同步到远程，必须显式 push"
+      ],
+      "interviewPoints": [
+        "「Git 为什么叫分布式版本控制？」要答到本地有完整历史、离线也能提交，说明远程仓库只是协作节点而非唯一真相",
+        "「工作区、暂存区、仓库三者的关系？」要答到 add 与 commit 分阶段的意义，说明暂存区为何能支持精细提交",
+        "「实验代码怎么用 Git 管理？」要答到每改配置就提交、用分支隔离实验，说明如何回溯是哪次改动影响了指标"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "git-q1",
+          "type": "choice",
+          "prompt": "把暂存区的变更记录到本地历史的命令是？",
+          "options": [
+            "git add",
+            "git commit",
+            "git push",
+            "git stage"
+          ],
+          "answerIndex": 1,
+          "explanation": "git commit 把暂存区变更提交为一次历史记录；git add 只是暂存。"
+        },
+        {
+          "id": "git-q2",
+          "type": "short",
+          "prompt": "工作区、暂存区、仓库三者有什么区别？",
+          "answer": "工作区是你正在编辑的实际文件；暂存区是 git add 后准备提交的变更集合；仓库是 git commit 后保存的版本历史。变更从工作区→暂存区→仓库逐步推进。",
+          "keywords": [
+            "工作区",
+            "暂存区",
+            "提交"
+          ],
+          "explanation": "文件变更经 add 暂存再到 commit 进仓库。"
+        },
+        {
+          "id": "git-q3",
+          "type": "code",
+          "prompt": "写出命令：初始化一个 Git 仓库，然后创建一个 README.md 并完成首次提交。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit init\necho \"hello\" > README.md\ngit add README.md\ngit commit -m \"first commit\"",
+          "checks": [
+            "git init",
+            "git add",
+            "git commit"
+          ],
+          "explanation": "init、add、commit 三步完成首次提交。"
+        }
+      ]
+    },
+    {
+      "slug": "github",
+      "title": "GitHub",
+      "order": 5,
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "GitHub 是基于 Git 的远程代码托管平台，支持协作、Issue、Pull Request 与 CI/CD。",
+      "intuition": "Git 是把代码历史存在你本地，而 GitHub 是把你的仓库搬到云端，让全世界或团队都能看到、协作。就像你有了一台时光机（Git），而 GitHub 是大家共享的那间'时光机博物馆'——你把快照放上去，别人可以看、可以提意见、可以一起改。",
+      "formal": "GitHub 是托管的远程 Git 仓库平台。`remote` 是远程仓库别名（通常为 `origin`）。基本协作流程：`git remote add origin <url>` 关联远程；`git push -u origin main` 首次推送；`git pull` 拉取更新。协作机制包括 `fork`（复制仓库）、`branch`（分支开发）、`Pull Request`（PR，请求合并改动并评审）、`Issue`（问题追踪）、`Code Review`。`clone` 是下载仓库副本。GitHub 还提供 CI/CD（GitHub Actions）自动化测试构建。",
+      "formula": "",
+      "aiConnection": "开源模型、框架（transformers、PyTorch）都托管在 GitHub 上，工程师通过 GitHub 拉取代码、提 Issue、参与 PR。理解 GitHub 协作流程，是使用开源 AI 生态、复现代码和团队协作开发的基础。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "github.sh",
+        "code": "#!/bin/bash\n# 关联远程仓库\ngit remote add origin https://github.com/user/myproj.git\n\n# 首次推送并建立关联\ngit push -u origin main\n\n# 之后推送更简单\ngit push\n\n# 从远程拉取最新\ngit pull\n\n# 查看远程仓库\n git remote -v"
+      },
+      "mistakes": [
+        "把 GitHub 与 Git 混为一谈，Git 是工具、GitHub 是托管平台",
+        "忘了先 git remote add 就 push，找不到远程地址",
+        "push 前未 pull，合并冲突",
+        "把敏感信息（API key、密码）提交到公开仓库"
+      ],
+      "interviewPoints": [
+        "「Git 和 GitHub 有什么区别？」要答到本地版本控制工具与远程托管平台，说明没网也能 commit 但 push 必须连远程",
+        "「Pull Request 的流程是怎样的？」要答到开分支或 fork、提交后评审、CI 通过再合并，说明团队协作与开源贡献的标准路径",
+        "「哪些东西绝对不能提交到公开仓库？」要答到 API key、密码与数据隐私，说明 .env 与 .gitignore 的防护作用"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "github-q1",
+          "type": "choice",
+          "prompt": "首次把本地仓库关联并推送到远程常用哪条命令组合？",
+          "options": [
+            "git pull -u origin main",
+            "git init origin",
+            "git push -u origin main",
+            "git clone origin"
+          ],
+          "answerIndex": 2,
+          "explanation": "git push -u origin main 首次推送并建立 upstream 关联。"
+        },
+        {
+          "id": "github-q2",
+          "type": "short",
+          "prompt": "Pull Request（PR）在协作中的作用是什么？",
+          "answer": "PR 是提交分支改动请求合并到目标分支的机制，包含了变更内容、评审与讨论，团队成员可审查代码、提出修改意见，确认后再合并，保证代码质量与协作有序。",
+          "keywords": [
+            "pull request",
+            "合并",
+            "评审"
+          ],
+          "explanation": "PR 是请求合并的评审机制。"
+        },
+        {
+          "id": "github-q3",
+          "type": "code",
+          "prompt": "写出命令：关联远程仓库 origin 到指定 URL，并首次推送 main 分支。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit remote add origin https://github.com/user/myproj.git\ngit push -u origin main",
+          "checks": [
+            "remote add origin",
+            "push -u"
+          ],
+          "explanation": "add remote 关联，push -u 首次推送。"
+        }
+      ]
+    },
+    {
+      "slug": "repository",
+      "title": "Repository 仓库",
+      "order": 6,
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "仓库是 Git 管理项目版本与历史的目录，包含工作区、暂存区与 .git 元数据。",
+      "intuition": "仓库就像一个带'时光机'的项目文件夹。它不只是放着现在的文件，还装着这个项目从出生到现在每一次修改的历史。`.git` 这个隐藏文件夹就是'时光机本体'，里面记录了所有快照。有了它，你才能随时回到任何一版。",
+      "formal": "仓库（repository）是 Git 管理版本控制的项目目录。`git init` 会在项目根目录创建 `.git` 隐藏文件夹，其中存储所有提交对象、分支、标签与配置，是仓库的核心元数据。仓库的结构包含`工作区`（实际文件）、`暂存区`（index）与`.git`（历史对象数据库）。克隆远程仓库用 `git clone <url>` 会在本地生成一个包含完整历史的副本。`README.md`、`.gitignore`（忽略文件，如模型权重、缓存）是常见文件。仓库可用 `git remote` 关联远程，便于备份与协作。",
+      "formula": "",
+      "aiConnection": "AI 项目仓库通常用 `.gitignore` 忽略大型模型权重、数据集与缓存，避免仓库过大；用 README 说明复现步骤。理解仓库结构与忽略规则，才能做出干净、可复现、便于团队协作的 AI 项目仓库。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "repository.sh",
+        "code": "#!/bin/bash\n# 从远程克隆仓库\n# git clone https://github.com/user/myproj.git\n\n# 初始化本地仓库\nmkdir proj && cd proj\ngit init\n\n# 创建忽略文件\necho \"*.pyc\" > .gitignore\necho \"cache/\" >> .gitignore\n\n# 查看仓库状态与远程\ngit status\ngit remote -v"
+      },
+      "mistakes": [
+        "以为仓库就是普通文件夹，忽略 .git 元数据的作用",
+        "把大文件（模型、数据集）直接提交，导致仓库臃肿",
+        "忘配 .gitignore，把缓存、密钥误提交",
+        "克隆后修改但从不 push，远程不同步"
+      ],
+      "interviewPoints": [
+        "「.git 目录里存了什么？」要答到提交对象、分支指针与配置，说明删掉 .git 等于丢失全部历史",
+        "「.gitignore 该怎么写？」要答到忽略模型权重、数据集与缓存，说明已跟踪文件加进 ignore 后为何仍会出现在变更里",
+        "「仓库怎么保持干净可复现？」要答到 README 写清复现步骤、权重走外部存储，说明大文件提交导致仓库臃肿的后果"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "repository-q1",
+          "type": "choice",
+          "prompt": "Git 仓库的核心历史数据集存储在哪个目录？",
+          "options": [
+            "src",
+            ".git",
+            "README.md",
+            "log"
+          ],
+          "answerIndex": 1,
+          "explanation": ".git 隐藏文件夹存放提交对象、分支等所有版本元数据。"
+        },
+        {
+          "id": "repository-q2",
+          "type": "short",
+          "prompt": "`.gitignore` 文件的作用是什么？",
+          "answer": ".gitignore 列出不希望被 Git 跟踪的文件或目录模式（如缓存、密钥、大型数据文件），使这些文件不会被 git add 或提交，避免仓库臃肿与敏感信息泄露。",
+          "keywords": [
+            ".gitignore",
+            "忽略",
+            "缓存"
+          ],
+          "explanation": "忽略指定文件不被版本控制跟踪。"
+        },
+        {
+          "id": "repository-q3",
+          "type": "code",
+          "prompt": "写出命令：初始化一个仓库，并创建一个 .gitignore 忽略所有 .pyc 文件。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit init\necho \"*.pyc\" > .gitignore",
+          "checks": [
+            "git init",
+            "*.pyc"
+          ],
+          "explanation": "init 建仓库，写出忽略规则。"
+        }
+      ]
+    },
+    {
+      "slug": "branch",
+      "title": "Branch 分支",
+      "order": 7,
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "分支让开发者在不影响主线的并行开发，是功能开发与协作的核心机制。",
+      "intuition": "分支就像给你同一份文档开多个'平行宇宙'。你在主版本（比如 main）之外另起一条线（feature 分支），在那边大胆改动、试验，完全不影响主线的稳定。等改好了，再合并回主干。这让你可以安全地尝试新功能，而不会把正在工作的主线弄坏。",
+      "formal": "分支（branch）是独立的提交线，`main`（或 `master`）是默认主分支。`git branch` 查看分支、`git branch name` 创建分支、`git switch name`（或 `git checkout name`）切换、`git merge name` 把该分支合并到当前分支。`git switch -c name` 创建并切换。分支指针指向某次提交。合并方式有 `fast-forward` 与 `merge commit`。可能产生`冲突`，需手动解决后提交。删除分支用 `git branch -d name`。PR 通常基于分支请求合并。",
+      "formula": "",
+      "aiConnection": "AI 实验常开独立分支或使用不同分支保存不同配置的实验，便于对照与回滚。团队协作时，开发者在各自分支开发，通过 PR 评审合并，避免彼此干扰，是专业 AI 工程团队协作的标配。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "branch.sh",
+        "code": "#!/bin/bash\n# 查看当前分支\n git branch\n\n# 创建并切换到 feature 分支\ngit switch -c feature-add-data\n\n# 在此分支做修改并提交\n echo \"new feature\" >> feature.txt\ngit add feature.txt\ngit commit -m \"add feature\"\n\n# 切换回主分支并合并\ngit switch main\ngit merge feature-add-data\n\n# 删除已合并分支\ngit branch -d feature-add-data"
+      },
+      "mistakes": [
+        "在 main 上直接改而不是先开分支，破坏主线稳定",
+        "混淆 switch 于 branch，创建后忘了切换",
+        "没提交就切换分支，导致变更跟随切换",
+        "合并冲突不解决直接提交，造成仓库损坏"
+      ],
+      "interviewPoints": [
+        "「为什么开发新功能要开分支？」要答到隔离实验、不影响 main 的稳定，说明并行实验与快速回滚的好处",
+        "「merge 和 rebase 有什么区别？」要答到产生 merge commit 与重写提交历史，说明在公共分支上 rebase 的风险",
+        "「合并冲突怎么解决？」要答到冲突标记、手动取舍与重新提交，说明冲突时该保留哪一版实验配置的判断依据"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "branch-q1",
+          "type": "choice",
+          "prompt": "创建新分支并切换到它的命令是？",
+          "options": [
+            "git branch name",
+            "git switch -c name",
+            "git commit name",
+            "git merge name"
+          ],
+          "answerIndex": 1,
+          "explanation": "git switch -c（或 checkout -b）创建并切换到该分支。"
+        },
+        {
+          "id": "branch-q2",
+          "type": "short",
+          "prompt": "为什么开发新功能时建议在新分支上进行而不是直接在 main 上改？",
+          "answer": "新分支隔离了实验性改动，不影响 main 的稳定，开发过程中可随意修改、回滚；等验证通过再合并回 main，降低破坏主线的风险，也便于评审与多人并行开发。",
+          "keywords": [
+            "分支",
+            "隔离",
+            "main"
+          ],
+          "explanation": "分支隔离改动，保护主线稳定。"
+        },
+        {
+          "id": "branch-q3",
+          "type": "code",
+          "prompt": "写出命令：创建并切换到 dev 分支，然后把它合并回 main。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit switch -c dev\ngit switch main\ngit merge dev",
+          "checks": [
+            "switch -c dev",
+            "merge dev"
+          ],
+          "explanation": "创建切换分支，切回并合并。"
+        }
+      ]
+    },
+    {
+      "slug": "commit",
+      "title": "Commit 提交",
+      "order": 8,
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 20,
+      "summary": "提交是给项目某时刻状态拍一次快照并写入历史，是 Git 回溯与协作的最小单位。",
+      "intuition": "提交就是'存档'。玩过游戏吧？你在关键节点存个档，之后无论出什么乱子都能读档回去。Git 的 commit 就是给项目存一个档：记录下这一刻所有文件的状态，并附上一句说明你改了什么。每次提交构成一条不断向前的时间线。",
+      "formal": "提交（commit）是 Git 版本历史的最小单元，记录某一时刻工作区的快照。`git commit -m \"message\"` 把暂存区的变更写入历史，每个提交包含唯一哈希值、作者、时间与提交信息。提交前先用 `git add` 暂存。`git commit -am \"msg\"` 可同时暂存已跟踪文件的修改并提交（不含新文件）。`git log` 查看提交历史，`git reset`/`git revert` 用于回退。良好的提交信息应简洁说明做了什么，便于后续回溯。提交是本地操作，需 `git push` 才同步远程。",
+      "formula": "",
+      "aiConnection": "在 AI 实验中，清晰、小巧的提交能帮你精确定位是哪次改动导致模型效果变化。把每次配置、代码调整都记录成提交，是复现实验、回溯问题、团队协作的核心习惯。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "commit.sh",
+        "code": "#!/bin/bash\n# 暂存并查看待提交变更\ngit add train.py\ngit status\n\n# 提交并写明信息\ngit commit -m \"train: 增加 learning rate scheduler\"\n\n# 查看提交历史\ngit log --oneline\n\n# 查看某次提交的改动\ngit show --stat HEAD"
+      },
+      "mistakes": [
+        "提交信息过于含糊（如 update），难以回溯",
+        "把无关的多个改动塞进一个提交，破坏可读性",
+        "忘记 git add，改动没被提交",
+        "以为 commit 会自动上传远程，还需 push"
+      ],
+      "interviewPoints": [
+        "「一次好的提交应该包含什么？」要答到单一职责、清晰信息与可回溯，说明含糊信息给定位指标变化带来的困难",
+        "「commit 和 push 有什么区别？」要答到本地写入历史与同步远程，说明没 push 就换机器为何找不到代码",
+        "「git reset 和 git revert 怎么选？」要答到改写历史与新增反向提交，说明已推送的提交为何应优先用 revert"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "commit-q1",
+          "type": "choice",
+          "prompt": "`git commit -am \"msg\"` 中 `-a` 的作用是？",
+          "options": [
+            "提交所有未跟踪的新文件",
+            "自动暂存已跟踪文件的修改并提交",
+            "强制推送",
+            "生成合并提交"
+          ],
+          "answerIndex": 1,
+          "explanation": "-a 自动暂存已跟踪文件的修改并提交，但不包含未跟踪的新文件。"
+        },
+        {
+          "id": "commit-q2",
+          "type": "short",
+          "prompt": "为什么提交信息要写得清晰、一个提交只做一件事？",
+          "answer": "清晰、单目标的提交让历史易于阅读与回溯，能精准定位某次改动，便于评审、回滚与协作，也方便后续分析是哪个改动导致了问题（如模型效果变化）。",
+          "keywords": [
+            "清晰",
+            "单目标",
+            "回溯"
+          ],
+          "explanation": "小而清晰的提交便于回溯与协作。"
+        },
+        {
+          "id": "commit-q3",
+          "type": "code",
+          "prompt": "写出命令：把一个文件 train.py 加入暂存并提交，信息为 'train: update model'。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit add train.py\ngit commit -m \"train: update model\"",
+          "checks": [
+            "git add",
+            "git commit -m"
+          ],
+          "explanation": "add 暂存后 commit 提交。"
+        }
+      ]
+    }
+  ]
+}
