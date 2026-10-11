@@ -9,7 +9,7 @@ import {
   Target,
 } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
-import { TOTALS } from '../lib/content';
+import { LESSON_ORDER, TOTALS } from '../lib/content';
 import { useStore } from '../lib/store';
 
 const NAV = [
@@ -21,7 +21,12 @@ const NAV = [
 ];
 
 export function Sidebar() {
-  const { stats } = useStore();
+  const { stats, progress } = useStore();
+  const mainRefs = LESSON_ORDER.filter((r) => r.lesson.track === 'main');
+  const mainDone = mainRefs.filter(
+    ({ stage, lesson }) => progress.get(`${stage.stageSlug}/${lesson.slug}`)?.status === 'mastered',
+  ).length;
+  const mainPercent = TOTALS.main ? Math.round((mainDone / TOTALS.main) * 100) : 0;
 
   return (
     <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col border-r border-white/8 bg-ink-900/60 px-4 py-5 backdrop-blur lg:flex">
@@ -62,14 +67,14 @@ export function Sidebar() {
         <div className="flex items-center justify-between text-[11px] text-slate-500">
           <span className="inline-flex items-center gap-1">
             <GraduationCap className="h-3.5 w-3.5" />
-            总进度
+            主线进度
           </span>
-          <span className="font-mono text-slate-300">{stats.overallPercent}%</span>
+          <span className="font-mono text-slate-300">{mainPercent}%</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
           <div
             className="h-full rounded-full bg-gradient-to-r from-brand-500 to-accent-500 transition-all"
-            style={{ width: `${stats.overallPercent}%` }}
+            style={{ width: `${mainPercent}%` }}
           />
         </div>
         <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-500">
@@ -78,8 +83,11 @@ export function Sidebar() {
             阶段
           </div>
           <div>
-            <div className="font-mono text-sm text-slate-200">{TOTALS.lessons}</div>
-            知识点
+            <div className="font-mono text-sm text-slate-200">
+              {mainDone}
+              <span className="text-xs text-slate-500">/{TOTALS.main}</span>
+            </div>
+            主线已掌握
           </div>
           <div>
             <div className="font-mono text-sm text-emerald-300">{stats.mastered}</div>

@@ -22,3 +22,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# 结构重排时的一次性备份（内容已在 git 历史中）
+content/stages-backup-*/

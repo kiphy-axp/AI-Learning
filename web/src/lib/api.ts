@@ -1,4 +1,4 @@
-import type { AppState, Note, TutorConfig } from './types';
+import type { AppState, Note, PlanConfig, TutorConfig } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -51,9 +51,19 @@ export const api = {
       body: JSON.stringify({ projectId, taskIndex, done }),
     }),
 
-  settings: () => request<{ tutor: TutorConfig }>('/api/settings'),
-  saveSettings: (payload: { provider?: string; baseUrl?: string; model?: string; apiKey?: string }) =>
-    request<{ tutor: TutorConfig }>('/api/settings', { method: 'POST', body: JSON.stringify(payload) }),
+  settings: () => request<{ tutor: TutorConfig; plan: PlanConfig }>('/api/settings'),
+  saveSettings: (payload: {
+    provider?: string;
+    baseUrl?: string;
+    model?: string;
+    apiKey?: string;
+    planWeeklyHours?: number;
+    planStartDate?: string;
+  }) =>
+    request<{ tutor: TutorConfig; plan: PlanConfig }>('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   tutor: (payload: {
     message: string;

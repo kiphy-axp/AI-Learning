@@ -1,290 +1,623 @@
 {
   "stage": 16,
-  "stageSlug": "papers",
-  "stageTitle": "论文精读与复现",
-  "stageEmoji": "📄",
-  "stageDesc": "读得懂、跑得通、讲得出：经典论文清单、三遍读法、复现方法与从复现到创新",
+  "stageSlug": "advanced-ml",
+  "stageTitle": "机器学习与深度学习进阶",
+  "stageEmoji": "🎛️",
+  "stageDesc": "从「知道算法」到「能训出模型」：评估指标、正则化、归一化、优化器与训练调试",
+  "act": 6,
+  "actName": "第六幕 · 深度学习与大模型",
   "category": "算法岗核心",
   "lessons": [
     {
-      "slug": "three-pass-method",
-      "title": "三遍读论文法",
+      "slug": "bias-variance",
+      "title": "偏差-方差分解 Bias-Variance",
       "order": 1,
-      "module": "阅读方法",
+      "module": "模型评估",
       "difficulty": "基础",
       "estimatedMinutes": 30,
-      "summary": "用三遍、耗时递增的阅读法把一篇论文从「判断值不值得读」推进到「能复现」：第一遍 5-10 分钟看骨架，第二遍 1 小时看方法与证据，第三遍数小时逐行推导与复现。",
-      "intuition": "读论文最大的成本不是智力，而是时间：一个方向一年新增几千篇预印本，你不可能每篇都精读。三遍读法本质是一个漏斗——第一遍像看房时先看户型图和总价，5 到 10 分钟判断这套房要不要继续看；第二遍像实地看房，量尺寸、看采光、问物业费，搞清楚方法到底怎么做、证据够不够硬；第三遍像装修前逐项核对水电图，把每个公式、每个超参、每个数据划分都推一遍，目标是能自己跑出来。三遍的投入是 10 分钟、1 小时、数小时，收益也依次递增，所以顺序不能颠倒：先廉价筛掉 90%，再把时间砸在剩下 10% 上。",
-      "formal": "第一遍读标题、摘要、引言最后一段、所有图表标题和结论，回答五个 C：类别（这是什么类型的工作）、背景（和哪些工作相关）、正确性（假设看起来成立吗）、贡献（主要贡献是什么）、清晰度（写得清楚吗）。产出是一句话判断「要不要读第二遍」。第二遍读正文，跳过证明细节，重点抓方法结构、实验设置和主要数字，并在页边记下没看懂的点；读完应能向别人复述这篇论文解决了什么、怎么做的、比谁好多少。第三遍是虚拟复现：逐行推导公式，记录数据划分、优化器、学习率、batch size、随机种子、评测协议，列出「论文没写但我必须决定」的清单。判据很硬——第三遍读完你应当能写出复现代码；复现不出来，通常说明第三遍读得不够。",
-      "formula": "\\text{总成本} \\approx 10\\,\\text{min} + 60\\,\\text{min} + O(\\text{数小时}),\\quad \\text{阅读深度} \\propto \\text{论文价值}",
-      "aiConnection": "算法岗面试里「给你一篇新论文，你怎么快速读懂」考的就是这套流程：先讲清楚它解决什么问题、核心创新是什么，再讲它的实验是否可信、能不能用在我们的业务上。工作中技术选型往往只有一两天，你需要在一个下午筛掉十篇论文、挑出两篇值得复现的；向上汇报时也要能用三句话讲清一篇论文的价值，而不是从头念摘要。",
+      "summary": "把模型误差拆成偏差、方差与不可约噪声三部分，用它决定下一步该加容量还是该加正则。",
+      "intuition": "打靶。偏差是瞄准点整体偏移（系统性错误），方差是手抖导致弹着点分散（对训练集敏感）。10 发子弹全打在靶心左侧 20 cm，是高偏差低方差，也就是欠拟合；弹着点散满整个靶面但平均落在靶心，是低偏差高方差，也就是过拟合。诊断方式就是比较训练误差与验证误差：两者都高是偏差问题，训练低验证高是方差问题。这个判断决定了你下一步是加容量、加特征，还是加正则、加数据——方向选错，调参一周也没用。",
+      "formal": "对同一分布采样出的不同训练集 D，模型 f̂_D 在测试点 x 上的期望平方误差可分解为三项：噪声 + 偏差平方 + 方差。噪声是数据本身的不可约误差，任何模型都消不掉，它是误差下界。偏差衡量模型族平均预测与真实函数的系统性偏离，方差衡量模型对训练集扰动的敏感度。模型复杂度上升时偏差单调下降、方差单调上升，总误差呈 U 形，最优复杂度在两者交点附近。实践判据：训练误差 0.5% 而验证误差 8%，方差主导；训练 12% 验证 13%，偏差主导。深度学习里还有双下降现象——模型大到远超插值阈值后测试误差会二次下降。",
+      "formula": "\\mathbb{E}_D\\left[(y-\\hat{f}_D(x))^2\\right] = \\underbrace{\\sigma^2_{\\text{noise}}}_{\\text{不可约}} + \\underbrace{\\left(\\mathbb{E}_D[\\hat{f}_D(x)]-f(x)\\right)^2}_{\\text{Bias}^2} + \\underbrace{\\mathbb{E}_D\\left[(\\hat{f}_D(x)-\\mathbb{E}_D[\\hat{f}_D(x)])^2\\right]}_{\\text{Variance}}",
+      "aiConnection": "面试里「模型效果不好怎么办」的标准答法就是这条曲线：先看训练与验证误差的差距。差距大（train 1% / val 10%）→ 方差主导，优先加数据、加增强、加 weight_decay 与 dropout、早停；差距小但都高（train 12% / val 13%）→ 偏差主导，换更大模型、补特征、延长训练、调小正则。调参时也是同一套逻辑：不确定该往哪个方向调，就先打印这两条曲线。",
       "codeExample": {
         "lang": "python",
-        "filename": "paper_notes.py",
-        "code": "from dataclasses import dataclass, field\n\n\n@dataclass\nclass PaperNote:\n    title: str\n    pass1: str = \"\"          # 一句话：它解决什么问题\n    innovation: str = \"\"     # 核心创新点\n    evidence: str = \"\"       # 关键实验数字（数据集 / 指标 / 提升）\n    limits: str = \"\"         # 局限性\n    blockers: list = field(default_factory=list)   # 没看懂的点\n    repro: dict = field(default_factory=dict)      # 复现要素\n\n\nnote = PaperNote(\n    title=\"ResNet\",\n    pass1=\"超深网络退化，用残差连接让 152 层可训练\",\n    innovation=\"identity 捷径 + 残差映射 F(x)+x\",\n    evidence=\"ImageNet top-5 3.57%（152 层集成）\",\n    limits=\"残差块内 BN 的位置对结果敏感\",\n    blockers=[\"为什么退化不是过拟合造成的\"],\n    repro={\"optimizer\": \"SGD momentum 0.9\", \"lr\": 0.1, \"wd\": 1e-4},\n)\n\nfor k, v in note.__dict__.items():\n    print(f\"{k:10s}: {v}\")"
+        "filename": "bias_variance.py",
+        "code": "import numpy as np\nfrom sklearn.linear_model import Ridge\nfrom sklearn.metrics import mean_squared_error\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import PolynomialFeatures\n\nrng = np.random.default_rng(0)\nX = rng.uniform(-3, 3, size=(200, 1))\ny = np.sin(X).ravel() + rng.normal(0, 0.2, size=200)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 提高多项式次数 = 提高模型容量：偏差下降、方差上升\nfor degree in [1, 3, 9, 15]:\n    model = make_pipeline(PolynomialFeatures(degree), Ridge(alpha=1e-6))\n    model.fit(X_tr, y_tr)\n    tr = mean_squared_error(y_tr, model.predict(X_tr))\n    te = mean_squared_error(y_te, model.predict(X_te))\n    print(f'degree={degree:2d} train_mse={tr:.4f} test_mse={te:.4f} gap={te - tr:+.4f}')"
       },
       "mistakes": [
-        "逐字翻译式阅读，把 10 分钟的初筛读成两小时，效率极低；正确做法是先只读摘要、图表和结论",
-        "只读一遍就以为懂了，跳过第三遍的推导与复现清单，结果一动手就发现细节全缺",
-        "完全跳过实验部分，不知道论文的收益是在什么规模、什么数据上取得的，容易误用结论",
-        "只看正文不看图表，漏掉论文里信息密度最高的部分：主结果表和消融表"
+        "把训练误差低当成模型好，忽略验证集才是唯一可信指标",
+        "一看到验证误差高就加大模型，方向搞反导致方差更大",
+        "把不可约噪声当成可优化项，反复调参浪费算力",
+        "只跑一个随机种子就下结论，忽略方差本身带来的波动"
       ],
       "interviewPoints": [
-        "三遍读法每一遍的目标分别是什么，为什么顺序不能颠倒",
-        "面试官问「你最近读的一篇论文」，需要能讲清问题、创新、实验数字、局限四要素",
-        "如何判断一篇论文值不值得投入第三遍精读（看收益量级、可复现性、与当前工作的相关性）",
-        "遇到看不懂的数学推导时怎么办：先看附录与官方代码，再找复现博客，不要卡死在正文"
+        "写出偏差-方差分解的三项，并说明噪声项不可优化",
+        "针对「train 低 val 高」与「两者都高」两种现象分别给出处理手段",
+        "解释为什么增加容量降偏差升方差，以及双下降现象说明了什么",
+        "说明 bagging 主要降方差、boosting 主要降偏差的原因"
       ],
       "resources": [
         {
-          "title": "S. Keshav, How to Read a Paper (ACM SIGCOMM CCR)",
-          "url": "https://web.stanford.edu/class/ee384m/Handouts/HowtoReadPaper.pdf"
+          "title": "An Introduction to Statistical Learning（免费 PDF，第 2、5 章）",
+          "url": "https://www.statlearning.com/"
         },
         {
-          "title": "三遍阅读法，高效研读学术论文（中文实践版）",
-          "url": "https://www.jiaojianli.com/18744.html"
+          "title": "scikit-learn 学习曲线与验证曲线文档",
+          "url": "https://scikit-learn.org/stable/modules/learning_curve.html"
         }
       ],
       "quiz": [
         {
-          "id": "three-pass-method-q1",
+          "id": "bias-variance-q1",
           "type": "choice",
-          "prompt": "三遍读法中，第一遍阅读的主要目的是？",
+          "prompt": "某模型训练误差 1%、验证误差 12%，最合理的下一步是？",
           "options": [
-            "逐行推导论文中所有公式",
-            "判断这篇论文值不值得继续投入时间精读",
-            "完整复现论文的全部实验",
-            "背下论文中的所有实验数字"
+            "换更大的模型以提高容量",
+            "增加正则化、数据增强或更多训练数据",
+            "延长训练轮数",
+            "降低学习率并重新训练更久"
           ],
           "answerIndex": 1,
-          "explanation": "第一遍只花 5-10 分钟读标题、摘要、图表与结论，产出是一个「要不要读第二遍」的判断；推导和复现分别属于第三遍和第二遍之后的工作。"
+          "explanation": "训练与验证差距大说明方差主导（过拟合），应加正则、加数据、早停；换更大模型或延长训练会进一步放大方差。"
         },
         {
-          "id": "three-pass-method-q2",
+          "id": "bias-variance-q2",
           "type": "short",
-          "prompt": "第三遍读论文的产出应该是什么？为什么说「复现不出来说明这一遍没读到位」？",
-          "answer": "参考回答：第三遍是虚拟复现，产出应是一份可执行的复现清单：数据划分、优化器与学习率、batch size、训练轮数、评测协议，以及论文没写清但实现时必须决定的细节，同时把关键公式逐行推导一遍。如果照着这份清单仍然跑不出接近的结果，说明某些关键细节（预处理、超参、评测口径）在阅读时被漏掉或误解了，所以复现失败就是第三遍没读透的直接证据。",
+          "prompt": "偏差与方差分别衡量什么？如何用误差曲线判断当前处于哪种状态？",
+          "answer": "参考回答：偏差衡量模型族的平均预测与真实函数的系统性偏离，表现为欠拟合；方差衡量模型对训练集扰动的敏感度，表现为过拟合。判断方法看训练与验证误差：两者都高、差距小是偏差主导；训练低而验证高、差距大是方差主导。前者加容量或加特征，后者加正则或加数据。",
           "keywords": [
-            "虚拟复现",
-            "复现清单",
-            "超参数",
-            "评测协议"
+            "系统性偏离",
+            "敏感度",
+            "训练验证差距"
           ],
-          "explanation": "得分要点是点出第三遍的产物是「能照着做的细节清单」，并把复现失败与阅读遗漏建立因果联系。"
+          "explanation": "抓住「差距小但都高=偏差」「差距大=方差」这一判据，并给出对应的处理方向。"
         },
         {
-          "id": "three-pass-method-q3",
+          "id": "bias-variance-q3",
           "type": "code",
-          "prompt": "实现函数 triage(notes)，输入是若干篇论文的笔记字典（含 year、cites_per_year、has_code、gain 四个键），按「值得精读」程度排序返回标题列表。排序规则：先按 has_code 降序，再按 gain 降序，再按 cites_per_year 降序，最后按 year 降序。",
-          "starterCode": "def triage(notes):\n    \"\"\"notes: list[dict]，每个 dict 含 title/year/cites_per_year/has_code/gain\"\"\"\n    pass\n",
-          "solution": "def triage(notes):\n    \"\"\"notes: list[dict]，每个 dict 含 title/year/cites_per_year/has_code/gain\"\"\"\n    def key(n):\n        return (\n            -int(bool(n[\"has_code\"])),\n            -n[\"gain\"],\n            -n[\"cites_per_year\"],\n            -n[\"year\"],\n        )\n    return [n[\"title\"] for n in sorted(notes, key=key)]\n",
+          "prompt": "用 sklearn 在同一个数据集上训练 degree 分别为 1、3、15 的多项式回归，打印每个 degree 的训练 MSE 与测试 MSE。",
+          "starterCode": "import numpy as np\nfrom sklearn.linear_model import Ridge\nfrom sklearn.metrics import mean_squared_error\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import PolynomialFeatures\n\nrng = np.random.default_rng(0)\nX = rng.uniform(-3, 3, size=(200, 1))\ny = np.sin(X).ravel() + rng.normal(0, 0.2, size=200)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, random_state=0)\n\ndef report(degree):\n    pass\n",
+          "solution": "import numpy as np\nfrom sklearn.linear_model import Ridge\nfrom sklearn.metrics import mean_squared_error\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import PolynomialFeatures\n\nrng = np.random.default_rng(0)\nX = rng.uniform(-3, 3, size=(200, 1))\ny = np.sin(X).ravel() + rng.normal(0, 0.2, size=200)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, random_state=0)\n\ndef report(degree):\n    model = make_pipeline(PolynomialFeatures(degree), Ridge(alpha=1e-6))\n    model.fit(X_tr, y_tr)\n    tr = mean_squared_error(y_tr, model.predict(X_tr))\n    te = mean_squared_error(y_te, model.predict(X_te))\n    print(f'degree={degree:2d} train={tr:.4f} test={te:.4f}')\n\nfor d in [1, 3, 15]:\n    report(d)\n",
           "checks": [
-            "sorted(",
-            "has_code",
-            "key="
+            "PolynomialFeatures",
+            "mean_squared_error",
+            "model.fit"
           ],
-          "explanation": "用 sorted 配合多级元组 key，把「降序」统一写成取负号，顺序即优先级。"
+          "explanation": "用 Pipeline 组合多项式特征与 Ridge，分别拟合后比较训练/测试 MSE，可看到高次项训练误差下降而测试误差上升。"
         }
-      ]
+      ],
+      "track": "side"
     },
     {
-      "slug": "finding-papers",
-      "title": "找论文与追踪前沿",
+      "slug": "metrics",
+      "title": "评估指标：混淆矩阵、PR 与 ROC-AUC",
       "order": 2,
-      "module": "阅读方法",
+      "module": "模型评估",
       "difficulty": "基础",
-      "estimatedMinutes": 30,
-      "summary": "建立一条从 arXiv 预印本、会议论文、引用图谱到代码仓库的信息流水线：四种找论文的方式（关键词、引用、作者、最新引用），以及每周半小时的前沿追踪习惯。",
-      "intuition": "找论文像在一个巨大城市里找一家靠谱的餐馆：你可以按菜系搜（关键词），可以问吃过的人还有什么推荐（引用关系），可以盯着一位名厨新开的店（作者主页），也可以看最近谁又去了这家店（最新引用，判断它是不是还活跃）。最糟的做法是只在搜索引擎里搜一次关键词，然后照着结果列表从第一篇读起。真正的效率来自组合：先用综述建立地图，再用引用关系找到地图上的关键节点，最后用「谁引用了它」判断这条路现在还有没有人走。",
-      "formal": "工具链分工明确：arXiv 覆盖最新预印本但没有同行评审；Semantic Scholar 与 Google Scholar 提供引用关系、被引数与作者主页；Papers with Code 把论文与开源实现、排行榜绑定；Connected Papers 用引用图展示一篇论文的前后脉络；ACL Anthology 与 OpenReview 提供会议正式版与评审意见。找论文的四种方式：关键词搜索（标题摘要匹配）、引文回溯（从一篇好论文顺藤摸瓜，向前看它引了谁、向后看谁引了它）、作者追踪（跟住 3-5 位核心作者）、最新引用监控（用被引列表判断方向热度）。会议节奏决定了信息时效：NeurIPS 通常 5 月截稿、12 月开会，ICLR 9 月截稿、次年 4-5 月开会，CVPR 11 月截稿、6 月开会，ACL 2 月截稿、7 月开会，所以每年 2-3 月与 9-10 月是预印本爆发期。",
-      "formula": "",
-      "aiConnection": "算法岗要能在一周内对一个陌生方向形成判断：这个方向现在的主流方法是什么、SOTA 数字是多少、有没有开源实现、我们能不能在现有资源下做。这套流水线直接服务于技术选型和方案汇报。追踪前沿也是长期习惯：每周固定 30 分钟扫一遍 arXiv 订阅和会议接收列表，比临时抱佛脚有效得多；面试里被问「你平时怎么跟进最新工作」，答得出具体工具和节奏才可信。",
+      "estimatedMinutes": 35,
+      "summary": "从混淆矩阵出发，讲清 Accuracy、Precision/Recall、F1、PR-AUC 与 ROC-AUC 的适用边界与阈值选择。",
+      "intuition": "风控场景正样本只有 1%，模型全预测「不违约」就能拿到 99% 准确率，但一个坏客户都没抓到——Accuracy 在不平衡数据上会骗人。这时把预测拆成四格（TP/FP/FN/TN）：Precision 回答「报警的里面有多少是真的」，Recall 回答「真的里面抓到了多少」，两者此消彼长，用 F1 折中。ROC-AUC 衡量模型把正样本排在负样本前面的排序能力，与阈值无关；PR-AUC 在正样本极稀有（低于 5%）时更敏感，更能反映真实业务收益。",
+      "formal": "混淆矩阵统计 TP、FP、FN、TN 四格。Precision = TP/(TP+FP)，Recall = TP/(TP+FN)，F1 = 2PR/(P+R) 是调和平均，对较小的那个值更敏感。ROC 曲线以 FPR = FP/(FP+TN) 为横轴、TPR = Recall 为纵轴遍历所有阈值绘制，AUC 等于随机取一对正负样本、模型给正样本打分更高的概率：0.5 等价随机猜测，0.7~0.8 可用，0.85 以上算好。PR 曲线以 Recall 为横轴、Precision 为纵轴，其 AUC 即 average precision。不平衡时负样本极多，FPR 分母 TN 很大，少量误判在 ROC 上几乎看不出来，因此 PR-AUC 更有区分度。阈值按业务代价选：漏判代价高就压低阈值提高 Recall。",
+      "formula": "\\text{Precision}=\\frac{TP}{TP+FP},\\quad \\text{Recall}=\\frac{TP}{TP+FN},\\quad F_1=\\frac{2PR}{P+R},\\quad \\text{AUC}=\\frac{1}{n_+n_-}\\sum_{i\\in +}\\sum_{j\\in -}\\mathbb{1}[\\hat{s}_i>\\hat{s}_j]",
+      "aiConnection": "面试常问「类别不平衡怎么评估」。标准回答：先看正样本比例，低于 5% 时以 PR-AUC 与 Recall@固定 Precision 为主，直接放弃 Accuracy；再做阈值调优而不是死守 0.5。工程上要把指标和业务代价绑定——推荐召回率优先、垃圾邮件精确率优先。另外 AUC 只衡量排序、不衡量概率是否校准，若下游要用概率算期望（如广告出价、定价），还得看 Brier score 或可靠性曲线。",
       "codeExample": {
         "lang": "python",
-        "filename": "arxiv_search.py",
-        "code": "# pip install arxiv\nimport arxiv\n\n\ndef search(query, max_results=5):\n    client = arxiv.Client(page_size=50, delay_seconds=3.0, num_retries=3)\n    search = arxiv.Search(\n        query=query,\n        max_results=max_results,\n        sort_by=arxiv.SortCriterion.SubmittedDate,\n    )\n    for r in client.results(search):\n        print(r.published.date(), \"|\", r.title.strip())\n        print(\"   \", r.entry_id)\n\n\nif __name__ == \"__main__\":\n    # arXiv API 的字段前缀：ti 标题, abs 摘要, au 作者, cat 分类\n    search('ti:\"flash attention\" OR abs:\"paged attention\"', max_results=5)"
+        "filename": "imbalanced_metrics.py",
+        "code": "import numpy as np\nfrom sklearn.datasets import make_classification\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import (accuracy_score, average_precision_score,\n                             classification_report, roc_auc_score)\nfrom sklearn.model_selection import train_test_split\n\n# 正样本约 1% 的极度不平衡数据\nX, y = make_classification(n_samples=5000, n_features=20, weights=[0.99, 0.01],\n                           flip_y=0.01, random_state=0)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, stratify=y, random_state=0)\n\nclf = LogisticRegression(max_iter=1000, class_weight='balanced').fit(X_tr, y_tr)\nproba = clf.predict_proba(X_te)[:, 1]\npred = (proba >= 0.5).astype(int)\n\nprint('正样本比例', round(float(y_te.mean()), 4))\nprint('全预测负类的 accuracy', round(float(1 - y_te.mean()), 4))\nprint('模型 accuracy', round(accuracy_score(y_te, pred), 4))\nprint('roc_auc', round(roc_auc_score(y_te, proba), 4))\nprint('pr_auc (average precision)', round(average_precision_score(y_te, proba), 4))\nprint(classification_report(y_te, pred, digits=3))"
       },
       "mistakes": [
-        "只读综述不读原始论文，综述的归纳会丢细节，也无法判断某个结论的适用边界",
-        "只看标题和摘要就写进技术调研报告并当作结论引用，容易出现张冠李戴",
-        "追最热的方向但忽略自己有没有数据和算力复现，方案汇报时无法落地",
-        "把 arXiv 预印本当作已同行评审的结论直接引用，忽略它可能已被会议拒稿或大幅修改"
+        "在不平衡数据上用 Accuracy 做主指标，被「全预测负类」的假高分骗过",
+        "死守 0.5 阈值不做调优，浪费了模型的排序能力",
+        "混用 ROC-AUC 与 PR-AUC 的结论，正样本极稀有时应看 PR-AUC",
+        "把 AUC 高当成概率准，忽略概率校准问题"
       ],
       "interviewPoints": [
-        "如何判断一篇论文的可信度：看会议、看是否有开源实现、看是否有独立复现、看消融是否完整",
-        "给你一个陌生方向（例如长上下文推理加速），你打算怎么在三天内摸清主流方法与 SOTA",
-        "论文没有公开代码时怎么办：先找第三方复现，再评估从零实现的成本与风险",
-        "被问「最近关注什么工作」时，要能说出具体论文名、核心改进与量级收益，而不是只说方向名"
+        "手推 Precision/Recall/F1，并说明 F1 为什么用调和平均而不是算术平均",
+        "解释 AUC 的概率含义（正样本打分高于负样本的概率）与 0.5 的意义",
+        "解释为什么类别极不平衡时 PR-AUC 比 ROC-AUC 更有区分度",
+        "给定漏判与误判的业务代价，如何选择分类阈值"
       ],
       "resources": [
         {
-          "title": "arXiv API 官方文档",
-          "url": "https://info.arxiv.org/help/api/user-manual.html"
+          "title": "scikit-learn 模型评估指标文档（含 PR/ROC 曲线 API）",
+          "url": "https://scikit-learn.org/stable/modules/model_evaluation.html"
         },
         {
-          "title": "Papers with Code（论文 + 代码 + 排行榜）",
-          "url": "https://paperswithcode.com/"
-        },
-        {
-          "title": "Semantic Scholar API",
-          "url": "https://api.semanticscholar.org/"
+          "title": "Google Machine Learning Crash Course: ROC and AUC",
+          "url": "https://developers.google.com/machine-learning/crash-course/classification/roc-and-auc"
         }
       ],
       "quiz": [
         {
-          "id": "finding-papers-q1",
+          "id": "metrics-q1",
           "type": "choice",
-          "prompt": "想快速判断一个研究方向现在是否仍然活跃，最直接的做法是？",
+          "prompt": "正样本占 1% 的数据集上，某模型 Accuracy 为 99%，最合理的判断是？",
           "options": [
-            "看这个方向最早的奠基论文被引用了多少次",
-            "看最近半年有哪些新论文引用了这个方向的代表作",
-            "只看 arXiv 上该分类的总论文数",
-            "看维基百科上该词条的长度"
+            "模型效果很好，可以直接上线",
+            "该 Accuracy 与全预测负类的基线相同，需要用 PR-AUC/Recall 重新评估",
+            "应改用回归模型",
+            "应提高阈值到 0.9 以提升 Accuracy"
           ],
           "answerIndex": 1,
-          "explanation": "「谁在最近引用了它」直接反映当下是否还有人推进这条路线；总被引数只说明历史影响力，分类论文总数则无法区分热门与灌水。"
+          "explanation": "全预测负类的 Accuracy 也是 99%，此时 Accuracy 无区分度，应看 PR-AUC、Recall 或固定 Precision 下的召回。"
         },
         {
-          "id": "finding-papers-q2",
+          "id": "metrics-q2",
           "type": "short",
-          "prompt": "调研一个陌生方向时，为什么建议「先综述建立地图，再回溯原始论文」，而不是直接读最新的几篇？",
-          "answer": "参考回答：综述会把一个方向的问题定义、方法谱系和常用数据集评测口径整理好，让你先有地图，知道哪些是主干工作、哪些是分支改进，避免把某个改进误当成全新思路。建立地图之后再回溯原始论文，能读懂方法细节与实验设置的来龙去脉，也能识别最新论文里哪些是真正的创新、哪些只是换了数据集或调了超参。反过来直接读最新论文，容易缺少参照系，无法判断其收益是否显著。",
+          "prompt": "为什么类别极不平衡时更推荐 PR-AUC 而不是 ROC-AUC？",
+          "answer": "参考回答：ROC 的横轴 FPR = FP/(FP+TN)，负样本极多时 TN 很大，即使误判大量负样本，FPR 仍然很小，曲线看起来依旧漂亮。PR 曲线的 Precision = TP/(TP+FP) 直接暴露误判，正样本稀有时的性能下降会立刻体现在 PR-AUC 上，因此更能反映业务收益。",
           "keywords": [
-            "综述",
-            "地图",
-            "原始论文",
-            "参照系"
+            "FPR",
+            "TN",
+            "Precision"
           ],
-          "explanation": "关键是说清综述提供坐标系、原始论文提供细节，两者顺序决定阅读效率。"
+          "explanation": "关键在于 FPR 的分母含大量 TN，掩盖了误判；PR 曲线对 FP 更敏感。"
         },
         {
-          "id": "finding-papers-q3",
+          "id": "metrics-q3",
           "type": "code",
-          "prompt": "实现函数 rank_papers(papers, now_year)，输入论文列表（每个含 title、year、cites）与当前年份，返回按「年均被引数」降序排列的标题列表；年均被引数 = cites / max(1, now_year - year + 1)。",
-          "starterCode": "def rank_papers(papers, now_year):\n    \"\"\"papers: list[dict]，每个 dict 含 title/year/cites\"\"\"\n    pass\n",
-          "solution": "def rank_papers(papers, now_year):\n    \"\"\"papers: list[dict]，每个 dict 含 title/year/cites\"\"\"\n    def score(p):\n        age = max(1, now_year - p[\"year\"] + 1)\n        return p[\"cites\"] / age\n    return [p[\"title\"] for p in sorted(papers, key=score, reverse=True)]\n",
+          "prompt": "给定真实标签 y_true 与预测概率 y_score，返回 (roc_auc, pr_auc) 二元组。",
+          "starterCode": "import numpy as np\nfrom sklearn.metrics import average_precision_score, roc_auc_score\n\ndef auc_pair(y_true, y_score):\n    pass\n",
+          "solution": "import numpy as np\nfrom sklearn.metrics import average_precision_score, roc_auc_score\n\ndef auc_pair(y_true, y_score):\n    return roc_auc_score(y_true, y_score), average_precision_score(y_true, y_score)\n",
           "checks": [
-            "max(1",
-            "sorted(",
-            "reverse=True"
+            "roc_auc_score",
+            "average_precision_score"
           ],
-          "explanation": "用 max(1, ...) 防止当年论文出现除零，再按年均被引数排序。"
+          "explanation": "roc_auc_score 计算 ROC-AUC，average_precision_score 计算 PR-AUC（即 average precision）。"
         }
-      ]
+      ],
+      "track": "side"
     },
     {
-      "slug": "reading-cnn-classics",
-      "title": "精读 CNN 经典：AlexNet、VGG、ResNet",
+      "slug": "cross-validation-leakage",
+      "title": "交叉验证与数据泄漏",
       "order": 3,
-      "module": "经典论文精读",
+      "module": "模型评估",
       "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "精读三篇奠定现代视觉骨干的论文：AlexNet 证明深度 CNN 可行，VGG 用 3×3 堆叠定义「深」的设计范式，ResNet 用残差连接解决退化问题并把网络推到 152 层。",
-      "intuition": "把训练深度网络想象成传话游戏：一句话经过 20 个人还能大致传对，经过 100 个人几乎必然走样——梯度在反向传播时也是这样一层层衰减或爆炸的。AlexNet 是第一个证明「只要给它足够数据、ReLU 和 GPU，深卷积网络真的能赢」的工作；VGG 回答「网络该长什么样」，用同一种 3×3 卷积反复堆叠，把结构选择变成深度选择；ResNet 则发现了一件反直觉的事：网络越深，训练误差反而越大，这不是过拟合而是优化问题，于是加了一条恒等捷径，让梯度可以「抄近路」直接流回浅层。",
-      "formal": "AlexNet（2012）：5 层卷积 + 3 层全连接，输入 224×224×3，首个卷积 11×11、步长 4、96 个通道，用 ReLU 替代 Sigmoid 缓解饱和、用 Dropout（p=0.5）与数据增强抑制过拟合、用双 GPU 切分特征图；ImageNet top-5 错误率 15.3%，第二名 26.2%。VGG（2014）：全部使用 3×3 卷积、步长 1、padding 1，2×2 最大池化步长 2；两个 3×3 卷积的感受野等于一个 5×5，但参数量从 25C² 降到 18C²（C 为通道数），VGG-16/19 把 top-5 错误率压到 7.3%。ResNet（2015）：把目标映射 H(x) 改写为 F(x)+x，捷径为恒等映射时不需要额外参数；退化问题的证据是 56 层平原网络在 CIFAR-10 上训练误差高于 20 层，而加入残差后 110 层反而更好；ImageNet 上 ResNet-152 单模型 top-5 错误率 4.49%，集成后 3.57%。",
-      "formula": "y = \\mathcal{F}(x,\\{W_i\\}) + x,\\qquad \\mathcal{F} = W_2\\,\\sigma(W_1 x)",
-      "aiConnection": "这三篇是视觉岗位的通用语言：面试官问「为什么用 3×3 而不是 5×5」「残差为什么能缓解梯度消失」，答不上来会直接暴露基础不牢。工程上 ResNet-50 仍是检测、分割、特征提取最常见的骨干，迁移学习时改的往往就是它的 stage 结构与下采样位置。读它们还能学到一种通用套路：先指出一个反直觉的现象（更深的网络反而更差），再用最小改动（一条恒等捷径）解决，并用充分的消融把原因钉死。",
+      "estimatedMinutes": 35,
+      "summary": "K 折交叉验证给出更稳的泛化估计，而任何在划分前使用验证集信息的操作都会造成数据泄漏。",
+      "intuition": "只切一次验证集，运气好可能刚好切到简单样本，结论就飘。K 折交叉验证让每份数据轮流当一次验证集、取 K 次平均，估计更稳，常用 K=5 或 10。更危险的是数据泄漏：如果先在全量数据上算均值方差做标准化、再切分训练验证，验证集的信息已经通过均值「渗」进训练过程，离线指标漂亮、上线就崩。典型症状是 CV 0.99 而测试 0.6——差得离谱时先怀疑泄漏，而不是怀疑模型。",
+      "formal": "K 折把数据集均分为 K 份，第 k 轮用第 k 份做验证、其余 K−1 份训练，最终指标为 K 次结果的均值；K 越大偏差越小但计算量上升，K=5/10 是实践默认。分层（StratifiedKFold）保持每折类别比例，不平衡数据必须用；分组（GroupKFold）保证同一用户/病人的样本不跨折；时序数据必须用 TimeSeriesSplit 且只允许用过去预测未来。泄漏来源：划分前做标准化/缺失值填充/特征选择/目标编码/过采样（SMOTE 只能在训练折内做）、用未来信息构造特征、按时间随机切分、去重不彻底导致同一样本同时出现在训练与验证集。防泄漏的工程做法是把所有预处理放进 sklearn Pipeline，让 cross_val_score 在每折内部 fit。",
+      "formula": "\\text{CV}_K = \\frac{1}{K}\\sum_{k=1}^{K} \\mathcal{M}\\left(f^{(-k)},\\, D_k\\right)",
+      "aiConnection": "算法岗日常最常踩的坑。上线前必须做三件事：预处理全部进 Pipeline、按业务实体分组切分、时序特征严格对齐时间戳。面试高频题「为什么离线 AUC 0.95 上线只有 0.6」的标准答案就是泄漏或分布漂移。深度学习里同样要注意：同一张图的不同增强版本不能跨 train/val 划分，LLM 的评测集不能出现在预训练语料里，否则评测分数毫无意义。",
       "codeExample": {
         "lang": "python",
-        "filename": "residual_block.py",
-        "code": "import torch\nimport torch.nn as nn\n\n\nclass BasicBlock(nn.Module):\n    \"\"\"ResNet-18/34 使用的基础残差块：两层 3x3 卷积 + 恒等捷径。\"\"\"\n\n    def __init__(self, in_ch, out_ch, stride=1):\n        super().__init__()\n        self.conv1 = nn.Conv2d(in_ch, out_ch, 3, stride, 1, bias=False)\n        self.bn1 = nn.BatchNorm2d(out_ch)\n        self.conv2 = nn.Conv2d(out_ch, out_ch, 3, 1, 1, bias=False)\n        self.bn2 = nn.BatchNorm2d(out_ch)\n        self.relu = nn.ReLU(inplace=True)\n        self.shortcut = nn.Sequential()\n        if stride != 1 or in_ch != out_ch:\n            # 形状不一致时用 1x1 卷积投影，否则保持恒等映射\n            self.shortcut = nn.Sequential(\n                nn.Conv2d(in_ch, out_ch, 1, stride, bias=False),\n                nn.BatchNorm2d(out_ch),\n            )\n\n    def forward(self, x):\n        out = self.relu(self.bn1(self.conv1(x)))\n        out = self.bn2(self.conv2(out))\n        return self.relu(out + self.shortcut(x))\n\n\nif __name__ == \"__main__\":\n    block = BasicBlock(64, 128, stride=2)\n    y = block(torch.randn(2, 64, 32, 32))\n    print(y.shape)   # torch.Size([2, 128, 16, 16])"
+        "filename": "leakage_demo.py",
+        "code": "import numpy as np\nfrom sklearn.datasets import make_classification\nfrom sklearn.feature_selection import SelectKBest, f_classif\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\n\n# 200 维里只有 5 维有信息，制造「特征选择泄漏」的经典场景\nX, y = make_classification(n_samples=300, n_features=200, n_informative=5,\n                           n_redundant=0, random_state=0)\n\n# 错误做法：在划分之前用全量标签挑特征，验证折的信息泄漏进训练\nX_bad = SelectKBest(f_classif, k=10).fit_transform(X, y)\nleaky = cross_val_score(LogisticRegression(max_iter=1000), X_bad, y, cv=5).mean()\n\n# 正确做法：标准化与特征选择都放进 Pipeline，每折内部单独 fit\npipe = make_pipeline(StandardScaler(), SelectKBest(f_classif, k=10),\n                     LogisticRegression(max_iter=1000))\nhonest = cross_val_score(pipe, X, y, cv=5).mean()\n\nprint(f'泄漏版 CV 准确率 {leaky:.4f}')\nprint(f'正确版 CV 准确率 {honest:.4f}')\nprint(f'虚高 {leaky - honest:+.4f}')"
       },
       "mistakes": [
-        "把 ResNet 的残差当成「防止过拟合」的手段，它解决的是深层网络的优化退化问题",
-        "以为 3×3 堆叠只是习惯，忽略两个 3×3 感受野等价于 5×5 且参数更少、非线性更多这一量化理由",
-        "复现时把 VGG 的卷积层通道数或 ResNet 的下采样位置改掉，导致指标对不上还找不到原因",
-        "只记住 top-5 错误率数字，却说不清这些数字是在什么输入分辨率、什么数据增强下取得的"
+        "先对全量数据 StandardScaler 再交叉验证，验证集统计量泄漏进训练",
+        "不平衡数据用普通 KFold，某折正样本极少导致指标剧烈波动",
+        "时序数据随机切分，用未来预测过去，离线指标虚高",
+        "把 SMOTE 过采样放在划分之前，合成样本跨折复制造成泄漏"
       ],
       "interviewPoints": [
-        "ResNet 解决的「退化问题」和过拟合有什么区别，为什么加恒等捷径就能缓解",
-        "两个 3×3 卷积与一个 5×5 卷积的感受野、参数量、非线性次数对比",
-        "AlexNet 相对同期工作做对了哪几件事（ReLU、Dropout、数据增强、GPU 并行）",
-        "为什么残差块里 BN 放在卷积之后、相加之前，顺序换掉会有什么影响"
+        "说明 K 折相比单次留出的优点，以及 K=5/10 的取舍",
+        "列举三种典型数据泄漏并给出对应的防泄漏做法",
+        "时序数据为什么必须用 TimeSeriesSplit 而不是 KFold",
+        "为什么 SMOTE 只能在训练折内做，放在划分前会怎样"
       ],
       "resources": [
         {
-          "title": "AlexNet: ImageNet Classification with Deep Convolutional Neural Networks (NeurIPS 2012)",
-          "url": "https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html"
+          "title": "scikit-learn 交叉验证：划分策略与分组/时序切分",
+          "url": "https://scikit-learn.org/stable/modules/cross_validation.html"
         },
         {
-          "title": "VGG: Very Deep Convolutional Networks for Large-Scale Image Recognition",
-          "url": "https://arxiv.org/abs/1409.1556"
-        },
-        {
-          "title": "ResNet: Deep Residual Learning for Image Recognition",
-          "url": "https://arxiv.org/abs/1512.03385"
+          "title": "Leakage in Data Mining: Formulation, Detection, and Avoidance",
+          "url": "https://dl.acm.org/doi/10.1145/2020408.2020496"
         }
       ],
       "quiz": [
         {
-          "id": "reading-cnn-classics-q1",
+          "id": "cross-validation-leakage-q1",
           "type": "choice",
-          "prompt": "ResNet 论文中「退化问题（degradation）」指的是？",
+          "prompt": "下列哪种操作会造成交叉验证中的数据泄漏？",
           "options": [
-            "网络太深导致训练集误差反而比浅层网络更高",
-            "网络太深导致训练集误差很低但测试集误差很高",
-            "网络参数量太大导致显存不足无法训练",
-            "梯度爆炸使损失变成 NaN"
+            "把 StandardScaler 放进 Pipeline 后再 cross_val_score",
+            "先用全量数据做 SelectKBest 特征选择，再交叉验证",
+            "使用 StratifiedKFold 保持类别比例",
+            "使用时序切分 TimeSeriesSplit"
+          ],
+          "answerIndex": 1,
+          "explanation": "在划分之前用全量数据（含标签）挑特征，验证折的信息已经进入训练流程；放进 Pipeline 才能保证每折内部独立 fit。"
+        },
+        {
+          "id": "cross-validation-leakage-q2",
+          "type": "short",
+          "prompt": "离线 CV 指标 0.99、上线只有 0.6，最可能的原因是什么？如何排查？",
+          "answer": "参考回答：最可能是数据泄漏或训练/线上分布不一致。排查顺序：检查所有预处理（标准化、填充、特征选择、目标编码、过采样）是否在划分前 fit 过全量数据，是否把未来信息构造成特征，划分是否按时间/实体分组，训练与线上特征口径是否一致。修复方式是把预处理全部放进 Pipeline，并按业务实体或时间切分。",
+          "keywords": [
+            "数据泄漏",
+            "Pipeline",
+            "分布不一致"
+          ],
+          "explanation": "先怀疑泄漏再怀疑模型，重点核查预处理 fit 的时机与切分方式。"
+        },
+        {
+          "id": "cross-validation-leakage-q3",
+          "type": "code",
+          "prompt": "用 sklearn 写一个防泄漏的评估流程：标准化 + 逻辑回归，5 折交叉验证返回平均准确率。",
+          "starterCode": "import numpy as np\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\n\ndef cv_accuracy(X, y, cv=5):\n    pass\n",
+          "solution": "import numpy as np\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\n\ndef cv_accuracy(X, y, cv=5):\n    pipe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))\n    scores = cross_val_score(pipe, X, y, cv=cv)\n    return float(scores.mean())\n",
+          "checks": [
+            "make_pipeline",
+            "cross_val_score",
+            "StandardScaler"
+          ],
+          "explanation": "把标准化与模型放进 Pipeline，cross_val_score 会在每折内部重新 fit，避免统计量泄漏。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "regularization",
+      "title": "正则化：L1、L2 与 Dropout",
+      "order": 4,
+      "module": "训练技巧",
+      "difficulty": "进阶",
+      "estimatedMinutes": 35,
+      "summary": "L1 造稀疏、L2 压权重、Dropout 造噪声，三者都是在用先验换泛化。",
+      "intuition": "过拟合的模型像背答案的学生：训练集原题全对，换个数字就崩。正则化就是给模型加「罚抄」——权重越大罚得越多，逼它用更简单的方式拟合。L1 罚绝对值之和，会把不重要的权重直接压到 0，相当于自动特征选择；L2 罚平方和，把权重整体压小但不为 0，让输出对输入更平滑；Dropout 训练时随机丢掉一部分神经元，逼网络不能依赖任何单个神经元，等价于同时训练很多子网络再做集成。",
+      "formal": "正则化把损失从 L0(θ) 改成 L0(θ) + λΩ(θ)。L2（岭回归 / weight decay）取 Ω = ½‖w‖²，梯度多一项 λw，权重按比例衰减，等价于对权重施加高斯先验；L1（Lasso）取 Ω = ‖w‖₁，在 0 点不可导，用次梯度 ±λ 更新，会把权重精确压到 0，等价于拉普拉斯先验并产生稀疏解。Dropout 训练时以概率 p 将激活置零，并对保留的激活除以 (1−p)（inverted dropout）保持期望不变，推理时关闭。常用取值：SGD 场景 L2 的 λ 取 1e-4~1e-2；AdamW 的 weight_decay 取 0.01~0.1；Dropout 在 MLP/CNN 取 0.2~0.5，Transformer 取 0.1，大模型预训练常直接设 0。注意 Adam 中的 L2 与真正的 weight decay 不等价，必须用 AdamW。",
+      "formula": "\\mathcal{L}(\\theta) = \\mathcal{L}_0(\\theta) + \\lambda\\Big(\\alpha\\|w\\|_1 + \\tfrac{1-\\alpha}{2}\\|w\\|_2^2\\Big)",
+      "aiConnection": "调参时的第一梯队旋钮。看到 train/val 曲线开口变大，先加 weight_decay（AdamW 从 0.01 起，不够再试 0.05、0.1），再考虑 dropout；小数据集微调 BERT 类模型时把 dropout 从 0.1 调到 0.3 往往直接涨点。L1 用在需要裁特征的线上场景，比如把 2000 维稀疏特征压到 300 维再上模型。注意正则强度与训练轮数耦合：正则越强需要训得越久，别在 3 个 epoch 就断言「正则没用」。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "regularization.py",
+        "code": "import torch\nimport torch.nn as nn\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\n\nX, y = make_classification(n_samples=2000, n_features=50, n_informative=10, random_state=0)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, random_state=0)\nX_tr = torch.tensor(X_tr, dtype=torch.float32)\ny_tr = torch.tensor(y_tr, dtype=torch.float32)\nX_te = torch.tensor(X_te, dtype=torch.float32)\ny_te = torch.tensor(y_te, dtype=torch.float32)\n\nmodel = nn.Sequential(\n    nn.Linear(50, 256), nn.ReLU(), nn.Dropout(0.3),\n    nn.Linear(256, 64), nn.ReLU(), nn.Dropout(0.3),\n    nn.Linear(64, 1),\n)\n# AdamW 的 weight_decay 是解耦的真实权重衰减，常用 0.01~0.1\nopt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.01)\nloss_fn = nn.BCEWithLogitsLoss()\n\nfor epoch in range(1, 31):\n    model.train()                      # Dropout 生效\n    opt.zero_grad()\n    loss = loss_fn(model(X_tr).squeeze(1), y_tr)\n    loss.backward()\n    opt.step()\n    if epoch % 10 == 0:\n        model.eval()                   # Dropout 关闭\n        with torch.no_grad():\n            val = loss_fn(model(X_te).squeeze(1), y_te)\n        print(f'epoch {epoch:2d} train {loss.item():.4f} val {val.item():.4f}')"
+      },
+      "mistakes": [
+        "用 Adam 的 weight_decay 当 L2 正则，更新被自适应缩放扭曲，应改用 AdamW",
+        "推理时忘记 model.eval()，Dropout 仍在生效导致指标随机抖动",
+        "正则强度直接上 1e-1 量级，把模型压成欠拟合还以为是数据问题",
+        "用 L1 却期待权重平滑，稀疏解会让部分特征权重直接归零"
+      ],
+      "interviewPoints": [
+        "从贝叶斯角度解释 L1 对应拉普拉斯先验、L2 对应高斯先验",
+        "说明为什么 L1 产生稀疏解而 L2 不产生，并写出次梯度更新",
+        "解释 Adam 中 L2 正则与 decoupled weight decay 的区别",
+        "说明 inverted dropout 的训练/推理差异以及为什么要除以 (1−p)"
+      ],
+      "resources": [
+        {
+          "title": "Dropout: A Simple Way to Prevent Neural Networks from Overfitting (JMLR)",
+          "url": "https://jmlr.org/papers/v15/srivastava14a.html"
+        },
+        {
+          "title": "Decoupled Weight Decay Regularization (AdamW)",
+          "url": "https://arxiv.org/abs/1711.05101"
+        },
+        {
+          "title": "PyTorch torch.nn.Dropout 文档",
+          "url": "https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "regularization-q1",
+          "type": "choice",
+          "prompt": "关于 L1 与 L2 正则，下列说法正确的是？",
+          "options": [
+            "L1 会把权重整体压小但不为 0",
+            "L2 会产生大量精确为 0 的权重",
+            "L1 倾向于产生稀疏解，可用于特征选择",
+            "两者在 Adam 中与 weight decay 完全等价"
+          ],
+          "answerIndex": 2,
+          "explanation": "L1 的次梯度在 0 附近形成「死区」，会把不重要的权重压到精确 0，产生稀疏解；L2 只按比例缩小权重；Adam 的 L2 与解耦 weight decay 不等价。"
+        },
+        {
+          "id": "regularization-q2",
+          "type": "short",
+          "prompt": "为什么在 Adam 中应使用 AdamW 而不是给 loss 加 L2 项？",
+          "answer": "参考回答：Adam 的自适应缩放会把加在梯度里的 L2 项除以 √v̂，导致权重衰减的实际强度随各参数的梯度历史变化，大梯度的参数衰减反而被削弱。AdamW 把权重衰减从梯度中解耦，直接以 ηλθ 衰减参数，衰减强度与梯度尺度无关，在长训练中更稳定、泛化更好。",
+          "keywords": [
+            "自适应缩放",
+            "解耦",
+            "weight decay"
+          ],
+          "explanation": "关键在于 L2 被塞进梯度后会被 √v̂ 缩放而失真，解耦后才是指数衰减的本意。"
+        },
+        {
+          "id": "regularization-q3",
+          "type": "code",
+          "prompt": "用 PyTorch 定义一个带 Dropout(0.3) 的两层 MLP（输入 50 维，隐藏 256 与 64，输出 1 维），并用 AdamW 创建优化器（lr=1e-3, weight_decay=0.01）。",
+          "starterCode": "import torch\nimport torch.nn as nn\n\nmodel = None\nopt = None\n",
+          "solution": "import torch\nimport torch.nn as nn\n\nmodel = nn.Sequential(\n    nn.Linear(50, 256), nn.ReLU(), nn.Dropout(0.3),\n    nn.Linear(256, 64), nn.ReLU(), nn.Dropout(0.3),\n    nn.Linear(64, 1),\n)\nopt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.01)\n",
+          "checks": [
+            "nn.Dropout(0.3)",
+            "optim.AdamW",
+            "weight_decay=0.01"
+          ],
+          "explanation": "Dropout 层插在激活之后；AdamW 用 weight_decay 参数实现解耦权重衰减。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "normalization-layers",
+      "title": "归一化：BatchNorm 与 LayerNorm",
+      "order": 5,
+      "module": "训练技巧",
+      "difficulty": "进阶",
+      "estimatedMinutes": 40,
+      "summary": "BatchNorm 沿 batch 维统计、LayerNorm 沿特征维统计，选哪个取决于 batch 大小与序列长度是否可变。",
+      "intuition": "网络每层的输出尺度会漂移，下一层就得不停适应新分布，训练又慢又抖。归一化把每层激活拉回均值 0、方差 1 的尺度，让优化地形更平滑，因此可以用更大的学习率。区别在「跟谁比」：BatchNorm 拿同一个特征在整批样本上的均值方差（横向统计），batch 越小越不准；LayerNorm 拿同一个样本的所有特征算均值方差（纵向统计），与 batch 无关，所以变长序列、batch=1 的逐 token 推理都能用。",
+      "formal": "BatchNorm 对每个通道 c 计算 batch 内均值 μ_B 与方差 σ²_B，输出 γ(x−μ_B)/√(σ²_B+ε)+β；训练时用当前 batch 统计量并更新滑动平均 running_mean/running_var，PyTorch 的 momentum 默认 0.1（更新式 running = (1−m)·running + m·batch），eps 默认 1e-5，推理时固定用 running 统计量。LayerNorm 对每个样本在指定维度（NLP 中是最后一维 d_model）内计算均值方差，不做滑动平均，训练与推理行为完全一致。BatchNorm 在 batch 小于 8 时统计噪声大、性能明显退化（此时用 GroupNorm，如检测/分割 batch=2 的场景），且对变长序列、RNN、自回归生成不友好。LLM 现代实现多用 RMSNorm，去掉均值中心化只做方差缩放，省约 10% 的归一化开销。",
+      "formula": "\\text{BN}(x)=\\gamma\\frac{x-\\mu_B}{\\sqrt{\\sigma_B^2+\\epsilon}}+\\beta,\\qquad \\text{LN}(x)=\\gamma\\frac{x-\\mu_{d}}{\\sqrt{\\sigma_{d}^2+\\epsilon}}+\\beta",
+      "aiConnection": "面试高频题「为什么大模型预训练用 LayerNorm 而不是 BatchNorm」有三点标准答案：预训练 batch 内序列长度不一，padding 会让 BN 的统计量被无效 token 污染；推理时逐 token 自回归生成，batch=1 且序列在增长，BN 的 running 统计与当前分布不匹配；BN 引入样本间依赖，破坏数据并行与梯度累积的可复现性。另外归一化放在残差分支前（Post-LN）还是后（Pre-LN）直接决定深层能否训稳，现代 LLM 普遍用 Pre-LN + RMSNorm，而 CV 任务（ResNet、检测）里 BN 依然是默认，因为 batch 大且尺寸固定。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "norm_layers.py",
+        "code": "import torch\nimport torch.nn as nn\n\ntorch.manual_seed(0)\nx = torch.randn(4, 6) * 3 + 5          # batch=4，特征维 6，均值 5、标准差 3\n\nbn = nn.BatchNorm1d(6, momentum=0.1, eps=1e-5)   # 沿 batch 维统计\nln = nn.LayerNorm(6)                             # 沿特征维统计\n\nbn.train()\nln.train()\nprint('BN 输出每列(特征)均值最大值', round(bn(x).mean(dim=0).abs().max().item(), 6))\nprint('LN 输出每行(样本)均值最大值', round(ln(x).mean(dim=1).abs().max().item(), 6))\n\nbn.eval()          # 推理阶段改用 running stats，不再看当前 batch\nx_new = torch.randn(4, 6) * 10 - 3\nprint('eval 模式输出均值', [round(v, 3) for v in bn(x_new).mean(dim=0).tolist()])\nprint('running_mean  ', [round(v, 3) for v in bn.running_mean.tolist()])\nprint('batch 只有', x.shape[0], '条时，BN 的 batch 统计量噪声很大')"
+      },
+      "mistakes": [
+        "训练时忘记 model.train()，BN 用了 running 统计导致收敛变慢甚至不收敛",
+        "batch 只有 2~4 却坚持用 BatchNorm，此时应换 GroupNorm 或 LayerNorm",
+        "以为 LayerNorm 也有 running_mean，去找并不存在的滑动统计量",
+        "在推理代码里对单样本调用 BatchNorm，还期待和训练时表现一致"
+      ],
+      "interviewPoints": [
+        "说明 BatchNorm 与 LayerNorm 归一化的维度差别及各自适用场景",
+        "解释 BN 训练/推理行为差异，以及 momentum=0.1 的更新含义",
+        "回答为什么 LLM 用 LayerNorm/RMSNorm，而 CV 里 BatchNorm 仍是默认",
+        "解释 BatchNorm 为什么允许使用更大的学习率（联系损失曲面平滑）"
+      ],
+      "resources": [
+        {
+          "title": "Batch Normalization 原始论文",
+          "url": "https://arxiv.org/abs/1502.03167"
+        },
+        {
+          "title": "Layer Normalization 原始论文",
+          "url": "https://arxiv.org/abs/1607.06450"
+        },
+        {
+          "title": "PyTorch torch.nn.BatchNorm1d 文档（momentum/eps 默认值）",
+          "url": "https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "normalization-layers-q1",
+          "type": "choice",
+          "prompt": "关于 BatchNorm 与 LayerNorm 的统计维度，正确的是？",
+          "options": [
+            "两者都在 batch 维统计，只是 eps 不同",
+            "BatchNorm 在 batch 维统计每个通道，LayerNorm 在特征维统计每个样本",
+            "LayerNorm 需要保存 running_mean",
+            "BatchNorm 在推理时使用当前 batch 的统计量"
+          ],
+          "answerIndex": 1,
+          "explanation": "BN 对每个通道统计整个 batch；LN 对每个样本统计其所有特征，因此与 batch 大小无关，也不需要滑动统计。"
+        },
+        {
+          "id": "normalization-layers-q2",
+          "type": "short",
+          "prompt": "为什么大语言模型预训练选择 LayerNorm 而不是 BatchNorm？",
+          "answer": "参考回答：一是序列长度可变且需 padding，BN 的 batch 统计量会被无效 token 污染；二是自回归推理时 batch=1、序列逐步增长，BN 的 running 统计与训练分布不匹配；三是 BN 引入样本间依赖，破坏数据并行、流水线并行与梯度累积的可复现性。LayerNorm 对每个 token 独立归一化，训练与推理行为一致，因此成为 Transformer 的默认。",
+          "keywords": [
+            "变长序列",
+            "自回归推理",
+            "样本间依赖"
+          ],
+          "explanation": "从变长/padding、推理时 batch 与统计量、并行可复现性三个角度回答最完整。"
+        },
+        {
+          "id": "normalization-layers-q3",
+          "type": "code",
+          "prompt": "用 PyTorch 构造 batch=4、特征维 8 的输入，分别经过 BatchNorm1d 与 LayerNorm，打印 BN 输出在 batch 维的均值与 LN 输出在特征维的均值（都应为 0）。",
+          "starterCode": "import torch\nimport torch.nn as nn\n\ntorch.manual_seed(0)\nx = torch.randn(4, 8) * 3 + 5\n",
+          "solution": "import torch\nimport torch.nn as nn\n\ntorch.manual_seed(0)\nx = torch.randn(4, 8) * 3 + 5\n\nbn = nn.BatchNorm1d(8)\nln = nn.LayerNorm(8)\nbn.train()\nln.train()\nprint('BN 每列均值', bn(x).mean(dim=0))\nprint('LN 每行均值', ln(x).mean(dim=1))\n",
+          "checks": [
+            "nn.BatchNorm1d",
+            "nn.LayerNorm",
+            "mean(dim=0)"
+          ],
+          "explanation": "BN 归一化后每个特征在 batch 维均值为 0；LN 归一化后每个样本在特征维均值为 0。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "initialization",
+      "title": "参数初始化策略",
+      "order": 6,
+      "module": "训练技巧",
+      "difficulty": "进阶",
+      "estimatedMinutes": 30,
+      "summary": "初始化的目标是让每层的激活与梯度方差在前向、反向传播中保持稳定。",
+      "intuition": "想象 100 层网络串起来，每层把信号放大 1.1 倍，输出就变成 1.1^100 ≈ 13780 倍，直接爆掉；每层缩小到 0.9 倍，信号衰减到 0.9^100 ≈ 2.7e-5，等于没了。初始化就是给每层的放大倍数选一个「刚好等于 1」的值。另一个坑是全 0 初始化：所有神经元收到相同梯度、永远学成同一个东西，对称性必须靠随机打破。",
+      "formal": "若某层输出 y = Wx，输入各维独立同分布且方差为 Var(x)，则 Var(y) = n_in·Var(w)·Var(x)。要让 Var(y) = Var(x)，必须 Var(w) = 1/n_in，这是 Xavier/Glorot 初始化（tanh/sigmoid 时代）的核心，均匀形式为 U[−√(6/(n_in+n_out)), √(6/(n_in+n_out))]，同时兼顾前向与反向。ReLU 会把一半激活置零、方差减半，因此 He/Kaiming 初始化把方差放大一倍：Var(w) = 2/n_in，即 std = √(2/n_in)，对应 nn.init.kaiming_normal_(w, nonlinearity='relu')。偏置通常初始化为 0。深层残差网络还需缩放残差分支（GPT-2 用 1/√(2N)，N 为残差层数；embedding 常用 std 0.02），否则残差累加会让方差随深度线性增长。PyTorch 的 nn.Linear 默认用 kaiming_uniform_(a=√5)，对大模型往往偏小，实践中要显式覆盖。",
+      "formula": "\\operatorname{Var}(w)=\\frac{2}{n_{in}+n_{out}}\\;\\text{(Xavier)},\\qquad \\operatorname{Var}(w)=\\frac{2}{n_{in}}\\;\\text{(Kaiming/He)}",
+      "aiConnection": "训练不收敛的排查清单里，初始化排在前三。实操检查：在 forward 里挂 hook，打印每层输出的 std，健康值大约在 0.5~1.5 且逐层不衰减；若第 1 层 std 是 1.0、第 20 层只剩 1e-3，就是初始化或缺少归一化的问题。加载预训练权重时初始化基本无关，但从头训小模型、给模型加新层（如新增投影头）时必须显式指定 init。LoRA 微调里 B 矩阵初始化为 0、A 用随机高斯，保证训练开始时增量为 0，正是同一套思路的工程应用。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "init_compare.py",
+        "code": "import torch\nimport torch.nn as nn\n\ntorch.manual_seed(0)\nwidth, depth = 128, 20\n\ndef build(init):\n    layers = []\n    for _ in range(depth):\n        lin = nn.Linear(width, width)\n        if init == 'zero':\n            nn.init.zeros_(lin.weight)\n            nn.init.zeros_(lin.bias)\n        elif init == 'xavier':\n            nn.init.xavier_uniform_(lin.weight)\n            nn.init.zeros_(lin.bias)\n        elif init == 'kaiming':\n            nn.init.kaiming_normal_(lin.weight, nonlinearity='relu')\n            nn.init.zeros_(lin.bias)\n        layers += [lin, nn.ReLU()]\n    return nn.Sequential(*layers)\n\nx = torch.randn(64, width)\nfor init in ['zero', 'default', 'xavier', 'kaiming']:\n    net = build(init).eval()\n    with torch.no_grad():\n        h = x\n        for m in net:\n            h = m(h)\n    print(f'{init:8s} 第 20 层激活 std = {h.std().item():.6f}')"
+      },
+      "mistakes": [
+        "全部初始化为 0 或同一个常数，神经元对称、永远学不出差异",
+        "用 Xavier 配 ReLU，方差偏小导致深层激活逐层衰减",
+        "自定义层忘记初始化，沿用默认值导致大模型训练初期 loss 抖动",
+        "只检查第一层激活，不看深层，漏掉逐层衰减的问题"
+      ],
+      "interviewPoints": [
+        "推导为什么 Xavier 取 1/n_in 量级、He 为什么要再乘 2",
+        "说明全 0 初始化导致对称性无法打破的具体过程",
+        "给出检查初始化是否健康的可操作手段（逐层激活 std 的量级）",
+        "解释残差网络为什么要额外缩放残差分支的初始化"
+      ],
+      "resources": [
+        {
+          "title": "Delving Deep into Rectifiers (He/Kaiming 初始化)",
+          "url": "https://arxiv.org/abs/1502.01852"
+        },
+        {
+          "title": "Understanding the difficulty of training deep feedforward networks (Xavier)",
+          "url": "https://proceedings.mlr.press/v9/glorot10a.html"
+        },
+        {
+          "title": "PyTorch torch.nn.init 文档",
+          "url": "https://pytorch.org/docs/stable/nn.init.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "initialization-q1",
+          "type": "choice",
+          "prompt": "为什么 ReLU 网络要用 Kaiming 而不是 Xavier 初始化？",
+          "options": [
+            "Kaiming 计算更快",
+            "ReLU 会把一半激活置零使方差减半，需要把初始化方差放大一倍",
+            "Xavier 只能用于卷积层",
+            "Kaiming 会把权重全部初始化为正数"
+          ],
+          "answerIndex": 1,
+          "explanation": "ReLU 输出约一半为 0，等效方差减半，Kaiming 取 Var(w)=2/n_in 来补偿，从而在前向中保持激活尺度。"
+        },
+        {
+          "id": "initialization-q2",
+          "type": "short",
+          "prompt": "把 50 层 MLP 的权重全部初始化为 0 会发生什么？为什么？",
+          "answer": "参考回答：网络无法学习。所有权重为 0 时，同一层的所有神经元对同一输入产生完全相同的输出与相同的梯度，反向传播后权重更新量也完全一致，神经元之间永远保持对称，等价于每层只有一个神经元。必须用随机初始化打破对称性，同时控制方差使激活尺度稳定。",
+          "keywords": [
+            "对称性",
+            "相同梯度",
+            "随机初始化"
+          ],
+          "explanation": "核心是「对称性无法打破」，等价于每层只有单个神经元在学。"
+        },
+        {
+          "id": "initialization-q3",
+          "type": "code",
+          "prompt": "用 PyTorch 构建 20 层、宽 128 的 ReLU MLP，分别用 Kaiming 正态初始化与 Xavier 均匀初始化，打印最后一层输出的 std。",
+          "starterCode": "import torch\nimport torch.nn as nn\n\ntorch.manual_seed(0)\n\ndef build(init_name):\n    pass\n",
+          "solution": "import torch\nimport torch.nn as nn\n\ntorch.manual_seed(0)\n\ndef build(init_name):\n    layers = []\n    for _ in range(20):\n        lin = nn.Linear(128, 128)\n        if init_name == 'kaiming':\n            nn.init.kaiming_normal_(lin.weight, nonlinearity='relu')\n        else:\n            nn.init.xavier_uniform_(lin.weight)\n        nn.init.zeros_(lin.bias)\n        layers += [lin, nn.ReLU()]\n    return nn.Sequential(*layers)\n\nx = torch.randn(64, 128)\nfor name in ['kaiming', 'xavier']:\n    net = build(name).eval()\n    with torch.no_grad():\n        print(name, net(x).std().item())\n",
+          "checks": [
+            "kaiming_normal_",
+            "xavier_uniform_",
+            "nn.ReLU()"
+          ],
+          "explanation": "Kaiming 补偿了 ReLU 的方差减半，深层激活 std 更接近输入尺度；Xavier 会让激活逐层衰减。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "activation-functions",
+      "title": "激活函数演进：ReLU 到 GELU",
+      "order": 7,
+      "module": "训练技巧",
+      "difficulty": "基础",
+      "estimatedMinutes": 30,
+      "summary": "从 Sigmoid 的饱和问题讲到 ReLU 的稀疏性，再到 GELU/SiLU/SwiGLU 的平滑门控。",
+      "intuition": "没有激活函数，100 层线性层叠起来还是一个线性变换，等于白叠。Sigmoid 把输出压到 (0,1)，但输入一旦到 ±5 曲线就压平了，梯度接近 0，反向传播传不回去；ReLU 简单粗暴地砍掉负半轴，正区间梯度恒为 1，计算还快，一举成为十年默认，但它对负输入梯度为 0，神经元可能「死掉」。GELU 不硬砍，而是按输入大小给一个平滑的门控概率，小负值还能保留一点信号，因此成为 Transformer 的标配。",
+      "formal": "Sigmoid σ(x) = 1/(1+e^{−x})，导数 σ(1−σ) 最大只有 0.25，|x| > 4 时导数 < 0.018，多层连乘导致梯度消失。Tanh 零中心但同样饱和。ReLU(x) = max(0, x) 正区间导数恒为 1，负区间为 0；若某神经元对所有输入都为负，其梯度永久为 0（dead ReLU），学习率过大时发生率显著升高。LeakyReLU 给负区间斜率 0.01 来缓解。GELU(x) = x·Φ(x)，Φ 是标准正态 CDF，常用 tanh 近似，处处可导且负区间有非零梯度，BERT/GPT 系列默认使用。SiLU/Swish(x) = x·σ(x) 用于 Llama、EfficientNet。GLU 变体 SwiGLU 把 FFN 中间维从 4d 改为约 (8/3)d 以对齐参数量，是当前 LLM FFN 的主流。判断 dead ReLU：统计某层激活为 0 的比例，持续超过 50% 且梯度范数为 0 就该换激活或调小学习率。",
+      "formula": "\\text{ReLU}(x)=\\max(0,x),\\quad \\text{GELU}(x)=x\\Phi(x)\\approx 0.5x\\left(1+\\tanh\\left(\\sqrt{2/\\pi}\\left(x+0.044715x^3\\right)\\right)\\right),\\quad \\text{SiLU}(x)=x\\sigma(x)",
+      "aiConnection": "换激活函数往往是最便宜的涨点手段之一。CV 里 ReLU 换 SiLU 在深层网络上常带来 0.5~1 个点提升；NLP 里 Transformer FFN 默认 GELU，Llama 系用 SwiGLU。面试常问「ReLU 相比 Sigmoid 好在哪」，答三点：无 exp 运算（FFN 里 exp 是主要开销之一）、非饱和、输出稀疏。还要能解释为什么大模型不太担心 dead ReLU 而小模型要担心：大模型的宽度与归一化让负激活比例稳定，不会整层死亡。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "activation_grad.py",
+        "code": "import torch\nimport torch.nn as nn\n\n# 在几个关键点上比较不同激活函数的导数大小\nx = torch.tensor([-6.0, -4.0, -1.0, 0.0, 1.0, 4.0], requires_grad=True)\n\nfor name, fn in [('sigmoid', torch.sigmoid), ('tanh', torch.tanh),\n                 ('relu', torch.relu), ('gelu', nn.functional.gelu),\n                 ('silu', nn.functional.silu)]:\n    if x.grad is not None:\n        x.grad.zero_()\n    y = fn(x)\n    y.sum().backward()\n    grads = [round(v, 4) for v in x.grad.tolist()]\n    print(f'{name:8s} 梯度 {grads}')\n\nprint('输入点 x =', x.tolist())\nprint('sigmoid 在 |x|>4 处梯度接近 0，ReLU 在负区间梯度恒为 0，GELU 在 -1 处仍有非零梯度')"
+      },
+      "mistakes": [
+        "在深层网络的隐藏层用 Sigmoid，梯度消失导致根本训不动",
+        "学习率设到 1e-2 量级还配 ReLU，大量神经元死亡后 loss 卡住不动",
+        "以为 GELU 只是 ReLU 的近似，忽略其负区间非零梯度带来的优化差异",
+        "换 SwiGLU 时不调整 FFN 中间维，参数量凭空涨约 50%"
+      ],
+      "interviewPoints": [
+        "解释 Sigmoid 梯度消失的数值原因（最大导数 0.25、|x|>4 时小于 0.018）",
+        "说明 dead ReLU 的成因与三种缓解方式",
+        "写出 GELU 的 tanh 近似并说明它与 ReLU 的关键差别",
+        "解释 SwiGLU 为什么把 FFN 中间维设成约 8/3 d"
+      ],
+      "resources": [
+        {
+          "title": "Gaussian Error Linear Units (GELU)",
+          "url": "https://arxiv.org/abs/1606.08415"
+        },
+        {
+          "title": "GLU Variants Improve Transformer (SwiGLU)",
+          "url": "https://arxiv.org/abs/2002.05202"
+        },
+        {
+          "title": "PyTorch 非线性激活函数文档",
+          "url": "https://pytorch.org/docs/stable/nn.html#non-linear-activations-weighted-sum-nonlinearity"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "activation-functions-q1",
+          "type": "choice",
+          "prompt": "Sigmoid 作为隐藏层激活函数的主要问题是？",
+          "options": [
+            "计算量比 ReLU 大且导数最大仅 0.25，深层连乘后梯度消失",
+            "输出不是零中心但导数恒为 1",
+            "负区间梯度为 0 导致神经元死亡",
+            "无法求导"
           ],
           "answerIndex": 0,
-          "explanation": "退化指更深的平原网络连训练误差都更差，说明问题出在优化而非泛化；选项 B 描述的是过拟合，是另一回事。"
+          "explanation": "Sigmoid 导数最大 0.25，饱和区更小，多层连乘后梯度指数衰减；dead ReLU 才是负区间梯度为 0 的问题。"
         },
         {
-          "id": "reading-cnn-classics-q2",
+          "id": "activation-functions-q2",
           "type": "short",
-          "prompt": "为什么 VGG 用两个 3×3 卷积替代一个 5×5 卷积？请从感受野和参数量两方面说明。",
-          "answer": "参考回答：两层 3×3 卷积堆叠后的有效感受野等于一层 5×5，因此表达能力覆盖范围相同。参数量上，设输入输出通道均为 C，一层 5×5 需要 25C² 个权重，而两层 3×3 只需 2×9C²=18C²，减少约 28%。此外两层之间多了一次 ReLU，非线性更强，判别能力更好，这也是 VGG 全部使用小卷积核的核心论据。",
+          "prompt": "什么是 dead ReLU？如何检测和缓解？",
+          "answer": "参考回答：当某个神经元的权重使其对所有输入都落在负区间时，ReLU 输出恒为 0，梯度也恒为 0，该神经元永久停止更新，称为 dead ReLU。检测方法是统计某层激活为 0 的比例，若持续超过 50% 且该层梯度范数为 0 即可确认。缓解手段：换 LeakyReLU/GELU/SiLU、调小学习率、使用 Kaiming 初始化或加归一化层。",
           "keywords": [
-            "感受野",
-            "参数量",
-            "18C²",
-            "非线性"
+            "负区间",
+            "梯度恒为 0",
+            "激活比例"
           ],
-          "explanation": "得分点是感受野等价、参数量 18C² 对 25C²、以及额外非线性三点。"
+          "explanation": "要点是「永久不更新」这一不可逆性，以及可量化的检测比例与三类缓解手段。"
         },
         {
-          "id": "reading-cnn-classics-q3",
+          "id": "activation-functions-q3",
           "type": "code",
-          "prompt": "实现 BasicBlock 的 forward 逻辑所依赖的辅助函数：给定 in_ch、out_ch、stride，返回是否需要使用 1×1 投影捷径的布尔值，并返回投影卷积的参数量（不计 bias）。",
-          "starterCode": "def shortcut_plan(in_ch, out_ch, stride):\n    \"\"\"返回 (need_proj, params)，params 为 1x1 卷积权重个数，need_proj 为 False 时 params=0\"\"\"\n    pass\n",
-          "solution": "def shortcut_plan(in_ch, out_ch, stride):\n    \"\"\"返回 (need_proj, params)，params 为 1x1 卷积权重个数，need_proj 为 False 时 params=0\"\"\"\n    need_proj = (stride != 1) or (in_ch != out_ch)\n    params = in_ch * out_ch if need_proj else 0\n    return need_proj, params\n",
+          "prompt": "对张量 x 分别计算 relu 与 gelu 的输出对 x 的梯度，并打印结果以对比两者在负区间的差异。",
+          "starterCode": "import torch\nimport torch.nn as nn\n\nx = torch.tensor([-2.0, -1.0, 0.0, 1.0, 2.0], requires_grad=True)\n",
+          "solution": "import torch\nimport torch.nn as nn\n\nx = torch.tensor([-2.0, -1.0, 0.0, 1.0, 2.0], requires_grad=True)\n\nfor name, fn in [('relu', torch.relu), ('gelu', nn.functional.gelu)]:\n    if x.grad is not None:\n        x.grad.zero_()\n    fn(x).sum().backward()\n    print(name, [round(v, 4) for v in x.grad.tolist()])\n",
           "checks": [
-            "stride != 1",
-            "in_ch != out_ch",
-            "in_ch * out_ch"
+            "torch.relu",
+            "nn.functional.gelu",
+            "backward()"
           ],
-          "explanation": "形状或步长不一致时必须投影，1×1 卷积权重数等于输入通道乘输出通道。"
+          "explanation": "ReLU 在负区间梯度全为 0，GELU 在 -1、-2 处仍有非零梯度，这正是它优化更平滑的原因。"
         }
-      ]
+      ],
+      "track": "side"
     },
     {
-      "slug": "reading-optimization-papers",
-      "title": "精读优化与正则：Adam、BatchNorm",
-      "order": 4,
-      "module": "经典论文精读",
+      "slug": "optimizers",
+      "title": "优化器：SGD 到 AdamW",
+      "order": 8,
+      "module": "训练技巧",
       "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "精读训练稳定性两块基石：Adam 用一阶、二阶矩估计做逐参数自适应学习率，BatchNorm 用批统计量标准化激活以允许更大学习率与更快收敛。",
-      "intuition": "训练网络像下山：不同坡面的陡峭程度差别很大，用同一个步长走，陡的地方会冲过头、缓的地方又挪不动。Adam 给每个参数配一双「自适应鞋」——记住这个参数近期梯度的方向（一阶矩，动量）和波动幅度（二阶矩），梯度大就迈小步、梯度小就迈大步。BatchNorm 解决的是另一个问题：训练中每层输入的分布会随着前面层更新而不断漂移，像接力赛里每棒都在换赛道，后面的人根本没法练；把每层激活拉回均值 0、方差 1 的尺度，相当于把赛道固定下来。",
-      "formal": "Adam 维护梯度的一阶矩估计 m_t 与二阶矩估计 v_t，二者都用指数移动平均，并做偏差修正以消除零初始化带来的初期低估：m̂_t = m_t/(1-β₁ᵗ)，v̂_t = v_t/(1-β₂ᵗ)，更新为 θ ← θ - η·m̂_t/(√v̂_t + ε)。默认超参 β₁=0.9、β₂=0.999、ε=1e-8，偏差修正让 t=1 时更新步长接近 η·sign(g)，而不是被 0.001 倍缩小。Loshchilov 与 Hutter 指出，在 Adam 中把 L2 正则加进梯度会被自适应缩放扭曲，正确做法是解耦的 AdamW：θ ← θ - η(m̂/(√v̂+ε) + λθ)。BatchNorm 对每个通道在 (N,H,W) 上统计：x̂ = (x-μ_B)/√(σ_B²+ε)，再仿射变换 y = γx̂ + β；训练用批统计量并更新全局滑动平均（momentum 默认 0.1），推理用滑动平均。小批量下批统计噪声大，是 BN 在检测、分割等小 batch 场景失宠的原因。",
-      "formula": "\\theta_t = \\theta_{t-1} - \\eta\\,\\frac{\\hat{m}_t}{\\sqrt{\\hat{v}_t}+\\epsilon},\\qquad \\hat{m}_t=\\frac{m_t}{1-\\beta_1^{t}},\\ \\ \\hat{v}_t=\\frac{v_t}{1-\\beta_2^{t}}",
-      "aiConnection": "这两篇是训练调参的日常工具：loss 不降时先看优化器与学习率调度，nan 时先查是否有除零或过大学习率，效果不稳时先怀疑 BN 的 batch size。面试常考「Adam 为什么需要偏差修正」「BN 训练和推理有什么区别」「为什么大模型都用 AdamW 而不是 Adam + weight decay」，答得清楚说明你真的调过模型。做 Transformer 训练还要知道 warmup：前 1%-5% 步数线性升高学习率，再余弦或逆平方根衰减，否则早期梯度噪声会让训练发散。",
+      "estimatedMinutes": 40,
+      "summary": "从 SGD 动量到自适应学习率，讲清 Adam 的更新式、显存代价与 AdamW 的解耦权重衰减。",
+      "intuition": "SGD 只凭当前这一步的坡度下山，遇到峡谷地形就来回震荡；加上动量（momentum 0.9）相当于给了惯性，方向一致的历史梯度被累积，震荡方向相互抵消。Adam 更进一步，给每个参数单独配一个学习率：梯度一直很大的参数步子收小，梯度一直很小的参数步子放大，因此对学习率不敏感、收敛快。代价是它要保存一阶和二阶矩，显存开销是 SGD 的三倍。AdamW 修的是原版 Adam 的一个缺陷：L2 正则被塞进梯度后会被自适应缩放扭曲，解耦出来直接衰减权重才符合直觉。",
+      "formal": "SGD 更新 θ ← θ − η·g。动量法累积 m_t = βm_{t−1} + g_t（β 常取 0.9），用 m_t 更新。Adam 同时维护一阶矩 m_t = β₁m_{t−1} + (1−β₁)g_t 与二阶矩 v_t = β₂v_{t−1} + (1−β₂)g_t²，并做偏差校正 m̂ = m_t/(1−β₁^t)、v̂ = v_t/(1−β₂^t)，更新 θ ← θ − η·m̂/(√v̂ + ε)，默认 β₁=0.9、β₂=0.999、ε=1e-8、η=1e-3。AdamW 把权重衰减从梯度中解耦：θ ← θ − η(m̂/(√v̂+ε)) − ηλθ，λ 常取 0.01~0.1。显存方面，Adam 每个参数额外存 2 个 fp32 状态，加上参数与梯度，混合精度下约 16~18 bytes/参数；7B 模型仅优化器状态就约 7e9×8 = 56 GB，这正是全量微调必须用 ZeRO/FSDP 分片的原因，而 SGD 动量只需 4 bytes/参数。经验选择：CV 小模型追精度用 SGD + momentum 0.9 + cosine；Transformer 预训练与微调一律 AdamW；LLM 预训练常把 β₂ 从 0.999 调到 0.95。",
+      "formula": "m_t=\\beta_1 m_{t-1}+(1-\\beta_1)g_t,\\quad v_t=\\beta_2 v_{t-1}+(1-\\beta_2)g_t^2,\\quad \\theta_t=\\theta_{t-1}-\\eta\\left(\\frac{\\hat{m}_t}{\\sqrt{\\hat{v}_t}+\\epsilon}+\\lambda\\theta_{t-1}\\right)",
+      "aiConnection": "面试常问「为什么 LLM 微调常用 AdamW + cosine schedule」。三点：AdamW 的自适应学习率对 Transformer 各层、各参数尺度的梯度差异更鲁棒，省去大量调参；解耦权重衰减在长训练中稳定控制权重范数，防止后期 loss 漂移；cosine 衰减在训练后段把学习率降到接近 0，让模型落到更平坦的极小值、泛化更好。LoRA 微调常用 lr 1e-4~2e-4 + cosine + warmup 3%，全量微调常用 2e-5~5e-5，预训练约 3e-4 并配 β₂=0.95、weight_decay 0.1、grad clip 1.0。",
       "codeExample": {
         "lang": "python",
-        "filename": "bn_train_eval.py",
-        "code": "import torch\nimport torch.nn as nn\n\n\ntorch.manual_seed(0)\nbn = nn.BatchNorm1d(4, momentum=0.1, eps=1e-5)\nx = torch.randn(8, 4) * 3 + 1\n\n# 训练模式：使用当前 batch 的均值/方差，并更新 running stats\nbn.train()\ny_train = bn(x)\nprint(\"train  batch mean\", y_train.mean().item())\nprint(\"running_mean   \", bn.running_mean)\n\n# 推理模式：使用滑动平均统计量，结果与 batch 组成无关\nbn.eval()\nwith torch.no_grad():\n    y_eval = bn(x)\nprint(\"eval   batch mean\", y_eval.mean().item())\n\n# 关键坑：忘记切换 eval() 会让单样本推理结果随 batch 变化\nsingle = bn.eval()(x[:1])\nprint(\"single-sample out\", single.shape)"
+        "filename": "optimizer_compare.py",
+        "code": "import torch\nimport torch.nn as nn\n\ntorch.manual_seed(0)\nX = torch.randn(512, 20)\ntrue_w = torch.randn(20, 1)\ny = X @ true_w + 0.1 * torch.randn(512, 1)\n\ndef make_model():\n    return nn.Sequential(nn.Linear(20, 64), nn.ReLU(), nn.Linear(64, 1))\n\ndef train(name, steps=300):\n    torch.manual_seed(0)\n    model = make_model()\n    if name == 'sgd':\n        opt = torch.optim.SGD(model.parameters(), lr=0.05, momentum=0.9)\n    else:\n        opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.01)\n    loss_fn = nn.MSELoss()\n    for _ in range(steps):\n        opt.zero_grad()\n        loss = loss_fn(model(X), y)\n        loss.backward()\n        opt.step()\n    w_norm = sum(p.norm().item() ** 2 for p in model.parameters()) ** 0.5\n    print(f'{name:6s} final_loss={loss.item():.4f} 参数 L2 范数={w_norm:.4f}')\n\ntrain('sgd')\ntrain('adamw')\nprint('AdamW 每个参数额外保存 2 个 fp32 状态，显存约为 SGD 动量的 3 倍')"
       },
       "mistakes": [
-        "在 Adam 里直接把 weight decay 加进梯度，等于做了被自适应缩放扭曲的 L2，正确做法是用 AdamW",
-        "batch size 很小时仍用 BatchNorm，批统计噪声过大导致训练不稳，应改用 GroupNorm 或 LayerNorm",
-        "推理时忘记 model.eval()，BN 继续用批统计量，导致同一输入在不同 batch 下输出不同",
-        "以为 BN 在卷积层是「对每个像素位置」统计，实际是对每个通道在 N、H、W 三个维度上一起统计"
+        "把 Adam 的 weight_decay 当作 L2 正则，更新被自适应缩放扭曲，应用 AdamW",
+        "沿用 SGD 的学习率（如 0.1）去跑 Adam，直接发散",
+        "忽略 Adam 的显存开销，7B 模型全量微调时显存不足就盲目减小 batch",
+        "把 β₂ 从 0.999 改小却不同步调整 warmup，导致训练初期不稳定"
       ],
       "interviewPoints": [
-        "Adam 的偏差修正解决什么问题，去掉它会有什么后果（初期更新步长被严重低估）",
-        "BatchNorm 训练与推理阶段的差异，以及为什么推理必须用滑动平均",
-        "为什么 weight decay 要与 Adam 的自适应缩放解耦，AdamW 改了什么",
-        "学习率 warmup 为什么对 Transformer 尤其重要，典型 warmup 比例是多少"
+        "写出 Adam 的完整更新式并说明偏差校正的作用",
+        "解释 AdamW 与 Adam + L2 的区别，以及为什么解耦更好",
+        "估算 Adam 相比 SGD 的显存开销，并说明 7B 模型的数量级",
+        "说明 SGD + 动量与 Adam 各自适合什么场景"
       ],
       "resources": [
         {
@@ -292,724 +625,561 @@
           "url": "https://arxiv.org/abs/1412.6980"
         },
         {
-          "title": "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift",
-          "url": "https://arxiv.org/abs/1502.03167"
-        },
-        {
           "title": "Decoupled Weight Decay Regularization (AdamW)",
           "url": "https://arxiv.org/abs/1711.05101"
+        },
+        {
+          "title": "PyTorch torch.optim 文档（SGD/Adam/AdamW 参数默认值）",
+          "url": "https://pytorch.org/docs/stable/optim.html"
         }
       ],
       "quiz": [
         {
-          "id": "reading-optimization-papers-q1",
+          "id": "optimizers-q1",
           "type": "choice",
-          "prompt": "Adam 中的偏差修正（bias correction）主要是为了解决什么问题？",
+          "prompt": "Adam 中偏差校正（bias correction）的目的是？",
           "options": [
-            "梯度中存在异常值导致更新过大",
-            "一阶、二阶矩初始化为零，导致训练初期估计被严重低估",
-            "学习率随训练步数衰减过快",
-            "权重衰减与自适应学习率耦合"
+            "防止权重衰减过大",
+            "修正 m、v 初始化为 0 导致训练初期估计偏小的问题",
+            "让学习率自动衰减",
+            "减少显存占用"
           ],
           "answerIndex": 1,
-          "explanation": "m、v 从零开始做指数移动平均，初期期望被 (1-βᵗ) 倍缩小，除以该因子即可还原无偏估计；选项 D 描述的是 AdamW 要解决的问题。"
+          "explanation": "m_0、v_0 初始为 0，前几步的滑动平均被严重低估，除以 (1−β^t) 才能得到无偏估计，避免初期步长异常。"
         },
         {
-          "id": "reading-optimization-papers-q2",
+          "id": "optimizers-q2",
           "type": "short",
-          "prompt": "BatchNorm 在训练和推理阶段分别使用什么统计量？为什么必须区分这两个阶段？",
-          "answer": "参考回答：训练阶段对当前 mini-batch 的每个通道在 N、H、W 维度上计算均值和方差用于标准化，同时用 momentum 更新全局滑动平均统计量；推理阶段不再依赖 batch，直接使用训练期间累积的滑动平均均值和方差。必须区分的原因是推理时 batch 大小可能为 1 或组成任意，若继续用批统计量，同一输入的输出会随同批数据变化，结果不可复现，也会与训练时的分布不一致。",
+          "prompt": "AdamW 与 Adam + L2 正则有什么本质区别？",
+          "answer": "参考回答：Adam 把 L2 项加进梯度后，该梯度会与自适应分母 √v̂ 相除，导致权重衰减强度随每个参数的梯度历史变化，大梯度参数的衰减被削弱，二者不再等价。AdamW 把权重衰减解耦，直接以 ηλθ 衰减参数，衰减量与梯度尺度无关，等价于真正的指数衰减，长训练下更稳定、泛化更好。",
           "keywords": [
-            "批统计量",
-            "滑动平均",
-            "推理",
-            "可复现"
+            "解耦",
+            "自适应缩放",
+            "权重衰减"
           ],
-          "explanation": "得分点是训练用批统计 + 更新滑动平均、推理用滑动平均，以及推理不依赖 batch 组成这一理由。"
+          "explanation": "关键在「L2 进入梯度后被 √v̂ 缩放而失真」，解耦后才是干净的权重衰减。"
         },
         {
-          "id": "reading-optimization-papers-q3",
+          "id": "optimizers-q3",
           "type": "code",
-          "prompt": "实现 Adam 的单步更新函数 adam_step(param, grad, m, v, t, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8)，输入与返回都用 float，返回 (new_param, new_m, new_v)。要求包含偏差修正。",
-          "starterCode": "def adam_step(param, grad, m, v, t, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):\n    \"\"\"t 从 1 开始计数；返回 (new_param, new_m, new_v)\"\"\"\n    pass\n",
-          "solution": "def adam_step(param, grad, m, v, t, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):\n    \"\"\"t 从 1 开始计数；返回 (new_param, new_m, new_v)\"\"\"\n    m = beta1 * m + (1 - beta1) * grad\n    v = beta2 * v + (1 - beta2) * grad * grad\n    m_hat = m / (1 - beta1 ** t)\n    v_hat = v / (1 - beta2 ** t)\n    param = param - lr * m_hat / (v_hat ** 0.5 + eps)\n    return param, m, v\n",
+          "prompt": "为一个模型分别创建 SGD(momentum=0.9, lr=0.05) 与 AdamW(lr=1e-3, weight_decay=0.01) 两个优化器，并打印各自的 param_groups 中的 lr。",
+          "starterCode": "import torch\nimport torch.nn as nn\n\nmodel = nn.Linear(10, 1)\n",
+          "solution": "import torch\nimport torch.nn as nn\n\nmodel = nn.Linear(10, 1)\nsgd = torch.optim.SGD(model.parameters(), lr=0.05, momentum=0.9)\nadamw = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.01)\nprint('sgd lr', sgd.param_groups[0]['lr'])\nprint('adamw lr', adamw.param_groups[0]['lr'])\nprint('adamw weight_decay', adamw.param_groups[0]['weight_decay'])\n",
           "checks": [
-            "beta1 * m",
-            "1 - beta1 ** t",
-            "v_hat ** 0.5"
+            "torch.optim.SGD",
+            "torch.optim.AdamW",
+            "weight_decay=0.01"
           ],
-          "explanation": "先更新一阶、二阶矩，再做偏差修正，最后按 m̂/(√v̂+ε) 更新参数。"
+          "explanation": "两个优化器都从 param_groups 读取超参，注意 AdamW 的 weight_decay 是解耦实现。"
         }
-      ]
+      ],
+      "track": "side"
     },
     {
-      "slug": "reading-transformer-bert-gpt",
-      "title": "精读 Transformer、BERT 与 GPT",
-      "order": 5,
-      "module": "经典论文精读",
-      "difficulty": "进阶",
-      "estimatedMinutes": 55,
-      "summary": "精读三篇定义现代语言模型的论文：Transformer 用纯注意力取代循环并让序列可并行，BERT 用双向掩码预训练做理解，GPT 用自回归预训练验证了规模定律。",
-      "intuition": "RNN 读句子像一个人逐字念，第 100 个字必须等前 99 个字念完，GPU 再强也用不上。Transformer 把这件事改成「所有人同时看整张纸」：每个词直接和其他所有词算相关度，一次矩阵乘法就完成全序列交互，代价是计算量随长度平方增长，于是有了后来的长上下文优化。BERT 和 GPT 则是在同一套骨架上的两种学习目标：BERT 像做完形填空，把中间挖掉的字猜回来，因此能同时看左右两边；GPT 像接龙，永远只准看左边，因此天生会续写。",
-      "formal": "Transformer 的核心是缩放点积注意力：先用 QKᵀ 算相似度，除以 √d_k 防止 softmax 饱和，再对 V 加权求和；多头注意力把 d_model 切成 h 份并行计算后拼接，h=8、d_k=d_v=64、d_model=512 时总计算量与单头相当。每层含两个子层（注意力、前馈），每个子层都带残差与 LayerNorm；由于没有循环结构，位置信息必须靠位置编码注入，原论文用不同频率的正弦、余弦函数。BERT-Base 为 12 层、768 维、12 头、1.1 亿参数，预训练目标是掩码语言模型（随机遮 15% token 让其还原）与下一句预测，在 33 亿词料上训练，GLUE 上比 GPT 提升约 7 个百分点，SQuAD 1.1 上 F1 达 93.2，超过当时的人类水平。GPT-3 把自回归模型放大到 1750 亿参数、96 层、d_model 12288、上下文 2048，在少样本设定下多数任务超过微调基线，验证了规模定律。",
-      "formula": "\\text{MultiHead}(Q,K,V) = \\text{Concat}(\\text{head}_1,\\dots,\\text{head}_h)W^O,\\quad \\text{head}_i=\\text{softmax}\\!\\left(\\frac{QW_i^Q (KW_i^K)^T}{\\sqrt{d_k}}\\right)VW_i^V",
-      "aiConnection": "Transformer 是所有大模型岗的公共基础：面试必问自注意力复杂度为什么是 O(n²d)、多头为什么比单头好、位置编码为什么不能省。BERT 和 GPT 的差异决定了工程选型——做分类、抽取、检索用编码器类模型加微调，做生成、对话、Agent 用自回归模型加提示或微调。读 GPT-3 还要重点看它的评测方式：少样本、单样本、零样本如何设置，这直接对应今天做业务评估时「不微调能不能达标」的判断。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "causal_mask_demo.py",
-        "code": "import torch\nimport torch.nn.functional as F\n\n\ndef self_attention(x, causal=False):\n    \"\"\"x: (batch, seq, dim)；返回加权后的表示\"\"\"\n    q, k, v = x, x, x\n    scores = q @ k.transpose(-2, -1) / (x.size(-1) ** 0.5)\n    if causal:\n        seq = x.size(1)\n        # 上三角（不含对角线）置为 -inf，softmax 后权重恰好为 0\n        mask = torch.triu(torch.ones(seq, seq, dtype=torch.bool), diagonal=1)\n        scores = scores.masked_fill(mask, float(\"-inf\"))\n    weights = F.softmax(scores, dim=-1)\n    return weights @ v, weights\n\n\nx = torch.randn(1, 4, 8)\n_, w_bi = self_attention(x, causal=False)\n_, w_causal = self_attention(x, causal=True)\nprint(\"双向注意力第一行权重\", w_bi[0, 0].tolist())\nprint(\"因果注意力第一行权重\", w_causal[0, 0].tolist())   # 只有位置 0 非零\nprint(\"每行权重和\", w_causal.sum(-1))"
-      },
-      "mistakes": [
-        "把 BERT 说成生成模型：它用双向注意力做掩码还原，无法自然地自回归生成文本",
-        "以为多头注意力是「把 d_model 复制 h 份」，实际是把维度切分，总计算量与单头相当",
-        "微调 BERT 时沿用预训练的学习率 1e-4，通常应取 2e-5 到 5e-5，否则容易灾难性遗忘",
-        "忽略位置编码的作用，去掉后自注意力对输入顺序完全无感，模型退化成词袋"
-      ],
-      "interviewPoints": [
-        "自注意力的时间与显存复杂度是多少，为什么长上下文需要专门优化（FlashAttention、稀疏注意力）",
-        "多头注意力相对单头的收益与代价，h 变大时每个头的维度如何变化",
-        "BERT 与 GPT 在注意力掩码、预训练目标、适用任务上的三点差异",
-        "为什么 Transformer 训练需要 warmup，以及 LayerNorm 放在残差之前还是之后（Pre-LN 与 Post-LN）的取舍"
-      ],
-      "resources": [
-        {
-          "title": "Attention Is All You Need（Transformer）",
-          "url": "https://arxiv.org/abs/1706.03762"
-        },
-        {
-          "title": "BERT: Pre-training of Deep Bidirectional Transformers",
-          "url": "https://arxiv.org/abs/1810.04805"
-        },
-        {
-          "title": "GPT-3: Language Models are Few-Shot Learners",
-          "url": "https://arxiv.org/abs/2005.14165"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "reading-transformer-bert-gpt-q1",
-          "type": "choice",
-          "prompt": "关于多头注意力，下列说法正确的是？",
-          "options": [
-            "它把 d_model 维表示复制 h 份，计算量变为单头的 h 倍",
-            "它把 d_model 切成 h 份分别做注意力再拼接，总计算量与单头大致相当",
-            "它只能用于编码器，解码器必须使用单头注意力",
-            "它通过共享 Q、K、V 权重来减少参数量"
-          ],
-          "answerIndex": 1,
-          "explanation": "多头是把 d_model 划分给 h 个头（每个头 d_k=d_model/h），并行计算后拼接再做输出投影，总计算量与单头同量级；解码器同样使用多头注意力，只是加了因果掩码。"
-        },
-        {
-          "id": "reading-transformer-bert-gpt-q2",
-          "type": "short",
-          "prompt": "为什么自注意力里要除以 √d_k？如果不除，会出现什么现象？",
-          "answer": "参考回答：Query 与 Key 的点积是 d_k 个乘积之和，当 d_k 较大时点积的方差随 d_k 线性增大，数值容易落到较大区间。softmax 在输入绝对值很大时会进入饱和区，输出接近 one-hot，梯度趋近于零，训练几乎无法推进。除以 √d_k 相当于把点积的标准差拉回 1 附近，使 softmax 保持在梯度健康的范围内，这也是原论文选择该缩放因子的直接理由。",
-          "keywords": [
-            "点积",
-            "方差",
-            "softmax 饱和",
-            "梯度"
-          ],
-          "explanation": "得分点是点积方差随 d_k 增大、softmax 饱和导致梯度消失、缩放使数值稳定三点。"
-        },
-        {
-          "id": "reading-transformer-bert-gpt-q3",
-          "type": "code",
-          "prompt": "实现 causal_mask(scores)：输入形状为 (batch, heads, seq, seq) 的打分张量，把每个位置对未来的注意力（上三角，不含对角线）置为负无穷，返回处理后的张量。",
-          "starterCode": "import torch\n\n\ndef causal_mask(scores):\n    \"\"\"scores: (B, H, S, S)；返回同形状张量，未来位置为 -inf\"\"\"\n    pass\n",
-          "solution": "import torch\n\n\ndef causal_mask(scores):\n    \"\"\"scores: (B, H, S, S)；返回同形状张量，未来位置为 -inf\"\"\"\n    seq = scores.size(-1)\n    mask = torch.triu(torch.ones(seq, seq, dtype=torch.bool, device=scores.device), diagonal=1)\n    return scores.masked_fill(mask, float(\"-inf\"))\n",
-          "checks": [
-            "torch.triu",
-            "diagonal=1",
-            "masked_fill"
-          ],
-          "explanation": "用 torch.triu 取严格上三角作为掩码，masked_fill 置 -inf，softmax 后这些位置权重为 0。"
-        }
-      ]
-    },
-    {
-      "slug": "reading-alignment-papers",
-      "title": "精读对齐：InstructGPT 与 DPO",
-      "order": 6,
-      "module": "经典论文精读",
-      "difficulty": "高阶",
-      "estimatedMinutes": 50,
-      "summary": "精读对齐的两篇关键论文：InstructGPT 用 SFT + 奖励模型 + PPO 的三阶段 RLHF 让模型听指令，DPO 证明可以跳过奖励模型与强化学习，直接用偏好对做分类式优化。",
-      "intuition": "预训练模型像一个读遍全网但没上过班的实习生：知识很多，却不知道你想要的到底是什么格式和语气。RLHF 的做法是先给示范（SFT，手把手教），再让他做一堆题并让人类排序打分（训练奖励模型），最后用这个打分器当裁判反复练习（PPO 强化学习）。问题是裁判和选手同时训练很容易失控，模型会学会讨好裁判的怪癖。DPO 的洞察很漂亮：既然裁判和选手的关系可以被数学推导直接合并，那就不必真养一个裁判——直接把「人类更喜欢 A 而不是 B」当作分类标签来训练模型即可。",
-      "formal": "InstructGPT 的三阶段：第一步用约 1.3 万条人工示范做监督微调；第二步对同一提示的多个输出做人类排序，训练奖励模型 r_θ，损失为成对比较的 -log σ(r(x,y_w) - r(x,y_l))；第三步用 PPO 最大化 E[r_θ(x,y)] - β·KL(π_RL ‖ π_SFT)，KL 项约束新策略不要偏离 SFT 模型太远，防止奖励被过度优化。结论是 1.3B 的 InstructGPT 输出在人类偏好上优于 175B 的 GPT-3，且有害输出更少。DPO 从同一目标出发，把最优策略写成闭式解 π*(y|x) ∝ π_ref(y|x)·exp(r(x,y)/β)，反解出隐式奖励 r(x,y) = β·log(π_θ(y|x)/π_ref(y|x))，代回成对损失即得 DPO 目标：-log σ(β log(π_θ(y_w|x)/π_ref(y_w|x)) - β log(π_θ(y_l|x)/π_ref(y_l|x)))。整个训练只需偏好对上的交叉熵，不用采样、不用 PPO、不用维护奖励模型。",
-      "formula": "\\mathcal{L}_{\\text{DPO}} = -\\,\\mathbb{E}_{(x,y_w,y_l)}\\log \\sigma\\!\\left(\\beta \\log\\frac{\\pi_\\theta(y_w|x)}{\\pi_{\\text{ref}}(y_w|x)} - \\beta \\log\\frac{\\pi_\\theta(y_l|x)}{\\pi_{\\text{ref}}(y_l|x)}\\right)",
-      "aiConnection": "对齐是大模型岗的高频考点：面试会问 RLHF 三个阶段各自解决什么问题、奖励模型为什么会被 hack、DPO 为什么能省掉 PPO。工程上这决定了你的技术选型与成本——PPO 需要 4 个模型同时驻留显存（策略、参考、奖励、价值）且训练不稳定，DPO 只要策略与参考两个，单卡也能跑通，适合中小团队。读这两篇还要记住评估方式：人类偏好胜率是主要指标，而不是困惑度，这与业务里「回答好不好」的评估口径一致。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "dpo_loss.py",
-        "code": "import torch\nimport torch.nn.functional as F\n\n\ndef dpo_loss(policy_logp_w, policy_logp_l, ref_logp_w, ref_logp_l, beta=0.1):\n    \"\"\"四个入参均为 (batch,) 的序列对数概率之和；返回标量损失\"\"\"\n    # 隐式奖励：策略相对参考模型的 log 概率比，乘以 beta 控制偏离强度\n    margin = beta * ((policy_logp_w - ref_logp_w) - (policy_logp_l - ref_logp_l))\n    loss = -F.logsigmoid(margin).mean()\n    with torch.no_grad():\n        # 附带指标：隐式奖励差与胜率，用于判断训练是否真的在学偏好\n        reward_diff = margin\n        acc = (margin > 0).float().mean()\n    return loss, reward_diff.mean().item(), acc.item()\n\n\ntorch.manual_seed(0)\nB = 4\np_w, p_l = -torch.rand(B) * 10, -torch.rand(B) * 10\nr_w, r_l = -torch.rand(B) * 10, -torch.rand(B) * 10\nloss, rdiff, acc = dpo_loss(p_w, p_l, r_w, r_l)\nprint(f\"loss={loss.item():.4f} reward_diff={rdiff:.4f} acc={acc:.2f}\")"
-      },
-      "mistakes": [
-        "把 RLHF 的第二阶段当成「再用人类数据微调一遍」，它的产物是奖励模型而不是策略模型",
-        "忽略 PPO 里的 KL 惩罚项，去掉后策略会迅速偏离语言模型分布，输出重复或无意义文本",
-        "在 DPO 里忘记准备参考模型（π_ref），丢掉参考概率比就退化成普通的偏好分类，容易过拟合",
-        "以为对齐能提升模型的知识与推理上限，它主要改变的是输出风格与偏好匹配度"
-      ],
-      "interviewPoints": [
-        "RLHF 三个阶段各自的数据形式、模型产物和要解决的问题",
-        "奖励模型为什么会被 reward hacking，KL 约束在其中起什么作用",
-        "DPO 的推导思路：从带 KL 约束的最优策略闭式解反解出隐式奖励",
-        "β 在 DPO 中控制什么，取大或取小分别会带来什么现象"
-      ],
-      "resources": [
-        {
-          "title": "InstructGPT: Training language models to follow instructions with human feedback",
-          "url": "https://arxiv.org/abs/2203.02155"
-        },
-        {
-          "title": "DPO: Direct Preference Optimization: Your Language Model is Secretly a Reward Model",
-          "url": "https://arxiv.org/abs/2305.18290"
-        },
-        {
-          "title": "HH-RLHF 人类偏好数据集",
-          "url": "https://huggingface.co/datasets/Anthropic/hh-rlhf"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "reading-alignment-papers-q1",
-          "type": "choice",
-          "prompt": "InstructGPT 的 RLHF 流程中，奖励模型（reward model）的训练数据是？",
-          "options": [
-            "人工撰写的标准答案",
-            "同一提示下多个输出的人类排序比较结果",
-            "模型自己生成的最高概率回答",
-            "公开网页文本的下一词预测语料"
-          ],
-          "answerIndex": 1,
-          "explanation": "奖励模型学习的是人类对同一提示多个输出的偏好排序，用成对比较损失训练；人工撰写的标准答案用于第一阶段的监督微调。"
-        },
-        {
-          "id": "reading-alignment-papers-q2",
-          "type": "short",
-          "prompt": "DPO 相比 PPO 版 RLHF，省掉了哪些组件？它为什么还能保证优化的是同一个目标？",
-          "answer": "参考回答：DPO 省掉了奖励模型、PPO 的价值网络与在线采样，训练时只需策略模型和参考模型。它之所以等价，是因为在带 KL 约束的奖励最大化目标下，最优策略有闭式解，可反解出隐式奖励等于 β 乘策略与参考模型的 log 概率比；把这个隐式奖励代回成对比较损失，就得到只依赖偏好对的分类式目标。因此偏好优化不必显式建奖励模型，直接在偏好数据上做交叉熵即可。",
-          "keywords": [
-            "闭式解",
-            "隐式奖励",
-            "参考模型",
-            "偏好对"
-          ],
-          "explanation": "得分点是省掉奖励模型与 PPO 采样、闭式解反解隐式奖励、代回成对损失三点。"
-        },
-        {
-          "id": "reading-alignment-papers-q3",
-          "type": "code",
-          "prompt": "实现隐式奖励函数 implicit_reward(logp_policy, logp_ref, beta=0.1)：输入两个 (batch,) 张量，返回形状相同的隐式奖励张量，并同时返回偏好对 (chosen, rejected) 的准确率，即 margin > 0 的比例。",
-          "starterCode": "import torch\n\n\ndef implicit_reward(logp_policy, logp_ref, logp_policy_rej, logp_ref_rej, beta=0.1):\n    \"\"\"返回 (reward_chosen, reward_rejected, accuracy)\"\"\"\n    pass\n",
-          "solution": "import torch\n\n\ndef implicit_reward(logp_policy, logp_ref, logp_policy_rej, logp_ref_rej, beta=0.1):\n    \"\"\"返回 (reward_chosen, reward_rejected, accuracy)\"\"\"\n    reward_c = beta * (logp_policy - logp_ref)\n    reward_r = beta * (logp_policy_rej - logp_ref_rej)\n    acc = (reward_c > reward_r).float().mean().item()\n    return reward_c, reward_r, acc\n",
-          "checks": [
-            "beta * (logp_policy - logp_ref)",
-            "reward_c > reward_r",
-            ".mean()"
-          ],
-          "explanation": "隐式奖励为 β 乘策略与参考模型对数概率之差，偏好对准确率即 chosen 奖励高于 rejected 的比例。"
-        }
-      ]
-    },
-    {
-      "slug": "reading-efficiency-papers",
-      "title": "精读高效微调与推理：LoRA、FlashAttention、vLLM",
-      "order": 7,
-      "module": "经典论文精读",
-      "difficulty": "高阶",
-      "estimatedMinutes": 55,
-      "summary": "精读三篇把大模型从「训不动、跑得慢、并发低」变成可落地的论文：LoRA 用低秩增量做参数高效微调，FlashAttention 用分块与在线 softmax 提速省显存，vLLM 用分页 KV cache 提升推理吞吐。",
-      "intuition": "全量微调 7B 模型要存一份权重、一份梯度、两份优化器状态，显存需求约为参数的 16 倍，单卡根本放不下。LoRA 的想法是：微调带来的变化量本身是低秩的，与其改整面墙，不如在旁边贴两张小纸条，用它们的乘积表示改动。FlashAttention 解决的是「注意力矩阵太大」——长度为 8K 时注意力矩阵有 6400 万个元素，没必要把它完整写进显存再读出来，分块算完就地累加即可。vLLM 则发现推理时显存被 KV cache 切得七零八落，于是借用操作系统的分页思想，把缓存切成固定大小的块按需分配。",
-      "formal": "LoRA 冻结预训练权重 W₀，只训练低秩增量 ΔW = BA，其中 A 为 r×d、B 为 d×r，r 通常取 8-64；前向为 h = W₀x + (α/r)·BAx，B 初始化为零使训练起点等价于原模型。可训练参数量从 d² 降到 2rd，r=8、d=4096 时约为 0.4%。推理时可将 BA 合并回 W₀，不增加延迟。QLoRA 进一步把基座量化为 4-bit NF4 并做双重量化，使 65B 模型可在单张 48GB 卡上微调。FlashAttention 利用 GPU 显存层级（SRAM 约 20MB 每 SM、HBM 数十 GB），把 Q、K、V 分块载入 SRAM，用在线 softmax 逐块更新归一化因子与累加输出，避免实例化 n×n 注意力矩阵；IO 复杂度从 O(n²) 次 HBM 访问降到 O(n²/M)，长序列上带来 2-4 倍加速。vLLM 的 PagedAttention 把 KV cache 切成固定 token 数的 block，用块表映射逻辑与物理地址，显存浪费从传统实现的 60%-80% 降到 4% 以下，配合连续批处理在相同延迟下吞吐提升 2-24 倍。",
-      "formula": "h = W_0 x + \\frac{\\alpha}{r} B A x,\\qquad \\Delta W = BA,\\quad A\\in\\mathbb{R}^{r\\times d},\\ B\\in\\mathbb{R}^{d\\times r},\\ r \\ll d",
-      "aiConnection": "这三篇是算法岗落地能力的分水岭：面试问「单卡怎么微调 7B 模型」「推理吞吐上不去怎么排查」，需要给出具体数字——LoRA 把可训练参数降到 0.1%-1%、QLoRA 4-bit 量化让 65B 进 48GB 卡、PagedAttention 把 KV cache 浪费压到 4% 以下。工程上它们几乎决定了项目成本：训练侧选 LoRA 还是全参、推理侧选 vLLM 还是自研服务，直接对应显存账单与 QPS。读的时候要特别关注每篇的实验设置，例如 FlashAttention 的加速比是相对什么基线、在什么序列长度下取得的。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "lora_layer.py",
-        "code": "import torch\nimport torch.nn as nn\n\n\nclass LoRALinear(nn.Module):\n    \"\"\"冻结原始 Linear，仅训练低秩增量 BA；alpha/r 用于缩放增量幅度。\"\"\"\n\n    def __init__(self, base: nn.Linear, r=8, alpha=16):\n        super().__init__()\n        self.base = base\n        for p in self.base.parameters():\n            p.requires_grad = False\n        self.A = nn.Parameter(torch.zeros(r, base.in_features))\n        self.B = nn.Parameter(torch.zeros(base.out_features, r))\n        nn.init.kaiming_uniform_(self.A, a=5 ** 0.5)\n        self.scaling = alpha / r\n\n    def forward(self, x):\n        return self.base(x) + self.scaling * (x @ self.A.T @ self.B.T)\n\n    @torch.no_grad()\n    def merge(self):\n        \"\"\"把增量合并回原权重，推理时零额外开销\"\"\"\n        self.base.weight += self.scaling * (self.B @ self.A)\n        self.A.zero_()\n        self.B.zero_()\n\n\nlayer = LoRALinear(nn.Linear(4096, 4096), r=8, alpha=16)\ntrainable = sum(p.numel() for p in layer.parameters() if p.requires_grad)\ntotal = sum(p.numel() for p in layer.parameters())\nprint(f\"trainable={trainable} total={total} ratio={trainable / total:.4%}\")\nprint(layer(torch.randn(2, 4096)).shape)"
-      },
-      "mistakes": [
-        "把 LoRA 的 r 设得越大越好，r 增大收益很快饱和却线性增加显存与训练时间，通常 8-64 足够",
-        "忘记 LoRA 的 B 必须初始化为零，否则训练一开始就破坏了预训练权重，loss 会先飙升",
-        "把 FlashAttention 当成「近似注意力」，它是精确计算，只是改变了计算顺序与显存访问模式",
-        "认为 vLLM 的加速来自更快的算子，主要来源其实是 PagedAttention 的显存利用率与连续批处理"
-      ],
-      "interviewPoints": [
-        "LoRA 的可训练参数量如何计算，r=8、d=4096 时占比是多少，为什么推理可以零开销",
-        "QLoRA 的 NF4 量化与双重量化分别省了什么，4-bit 微调对精度的影响有多大",
-        "FlashAttention 为什么能同时更快且更省显存，它属于精确还是近似注意力",
-        "PagedAttention 解决了 KV cache 的什么问题，为什么它能提升吞吐而不是单条延迟"
-      ],
-      "resources": [
-        {
-          "title": "LoRA: Low-Rank Adaptation of Large Language Models",
-          "url": "https://arxiv.org/abs/2106.09685"
-        },
-        {
-          "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
-          "url": "https://arxiv.org/abs/2305.14314"
-        },
-        {
-          "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
-          "url": "https://arxiv.org/abs/2205.14135"
-        },
-        {
-          "title": "vLLM / PagedAttention: Efficient Memory Management for Large Language Model Serving",
-          "url": "https://arxiv.org/abs/2309.06180"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "reading-efficiency-papers-q1",
-          "type": "choice",
-          "prompt": "关于 LoRA，下列说法正确的是？",
-          "options": [
-            "它把预训练权重整体量化到 4-bit 来节省显存",
-            "它冻结原权重，只训练低秩增量 BA，推理时可合并回原权重",
-            "它通过减少训练数据量来加快微调速度",
-            "它必须与全量微调同时使用才能生效"
-          ],
-          "answerIndex": 1,
-          "explanation": "LoRA 冻结 W₀、只训练低秩矩阵 A、B，可训练参数降到千分之一量级，推理时把 BA 加回 W₀ 即可零额外延迟；量化基座是 QLoRA 的做法。"
-        },
-        {
-          "id": "reading-efficiency-papers-q2",
-          "type": "short",
-          "prompt": "FlashAttention 为什么能在不损失精度的前提下同时提升速度和降低显存？",
-          "answer": "参考回答：标准注意力需要把 n×n 的注意力矩阵写进 HBM 再读回来做 softmax，显存占用随序列长度平方增长，访存也是瓶颈。FlashAttention 按块把 Q、K、V 载入片上 SRAM，用在线 softmax 逐块更新最大值、归一化因子与输出累加，整个过程不实例化完整注意力矩阵，HBM 访问次数大幅下降。它只改变计算顺序与访存模式，计算结果与标准注意力完全一致，因此是精确注意力而非近似方法。",
-          "keywords": [
-            "分块",
-            "在线 softmax",
-            "SRAM",
-            "IO 复杂度",
-            "精确"
-          ],
-          "explanation": "得分点是分块 + 在线 softmax 避免实例化注意力矩阵、瓶颈在访存、结果精确三点。"
-        },
-        {
-          "id": "reading-efficiency-papers-q3",
-          "type": "code",
-          "prompt": "实现 lora_params(d_model, r) 计算 LoRA 在单个 d×d 线性层上的可训练参数量与占比，并返回需要几层才能达到与全参微调同量级的参数量（向上取整）。",
-          "starterCode": "import math\n\n\ndef lora_params(d_model, r):\n    \"\"\"返回 (lora_params, ratio, layers_to_match_full)\"\"\"\n    pass\n",
-          "solution": "import math\n\n\ndef lora_params(d_model, r):\n    \"\"\"返回 (lora_params, ratio, layers_to_match_full)\"\"\"\n    full = d_model * d_model\n    lora = 2 * r * d_model\n    ratio = lora / full\n    layers = math.ceil(full / lora)\n    return lora, ratio, layers\n\n\nif __name__ == \"__main__\":\n    print(lora_params(4096, 8))\n",
-          "checks": [
-            "2 * r * d_model",
-            "/ full",
-            "math.ceil"
-          ],
-          "explanation": "低秩增量参数量为 2rd，占比 2r/d，因此需要约 d/(2r) 层才能凑齐与一层全参同量级的可训练参数。"
-        }
-      ]
-    },
-    {
-      "slug": "reproduction-methodology",
-      "title": "复现方法论与实验记录",
-      "order": 8,
-      "module": "复现实战",
-      "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "把复现拆成六步可执行流程——读论文、找官方实现、跑通 baseline、对齐指标、消融、记录实验，并给出一份能直接用的实验记录模板，核心是让每个数字都可追溯。",
-      "intuition": "复现不是「把代码跑起来」，而是「让论文里的结论在你的环境里重新成立」。这像开一家分店：先看懂总店的菜单（读论文），再用总店给的配方（官方实现），先把招牌菜做出来（跑通 baseline），尝一口确认味道一致（对齐指标），然后每次只换一味料看味道怎么变（消融），最后把配方、火候、当天室温全记下来（实验记录），否则下次做不出来也说不清为什么。最忌讳的是味道还没对上就开始改配方，那样你既不知道原来错在哪，也不知道改动是否有效。",
-      "formal": "六步流程与判据：第一步读论文，产出复现清单（数据划分、预处理、优化器、学习率与调度、batch size、训练轮数、评测协议、随机种子）；第二步找官方实现，优先作者仓库，其次有复现报告与 issue 讨论的第三方实现；第三步跑通 baseline，先用小规模配置验证流程无 bug，例如 CIFAR 子集或 1/10 步数；第四步对齐指标，固定随机种子与数据划分，与论文差距应控制在 0.5 个百分点以内，差 1 个点以上通常不是算法问题而是预处理、评测口径或超参细节出错；第五步消融，一次只改一个变量，至少 3 个随机种子，报告均值与标准差；第六步记录，每条实验必须留下环境（GPU 型号、CUDA、PyTorch、依赖版本）、随机种子、完整命令、指标数值与日志路径，保证任何人能重跑出同一数字。",
-      "formula": "\\text{复现误差} = |M_{\\text{ours}} - M_{\\text{paper}}| \\le 0.5\\%\\ (\\text{同一数据划分与评测协议下})",
-      "aiConnection": "复现能力是算法岗最硬的考察点：面试官问「这篇论文你跑通过吗」，本质是在确认你是否真的动手、是否知道细节会带来多大偏差。工作中你几乎不会从零发明方法，更多是把论文方法迁到自己的数据上，先复现再改造；向上汇报时也必须能说清「基线是多少、我们涨了几个点、是否在噪声范围内、跑了几次」。一份规范的实验记录还能直接变成周报和论文的实验章节，节省大量重复劳动。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "exp_record.py",
-        "code": "import json\nimport subprocess\nimport time\nfrom dataclasses import dataclass, field, asdict\n\n\ndef git_hash():\n    try:\n        return subprocess.check_output([\"git\", \"rev-parse\", \"--short\", \"HEAD\"],\n                                       text=True).strip()\n    except Exception:\n        return \"unknown\"\n\n\n@dataclass\nclass ExpRecord:\n    name: str\n    config: dict\n    seed: int\n    metrics: dict = field(default_factory=dict)\n    commit: str = field(default_factory=git_hash)\n    created: str = field(default_factory=lambda: time.strftime(\"%Y-%m-%d %H:%M:%S\"))\n    log_path: str = \"\"\n\n    def save(self, path=\"experiments.jsonl\"):\n        with open(path, \"a\", encoding=\"utf-8\") as f:\n            f.write(json.dumps(asdict(self), ensure_ascii=False) + \"\\n\")\n\n\nrec = ExpRecord(\n    name=\"resnet18-cifar10-lr0.1\",\n    config={\"model\": \"resnet18\", \"opt\": \"sgd\", \"lr\": 0.1, \"bs\": 128, \"epochs\": 200},\n    seed=42,\n    metrics={\"top1\": 0.9512, \"top1_std\": 0.0018, \"runs\": 3},\n    log_path=\"logs/resnet18-cifar10-lr0.1.log\",\n)\nrec.save()\nprint(json.dumps(asdict(rec), ensure_ascii=False, indent=2))"
-      },
-      "mistakes": [
-        "指标还没对齐就开始改模型，导致既不知道基线错在哪，也无法判断改动是否真的有效",
-        "不做消融就下结论「这个模块有用」，无法排除是超参、数据增强或随机种子带来的差异",
-        "用不同随机种子分别跑不同方法再比较，差异可能全部来自噪声，结论不可信",
-        "只在笔记本里手记最好一次的结果，不保存命令与日志，无法复现也无法排查异常"
-      ],
-      "interviewPoints": [
-        "完整复现一篇论文的步骤是什么，每一步的验收标准如何界定",
-        "复现结果比论文低 2 个点，你的排查顺序是什么（数据划分、预处理、评测口径、超参、实现 bug）",
-        "如何判断实验提升是否显著：多随机种子、报告均值与标准差、与基线做配对比较",
-        "实验记录里必须包含哪些字段才能保证别人可复现（环境、种子、命令、指标、日志）"
-      ],
-      "resources": [
-        {
-          "title": "Papers with Code: Reproducibility 与代码实现索引",
-          "url": "https://paperswithcode.com/"
-        },
-        {
-          "title": "ML Reproducibility Checklist (NeurIPS)",
-          "url": "https://neurips.cc/public/guides/PaperChecklist"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "reproduction-methodology-q1",
-          "type": "choice",
-          "prompt": "复现论文时，指标与论文差距较大，最合理的第一步排查是？",
-          "options": [
-            "立刻更换更大的模型或更多数据",
-            "核对数据划分、预处理与评测协议是否与论文一致",
-            "把学习率调大几倍试试",
-            "直接放弃并改用其他论文的方法"
-          ],
-          "answerIndex": 1,
-          "explanation": "复现差异绝大多数来自数据划分、预处理与评测口径这类非算法细节，应先排除这些因素，再怀疑超参与实现；盲目调参会让问题更难定位。"
-        },
-        {
-          "id": "reproduction-methodology-q2",
-          "type": "short",
-          "prompt": "为什么消融实验要固定随机种子并至少跑 3 次？只跑一次会有什么风险？",
-          "answer": "参考回答：深度学习训练对初始化、数据顺序等随机因素敏感，单次实验的指标波动常在 0.3 到 1 个百分点，而很多改进的幅度也在这个量级。只跑一次无法区分提升来自方法本身还是随机噪声，容易得出错误结论。固定种子并跑 3 次以上，报告均值与标准差，才能判断差异是否稳定；若提升小于标准差，应视为不显著，需要更多重复或更大规模实验来验证。",
-          "keywords": [
-            "随机种子",
-            "噪声",
-            "均值与标准差",
-            "显著性"
-          ],
-          "explanation": "得分点是随机性带来的波动量级、单次结果不可区分方法与噪声、多次重复并报告统计量三点。"
-        },
-        {
-          "id": "reproduction-methodology-q3",
-          "type": "code",
-          "prompt": "实现 summarize_runs(runs)：输入同一配置多次重复实验的指标列表（float），返回字典，包含 mean、std（总体标准差）、n，以及是否与基线显著不同（|mean - baseline| > 2*std 视为显著），baseline 作为参数传入。",
-          "starterCode": "import statistics\n\n\ndef summarize_runs(runs, baseline):\n    \"\"\"返回 {'mean':..,'std':..,'n':..,'significant':bool}\"\"\"\n    pass\n",
-          "solution": "import statistics\n\n\ndef summarize_runs(runs, baseline):\n    \"\"\"返回 {'mean':..,'std':..,'n':..,'significant':bool}\"\"\"\n    mean = statistics.fmean(runs)\n    std = statistics.pstdev(runs) if len(runs) > 1 else 0.0\n    return {\n        \"mean\": mean,\n        \"std\": std,\n        \"n\": len(runs),\n        \"significant\": abs(mean - baseline) > 2 * std,\n    }\n\n\nif __name__ == \"__main__\":\n    print(summarize_runs([0.9512, 0.9498, 0.9531], 0.9420))\n",
-          "checks": [
-            "statistics.fmean",
-            "pstdev",
-            "abs(mean - baseline)"
-          ],
-          "explanation": "用均值与总体标准差概括多次运行，并以 2 倍标准差作为显著性判据；样本少于 2 次时标准差记为 0。"
-        }
-      ]
-    },
-    {
-      "slug": "reading-source-code",
-      "title": "读源码：从 PyTorch 实现理解论文",
+      "slug": "lr-schedule-warmup",
+      "title": "学习率调度与 Warmup",
       "order": 9,
-      "module": "复现实战",
+      "module": "训练技巧",
+      "difficulty": "进阶",
+      "estimatedMinutes": 35,
+      "summary": "学习率是最重要的超参：warmup 防止初期发散，cosine 衰减让后期收敛到平坦解。",
+      "intuition": "学习率是下山时的步长：太大直接跨过山谷来回横跳甚至飞出地图，太小一天挪不动一步。训练不同阶段对步长的需求还不一样——刚开始参数是随机的、梯度方向不可靠，得先小步试探（warmup）；中期方向明确了，用最大步长快速下降；后期接近谷底，必须把步子收小，否则永远在最优点附近晃。这就是 warmup + cosine 衰减的全部动机。",
+      "formal": "Warmup 在训练前 T_w 步把学习率从接近 0 线性升到峰值 η_max，常取总步数的 1%~5%（BERT 微调脚本的默认值是 10%，LLM 预训练常用 2000 步或 1%~2%），作用是避免初期 Adam 二阶矩估计不准导致参数被过大的更新破坏。之后常用 cosine 衰减，η_min 通常取 η_max 的 10%（如 3e-4 → 3e-5），也有衰减到 0 的写法。其他调度：step decay 每 30 个 epoch 乘 0.1（ResNet 经典配方）、linear decay（LLM 后期常用，便于继续训练）、OneCycle（先升后降，适合固定预算的短训练）、inverse sqrt（原始 Transformer 论文）。判断学习率是否合适：loss 在前 100 步剧烈震荡或直接 NaN 说明太大，除以 3~10 再试；loss 几乎线性缓慢下降、10 个 epoch 只降 1% 说明太小，乘以 3~10。常见峰值：BERT 微调 2e-5~5e-5，LLM 预训练常用 1.5e-4~3e-4（Llama 2 的 7B 用 3e-4、70B 用 1.5e-4），LoRA 1e-4~2e-4，ResNet SGD 0.1。",
+      "formula": "\\eta_t=\\eta_{\\min}+\\tfrac{1}{2}(\\eta_{\\max}-\\eta_{\\min})\\left(1+\\cos\\left(\\pi\\frac{t-T_w}{T-T_w}\\right)\\right),\\quad t>T_w",
+      "aiConnection": "大模型训练里学习率调度是少数必须调对的超参之一。实操套路：微调先用 warmup_ratio=0.03 + cosine，若 loss 前 50 步就冲高就把 lr 降 5 倍；训练到 70% 步数时 loss 还在明显下降，说明总步数设少了或 cosine 衰减太快。面试会问「为什么大模型需要 warmup」，答案要落到 Adam 二阶矩在初期样本少时估计偏差大、以及 embedding 与归一化层梯度尺度差异大这两点。另外断点续训必须同时恢复 scheduler 状态，否则学习率会跳变导致 loss 尖峰。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "warmup_cosine.py",
+        "code": "import math\nimport torch\nimport torch.nn as nn\n\nmodel = nn.Linear(10, 1)\nopt = torch.optim.AdamW(model.parameters(), lr=1e-3)\n\ntotal_steps = 1000\nwarmup_steps = 30        # 占总步数 3%，LLM 常用 1%~5%\nmin_lr_ratio = 0.1       # cosine 衰减到峰值的 10%\n\ndef lr_lambda(step):\n    if step < warmup_steps:\n        return (step + 1) / warmup_steps            # 线性 warmup\n    progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)\n    return min_lr_ratio + 0.5 * (1 - min_lr_ratio) * (1 + math.cos(math.pi * progress))\n\nsched = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda)\nfor step in range(total_steps):\n    opt.step()\n    sched.step()\n    if step in (0, 15, 29, 30, 100, 500, 999):\n        print(f'step {step:4d} lr = {sched.get_last_lr()[0]:.6f}')"
+      },
+      "mistakes": [
+        "总步数 1000 却设 warmup 500 步，一半训练时间都在爬坡",
+        "用恒定学习率跑完全程，后期 loss 在最优解附近震荡下不去",
+        "断点续训只保存模型不保存 scheduler，恢复后 lr 从峰值重启造成 loss 尖峰",
+        "把 warmup 当万能药，学习率本身大了 10 倍还指望 warmup 能救"
+      ],
+      "interviewPoints": [
+        "解释 warmup 为什么能防止初期发散（联系 Adam 二阶矩估计与梯度尺度差异）",
+        "写出 cosine 衰减公式，并说明 η_min 常取峰值的 10%",
+        "给出学习率过大/过小的可观测现象与调整倍数",
+        "说明 step decay、cosine、linear 三种调度各自适合什么场景"
+      ],
+      "resources": [
+        {
+          "title": "SGDR: Stochastic Gradient Descent with Warm Restarts（cosine 退火）",
+          "url": "https://arxiv.org/abs/1608.03983"
+        },
+        {
+          "title": "PyTorch 学习率调度器文档（LambdaLR/CosineAnnealingLR/OneCycleLR）",
+          "url": "https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate"
+        },
+        {
+          "title": "Attention Is All You Need（inverse sqrt 调度与 warmup 的出处）",
+          "url": "https://arxiv.org/abs/1706.03762"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "lr-schedule-warmup-q1",
+          "type": "choice",
+          "prompt": "关于 warmup 的常见设置，正确的是？",
+          "options": [
+            "warmup 应占总步数的 50% 以上",
+            "warmup 常占总步数的 1%~5%，让学习率从接近 0 线性升到峰值",
+            "warmup 是把学习率从峰值线性降到 0",
+            "warmup 只在使用 SGD 时才需要"
+          ],
+          "answerIndex": 1,
+          "explanation": "warmup 是训练初期的学习率爬坡阶段，常占总步数 1%~5%（BERT 用 10%），与 Adam 的初期估计不准有关，不是收尾的衰减。"
+        },
+        {
+          "id": "lr-schedule-warmup-q2",
+          "type": "short",
+          "prompt": "训练前 100 步 loss 剧烈震荡甚至出现 NaN，如何判断与处理？",
+          "answer": "参考回答：这通常是学习率过大导致的。处理顺序：先把学习率除以 3~10 重跑，观察前 100 步是否平稳；加上占总步数 1%~5% 的 warmup 让初期步长缓慢上升；同时开启梯度裁剪（clip_grad_norm_ 阈值 1.0）并检查数据中是否有异常样本。若 loss 仍不降，再排查标签与输入是否对齐。",
+          "keywords": [
+            "学习率过大",
+            "warmup",
+            "梯度裁剪"
+          ],
+          "explanation": "先归因到学习率并给出可执行的倍数与 warmup 比例，再补上裁剪与数据检查。"
+        },
+        {
+          "id": "lr-schedule-warmup-q3",
+          "type": "code",
+          "prompt": "用 LambdaLR 实现「前 100 步线性 warmup + 之后 cosine 衰减到峰值的 10%」，总步数 1000，打印第 0、99、500、999 步的学习率。",
+          "starterCode": "import math\nimport torch\nimport torch.nn as nn\n\nmodel = nn.Linear(4, 1)\nopt = torch.optim.AdamW(model.parameters(), lr=1e-3)\n",
+          "solution": "import math\nimport torch\nimport torch.nn as nn\n\nmodel = nn.Linear(4, 1)\nopt = torch.optim.AdamW(model.parameters(), lr=1e-3)\ntotal, warmup, floor = 1000, 100, 0.1\n\ndef lr_lambda(step):\n    if step < warmup:\n        return (step + 1) / warmup\n    p = (step - warmup) / (total - warmup)\n    return floor + 0.5 * (1 - floor) * (1 + math.cos(math.pi * p))\n\nsched = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda)\nfor step in range(total):\n    opt.step()\n    sched.step()\n    if step in (0, 99, 500, 999):\n        print(step, round(sched.get_last_lr()[0], 6))\n",
+          "checks": [
+            "LambdaLR",
+            "math.cos",
+            "get_last_lr"
+          ],
+          "explanation": "warmup 段返回线性比值，之后用余弦从 1 平滑降到 floor=0.1，乘以 base_lr 即为实际学习率。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "gradient-pathology",
+      "title": "梯度消失、爆炸与梯度裁剪",
+      "order": 10,
+      "module": "训练技巧",
+      "difficulty": "高阶",
+      "estimatedMinutes": 35,
+      "summary": "梯度问题本质是连乘效应，裁剪与残差/归一化分别从数值与结构两端解决它。",
+      "intuition": "反向传播是一路连乘：每层把梯度乘一个系数，100 层就是 100 次连乘。系数平均 1.1，梯度变成 1.1^100 ≈ 13780 倍直接爆成 Inf；系数平均 0.9，变成 0.9^100 ≈ 2.7e-5 直接消失，浅层几乎收不到学习信号。梯度裁剪是最后一道保险：不管梯度多大都按比例缩到阈值以内，防止一次异常更新毁掉几天的训练。而残差连接、归一化、合适的激活函数是从结构上让那个「平均系数」接近 1。",
+      "formal": "链式法则下深层梯度含 ∏ ∂h_{i+1}/∂h_i 的连乘项。当每层雅可比谱半径小于 1 时梯度指数衰减，大于 1 时指数增长；RNN 因各时间步共享同一矩阵，该问题尤其严重。梯度裁剪按全局 L2 范数缩放：g ← g·c/max(‖g‖₂, c)，c 常取 1.0（LLM 预训练普遍 1.0，RNN 常用 0.25~5），torch.nn.utils.clip_grad_norm_ 会返回裁剪前的总范数，可直接打日志。判断标准：梯度范数长期在 1e-6 以下说明消失，出现大于 100 的尖峰说明爆炸。混合精度训练中 fp16 的最小正规数约 6e-5、最小次正规数约 6e-8，更小的梯度直接下溢为 0，因此必须用 torch.amp.GradScaler 把 loss 放大（通常从 2^16 起动态调整）。结构性手段：残差连接（让梯度有恒等通路）、归一化层、LSTM 门控、梯度检查点（省显存但反向需重算）。逐层诊断：打印各层梯度范数，若第 1 层与第 20 层比值超过 1e3 即为消失。",
+      "formula": "g \\leftarrow g\\cdot\\frac{c}{\\max(\\|g\\|_2,\\; c)}",
+      "aiConnection": "训练大模型的标准配置就是 grad clip 1.0 + 梯度范数监控。loss 突然变 NaN 的第一反应是查梯度范数日志：若 NaN 前几步出现大于 100 的尖峰，说明是异常样本或学习率过大；若没有尖峰，则查除零、log(0)、fp16 溢出。面试问「梯度消失和爆炸怎么解决」，要分层答：初始化层面（Kaiming、归一化）、结构层面（残差、门控）、优化层面（warmup、小学习率）、数值层面（梯度裁剪、GradScaler、bf16）。bf16 的指数位与 fp32 相同（8 位），不需要 GradScaler，这也是现代 LLM 训练首选 bf16 的原因。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "grad_pathology.py",
+        "code": "import torch\nimport torch.nn as nn\n\ntorch.manual_seed(0)\nwidth, depth = 64, 30\n\ndef make_layers():\n    return [nn.Linear(width, width) for _ in range(depth)]\n\ndef forward(layers, x, residual):\n    h = x\n    for lin in layers:\n        out = torch.relu(lin(h))\n        h = h + out if residual else out\n    return h\n\nx = torch.randn(32, width)\nfor residual in [False, True]:\n    layers = make_layers()\n    forward(layers, x, residual).sum().backward()\n    norms = [lin.weight.grad.norm().item() for lin in layers]\n    print(f'residual={residual} 第1层 {norms[0]:.3e} 第15层 {norms[14]:.3e} 第30层 {norms[-1]:.3e}')\n\n# 全局 L2 范数裁剪：超过阈值就整体等比缩小，方向不变\nlayers = make_layers()\nforward(layers, x, True).sum().backward()\nparams = [p for lin in layers for p in lin.parameters()]\nbefore = torch.nn.utils.clip_grad_norm_(params, max_norm=1.0)\nafter = sum(p.grad.norm().item() ** 2 for p in params) ** 0.5\nprint(f'裁剪前全局范数 {before.item():.4f} -> 裁剪后 {after:.4f}')"
+      },
+      "mistakes": [
+        "用 fp16 训练却不开 GradScaler，梯度下溢导致浅层完全不更新",
+        "裁剪阈值设成 0.01，梯度被压得几乎没有更新、loss 停滞",
+        "只在总范数上裁剪却不看逐层范数，漏掉浅层梯度消失",
+        "训练中途才加 clip 却不降低学习率，尖峰只是被压住而根因仍在"
+      ],
+      "interviewPoints": [
+        "从链式法则的连乘解释梯度消失/爆炸，并给出数值例子",
+        "写出全局范数裁剪公式，并说明阈值 1.0 为什么常见",
+        "说明 fp16 为什么需要 GradScaler 而 bf16 不需要",
+        "列出结构层面缓解梯度问题的四种手段"
+      ],
+      "resources": [
+        {
+          "title": "On the difficulty of training recurrent neural networks（梯度裁剪出处）",
+          "url": "https://arxiv.org/abs/1211.5063"
+        },
+        {
+          "title": "Deep Residual Learning for Image Recognition（残差连接）",
+          "url": "https://arxiv.org/abs/1512.03385"
+        },
+        {
+          "title": "PyTorch 自动混合精度 (AMP) 文档",
+          "url": "https://pytorch.org/docs/stable/amp.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "gradient-pathology-q1",
+          "type": "choice",
+          "prompt": "关于梯度裁剪，下列说法正确的是？",
+          "options": [
+            "裁剪会把梯度方向也改变",
+            "按全局 L2 范数裁剪是等比缩放，方向不变，只限制步长上限",
+            "裁剪阈值越大越安全，应设为 100",
+            "裁剪可以替代学习率调整，解决所有 NaN 问题"
+          ],
+          "answerIndex": 1,
+          "explanation": "全局范数裁剪是乘以一个小于 1 的标量，方向不变只缩长度；阈值常用 1.0，过大则起不到保护作用，且不能替代学习率与 warmup。"
+        },
+        {
+          "id": "gradient-pathology-q2",
+          "type": "short",
+          "prompt": "fp16 混合精度训练为什么需要 GradScaler？bf16 为什么不需要？",
+          "answer": "参考回答：fp16 只有 5 位指数，最小正规数约 6e-5、最小次正规数约 6e-8，小梯度会直接下溢为 0，浅层参数得不到更新。GradScaler 先把 loss 放大（通常 2^16 起）再反传，使梯度落在可表示范围内，更新前再缩放回去。bf16 有 8 位指数、与 fp32 同量级的动态范围，不存在下溢问题，因此不需要缩放。",
+          "keywords": [
+            "下溢",
+            "动态范围",
+            "指数位"
+          ],
+          "explanation": "关键在于 fp16 的指数位太少导致小梯度下溢，而 bf16 与 fp32 动态范围一致。"
+        },
+        {
+          "id": "gradient-pathology-q3",
+          "type": "code",
+          "prompt": "给定模型与损失，完成一次反向传播后打印全局梯度范数，并用 max_norm=1.0 做裁剪，再打印裁剪后的全局范数。",
+          "starterCode": "import torch\nimport torch.nn as nn\n\nmodel = nn.Sequential(nn.Linear(16, 32), nn.ReLU(), nn.Linear(32, 1))\nx = torch.randn(8, 16)\ny = torch.randn(8, 1)\n",
+          "solution": "import torch\nimport torch.nn as nn\n\nmodel = nn.Sequential(nn.Linear(16, 32), nn.ReLU(), nn.Linear(32, 1))\nx = torch.randn(8, 16)\ny = torch.randn(8, 1)\n\nloss = nn.MSELoss()(model(x), y)\nloss.backward()\nbefore = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\nafter = sum(p.grad.norm().item() ** 2 for p in model.parameters()) ** 0.5\nprint('裁剪前', round(before.item(), 4), '裁剪后', round(after, 4))\n",
+          "checks": [
+            "clip_grad_norm_",
+            "loss.backward()",
+            "max_norm=1.0"
+          ],
+          "explanation": "clip_grad_norm_ 返回裁剪前的全局范数，原地修改梯度；裁剪后范数不超过 max_norm。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "feature-engineering-augmentation",
+      "title": "特征工程与数据增强",
+      "order": 11,
+      "module": "工程实践",
+      "difficulty": "进阶",
+      "estimatedMinutes": 40,
+      "summary": "表格数据靠特征工程补模型，图像/文本靠数据增强扩样本，两者都是最便宜的涨点手段。",
+      "intuition": "同一个 XGBoost，特征做得好和做得烂能差 10 个点以上——特征工程是「帮模型把答案摆到更容易看的位置」：把原始时间戳换成「是否周末、距上次消费几天」，把长尾类别分桶，模型就不用自己从数字里悟出业务含义。数据增强则是「没数据就造数据」：一张图左右翻转还是同一只猫，裁一裁、调调颜色，模型见得多就不容易死记硬背。两者都在扩充有效信息量，而不用改模型结构。",
+      "formal": "表格特征流程：数值特征做缺失填充（中位数，并额外加「是否缺失」指示列）、标准化或分桶；类别特征低基数（少于 20 类）用 one-hot，高基数用 target encoding，且必须用 K 折 OOF 计算并做平滑 ŷ = (n·ȳ + m·prior)/(n + m)，m 常取 10~100，否则必然泄漏；时序特征用滞后（lag 1/7/30）、滚动均值与窗口统计，严格保证只用 t 时刻之前的信息。图像增强：RandomResizedCrop(scale=(0.08, 1.0))、RandomHorizontalFlip、ColorJitter(0.4)、RandAugment；Mixup 用 λ ~ Beta(α, α) 混合样本与标签，α 常取 0.2；CutMix 用 α=1.0 粘贴图像块并按面积混合标签。文本增强：回译、同义词替换（EDA，替换比例 0.1）、随机删除。原则：增强必须保持标签语义不变，且只在训练集上做，验证集只能用确定性的 resize/center crop。",
+      "formula": "\\tilde{x}=\\lambda x_i+(1-\\lambda)x_j,\\quad \\tilde{y}=\\lambda y_i+(1-\\lambda)y_j,\\quad \\lambda\\sim\\text{Beta}(\\alpha,\\alpha)",
+      "aiConnection": "算法岗真实工作里，特征工程的投入产出比通常高于换模型。表格业务（风控、推荐、销量预测）的常见顺序是：先把特征做扎实（业务衍生 + 时间窗口统计），再上 GBDT 调参，最后才考虑深度模型。图像任务里增强强度直接决定小数据集能否训得动：CIFAR-10 上 ResNet-18 不用增强约 92%~93%，加 crop+flip 约 95%，再叠加 CutMix/Mixup 与 RandAugment 可到 96% 左右。面试会问「加了增强后训练准确率下降但验证上升，正常吗」——正常，增强让训练任务变难，这正是泛化的来源。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "feature_pipeline.py",
+        "code": "import numpy as np\nimport pandas as pd\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\n\nrng = np.random.default_rng(0)\nn = 500\ndf = pd.DataFrame({\n    'age': rng.integers(18, 70, n).astype(float),\n    'income': rng.normal(15000, 5000, n),\n    'city': rng.choice(['bj', 'sh', 'gz', 'sz'], n),\n    'y': rng.integers(0, 2, n),\n})\ndf.loc[df.sample(50, random_state=0).index, 'income'] = np.nan   # 制造缺失值\nX, y = df.drop(columns='y'), df['y']\n\nnumeric = Pipeline([('impute', SimpleImputer(strategy='median', add_indicator=True)),\n                    ('scale', StandardScaler())])\ncategorical = Pipeline([('impute', SimpleImputer(strategy='most_frequent')),\n                        ('onehot', OneHotEncoder(handle_unknown='ignore'))])\npre = ColumnTransformer([('num', numeric, ['age', 'income']),\n                         ('cat', categorical, ['city'])])\nmodel = Pipeline([('pre', pre), ('clf', LogisticRegression(max_iter=1000))])\n\nscores = cross_val_score(model, X, y, cv=5)\nprint('每折准确率', [round(s, 3) for s in scores])\nprint('平均', round(scores.mean(), 4))\nprint('填充与标准化只在每折的训练部分 fit，因此不会泄漏验证折信息')"
+      },
+      "mistakes": [
+        "在全量数据上算 target encoding 的均值，验证集信息泄漏导致离线虚高",
+        "把验证集也做随机增强，验证指标每次评估都在抖动、无法比较",
+        "时序特征用到了未来窗口的统计量，离线好上线崩",
+        "增强过强（如 scale 下限 0.02）把目标物体裁掉，标签语义被破坏"
+      ],
+      "interviewPoints": [
+        "说明 target encoding 为什么必须用 OOF + 平滑，并写出平滑公式",
+        "解释 Mixup/CutMix 的样本与标签构造方式及适用场景",
+        "时序特征工程如何避免使用未来信息",
+        "为什么验证集不能使用随机增强"
+      ],
+      "resources": [
+        {
+          "title": "mixup: Beyond Empirical Risk Minimization",
+          "url": "https://arxiv.org/abs/1710.09412"
+        },
+        {
+          "title": "CutMix: Regularization Strategy to Train Strong Classifiers",
+          "url": "https://arxiv.org/abs/1905.04899"
+        },
+        {
+          "title": "scikit-learn 特征列变换 ColumnTransformer 文档",
+          "url": "https://scikit-learn.org/stable/modules/compose.html"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "feature-engineering-augmentation-q1",
+          "type": "choice",
+          "prompt": "高基数类别特征使用 target encoding 时，最关键的要求是？",
+          "options": [
+            "直接用全量数据计算类别均值",
+            "用 K 折 OOF 计算并做平滑，避免标签泄漏",
+            "必须先做 one-hot 再编码",
+            "只能用于回归任务"
+          ],
+          "answerIndex": 1,
+          "explanation": "直接用全量标签算均值会把目标信息泄漏进特征，必须用折外（OOF）统计加平滑 (n·ȳ+m·prior)/(n+m) 来抑制噪声与泄漏。"
+        },
+        {
+          "id": "feature-engineering-augmentation-q2",
+          "type": "short",
+          "prompt": "训练时加入数据增强后，训练集准确率下降而验证集上升，如何解释？",
+          "answer": "参考回答：这是正常且期望的现象。增强让训练样本变得更难（裁剪、颜色扰动、Mixup 混合标签等），模型在训练集上的拟合难度上升，因此训练指标下降；同时模型学到的是对扰动不变的特征而非死记硬背，泛化能力提升，验证指标上升。判断增强是否有效的标准是看验证指标，而不是训练指标。",
+          "keywords": [
+            "更难的任务",
+            "不变性",
+            "泛化"
+          ],
+          "explanation": "要点是「训练变难换泛化」，并以验证指标作为唯一判据。"
+        },
+        {
+          "id": "feature-engineering-augmentation-q3",
+          "type": "code",
+          "prompt": "用 ColumnTransformer 搭建预处理：数值列用中位数填充 + 标准化，类别列用众数填充 + one-hot，然后接逻辑回归并做 5 折交叉验证。",
+          "starterCode": "import numpy as np\nimport pandas as pd\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\n\nrng = np.random.default_rng(0)\nn = 300\ndf = pd.DataFrame({'age': rng.integers(18, 70, n).astype(float),\n                   'income': rng.normal(15000, 5000, n),\n                   'city': rng.choice(['bj', 'sh', 'gz'], n),\n                   'y': rng.integers(0, 2, n)})\ndf.loc[df.sample(30, random_state=0).index, 'income'] = np.nan\nX, y = df.drop(columns='y'), df['y']\n",
+          "solution": "import numpy as np\nimport pandas as pd\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\n\nrng = np.random.default_rng(0)\nn = 300\ndf = pd.DataFrame({'age': rng.integers(18, 70, n).astype(float),\n                   'income': rng.normal(15000, 5000, n),\n                   'city': rng.choice(['bj', 'sh', 'gz'], n),\n                   'y': rng.integers(0, 2, n)})\ndf.loc[df.sample(30, random_state=0).index, 'income'] = np.nan\nX, y = df.drop(columns='y'), df['y']\n\nnum = Pipeline([('impute', SimpleImputer(strategy='median')), ('scale', StandardScaler())])\ncat = Pipeline([('impute', SimpleImputer(strategy='most_frequent')),\n                ('onehot', OneHotEncoder(handle_unknown='ignore'))])\npre = ColumnTransformer([('num', num, ['age', 'income']), ('cat', cat, ['city'])])\nmodel = Pipeline([('pre', pre), ('clf', LogisticRegression(max_iter=1000))])\nprint(cross_val_score(model, X, y, cv=5).mean())\n",
+          "checks": [
+            "ColumnTransformer",
+            "SimpleImputer",
+            "OneHotEncoder"
+          ],
+          "explanation": "数值与类别走不同子管道，最后 ColumnTransformer 拼接；整个预处理在 Pipeline 内保证每折独立 fit。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "ensemble-boosting",
+      "title": "集成学习与 XGBoost、LightGBM",
+      "order": 12,
+      "module": "工程实践",
       "difficulty": "进阶",
       "estimatedMinutes": 45,
-      "summary": "掌握从官方仓库读懂论文实现的方法：先看目录结构与配置默认值，再沿 forward 路径追张量形状，用 hook 打印中间形状与参数量，把代码与论文公式逐行对应。",
-      "intuition": "论文是作者的「宣传册」，代码才是「施工图」。很多关键决定论文里不会写：dropout 加在哪个位置、LayerNorm 是 Pre 还是 Post、学习率 warmup 多少步、权重初始化用什么分布、评测时用不用滑动窗口。这些细节往往决定了你能不能复现出论文的数字。读源码像拆一台机器：先看整体布局（目录结构），再看说明书上的默认参数（config），然后顺着动力传递路径走一遍（forward），最后拿卡尺量每个零件的尺寸（张量形状），而不是一上来就把每个螺丝都拧一遍。",
-      "formal": "推荐的阅读顺序：第一步看仓库根目录的 README、requirements 与训练脚本入口，确认数据准备与启动方式；第二步看配置文件的默认值，超参默认值比论文正文更权威，也是复现清单的主要来源；第三步定位模型定义文件，从 forward 入口沿调用链走一遍，在每个张量操作旁标注形状变化；第四步把代码片段与论文公式一一对应，例如 Q、K、V 的投影是否带 bias、缩放因子是 √d_k 还是 √d_head；第五步用 torchinfo 或 hook 打印每层输出形状与参数量，用一个小 batch 前向验证；第六步对照官方 issue 与 release notes，确认已知 bug 与版本差异。判断是否真读懂的硬标准：能画出数据流图，能指出与论文描述不一致的三处细节，并解释作者为什么这么做。",
-      "formula": "\\text{参数量} = \\sum_{\\text{layer}} \\text{out\\_channels} \\times \\text{in\\_channels} \\times k_h \\times k_w\\ (+\\ \\text{bias})",
-      "aiConnection": "工作中大量时间花在读别人的仓库而不是写新代码：要做业务微调，先读训练脚本的配置默认值；要复现论文，先看官方实现与论文哪里不一致；要排查线上问题，先看推理路径的张量形状是否与训练一致。面试里「你怎么快速读懂一个开源仓库」是常见问题，回答应体现顺序感（结构、配置、forward、形状、issue）和验证手段（打印形状、跑小 batch、对照论文公式）。能指出论文与实现不一致之处，往往是候选人真正动手过的信号。",
+      "summary": "Bagging 降方差、Boosting 降偏差，GBDT 家族是表格数据上最强的基线。",
+      "intuition": "一个专家的判断可能偏，但一群各有所长的专家投票就稳得多——这就是 Bagging（随机森林）：并行训练很多棵独立的树，各自看不同的样本和特征，最后投票，个别树的错误相互抵消。Boosting 是另一种思路：串行训练一堆「弱」树，每棵专门纠正前面所有树的残差错误，一步步把偏差磨掉。因为每棵树只学一点点（学习率 0.05~0.1），加起来就是一个很强的模型，这也是 GBDT 在表格数据上长期压着神经网络打的原因。",
+      "formal": "Bagging 对训练集做有放回采样训练多个基学习器再平均，主要降低方差；随机森林额外做特征随机采样以降低树间相关性。Boosting 是加法模型 F_m(x) = F_{m−1}(x) + ν·h_m(x)，其中 h_m 拟合当前模型的负梯度（伪残差），ν 是学习率（shrinkage）。XGBoost 对目标做二阶泰勒展开并加正则项 Ω(f) = γT + ½λ‖w‖²，用预排序加近似分位点找分裂；LightGBM 用直方图分桶（连续特征离散成 255 个桶）、leaf-wise 生长与 GOSS/EFB 加速，训练常快 3~10 倍，但小数据更易过拟合，需限制 num_leaves（默认 31，且应不超过 2^max_depth）。调参顺序：先定 learning_rate（0.05~0.1）与 n_estimators（配合 early_stopping_rounds=50，常 300~2000）；再定树复杂度（max_depth 3~8 或 num_leaves 31~255、min_child_weight/min_data_in_leaf 1~50）；最后加随机性与正则（subsample 0.8、colsample_bytree 0.8、reg_lambda 1~10）。学习率减半通常需要树数翻倍。",
+      "formula": "F_m(x)=F_{m-1}(x)+\\nu\\,h_m(x),\\qquad \\mathcal{L}^{(t)}=\\sum_i\\left[g_i f_t(x_i)+\\tfrac{1}{2}h_i f_t^2(x_i)\\right]+\\gamma T+\\tfrac{\\lambda}{2}\\sum_j w_j^2",
+      "aiConnection": "表格类业务（风控评分、CTR、销量预测）的第一基线就是 LightGBM/XGBoost，通常 30 分钟内能出结果，特征重要性还能直接向业务解释。实践要点：一定要用 early stopping 在验证集上定树数，否则会过拟合到无法察觉；高基数类别特征交给 LightGBM 原生处理（categorical_feature）往往优于 one-hot。面试会问「为什么 GBDT 用负梯度拟合而不是直接拟合残差」——平方损失下二者等价，但负梯度可推广到任意可导损失（logistic、排序损失），这正是 XGBoost 能统一处理分类、回归、排序的原因。",
       "codeExample": {
         "lang": "python",
-        "filename": "inspect_module.py",
-        "code": "import torch\nimport torch.nn as nn\n\n\ndef inspect(model, input_shape):\n    \"\"\"打印每层输出形状与参数量，用于把代码与论文结构对齐\"\"\"\n    shapes = {}\n    hooks = []\n    for name, module in model.named_modules():\n        if len(list(module.children())) > 0:\n            continue\n\n        def make_hook(n):\n            def hook(mod, inp, out):\n                shapes[n] = tuple(out.shape)\n            return hook\n\n        hooks.append(module.register_forward_hook(make_hook(name)))\n    model.eval()\n    with torch.no_grad():\n        model(torch.randn(*input_shape))\n    for h in hooks:\n        h.remove()\n    total = sum(p.numel() for p in model.parameters())\n    for name, shape in shapes.items():\n        n = sum(p.numel() for p in dict(model.named_modules())[name].parameters())\n        print(f\"{name:22s} out={str(shape):20s} params={n}\")\n    print(\"total params\", total)\n\n\nif __name__ == \"__main__\":\n    net = nn.Sequential(nn.Conv2d(3, 16, 3, padding=1), nn.ReLU(),\n                        nn.MaxPool2d(2), nn.Conv2d(16, 32, 3, padding=1), nn.ReLU())\n    inspect(net, (1, 3, 32, 32))"
+        "filename": "boosting_baseline.py",
+        "code": "import numpy as np\nfrom sklearn.datasets import make_classification\nfrom sklearn.ensemble import HistGradientBoostingClassifier\nfrom sklearn.model_selection import cross_val_score, train_test_split\nfrom sklearn.tree import DecisionTreeClassifier\n\nX, y = make_classification(n_samples=5000, n_features=30, n_informative=12, random_state=0)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)\n\n# 单棵不限制深度的树：训练集近乎完美，测试集明显落后\ntree = DecisionTreeClassifier(random_state=0).fit(X_tr, y_tr)\nprint('单棵树 train', round(tree.score(X_tr, y_tr), 4), 'test', round(tree.score(X_te, y_te), 4))\n\n# HistGradientBoosting 用直方图分桶，与 LightGBM 同属一类算法\ngbdt = HistGradientBoostingClassifier(\n    learning_rate=0.05, max_iter=1000, max_depth=6, min_samples_leaf=20,\n    l2_regularization=1.0, early_stopping=True, validation_fraction=0.15,\n    n_iter_no_change=50, random_state=0)   # 相当于 early_stopping_rounds=50\ngbdt.fit(X_tr, y_tr)\nprint('GBDT   train', round(gbdt.score(X_tr, y_tr), 4), 'test', round(gbdt.score(X_te, y_te), 4))\nprint('早停后实际使用树数', gbdt.n_iter_)\nprint('5 折 CV 准确率', round(cross_val_score(gbdt, X, y, cv=5).mean(), 4))"
       },
       "mistakes": [
-        "逐行通读几千行代码却不先跑一遍最小示例，缺少可验证的整体印象，读完仍然不会用",
-        "只看模型定义不看配置默认值，漏掉 warmup 步数、dropout 位置等决定复现成败的超参",
-        "把训练路径和推理路径混为一谈，忽略 eval 模式、KV cache、量化等推理专有逻辑",
-        "不打印张量形状就改代码，靠猜维度导致广播错误或静默的错误计算"
+        "不做 early stopping 就固定跑 1000 棵树，训练集近乎完美而验证集过拟合",
+        "同时调 learning_rate 与 n_estimators，无法判断哪个在起作用",
+        "几千行小数据上用默认 num_leaves=31 又不限制 min_data_in_leaf，严重过拟合",
+        "把特征重要性当因果结论，忽略相关特征之间的重要性稀释"
       ],
       "interviewPoints": [
-        "给你一个陌生的开源仓库，你打算按什么顺序读，怎么验证自己读懂了",
-        "论文描述与官方实现不一致时如何判断以谁为准，如何在报告中说明这一差异",
-        "为什么配置文件的默认值往往比论文正文更可信，举例说明",
-        "如何快速定位一个性能瓶颈或精度 bug 在源码中的位置"
+        "从偏差-方差角度说明 Bagging 与 Boosting 的区别",
+        "解释 GBDT 用负梯度拟合的动机，以及二阶泰勒展开带来的好处",
+        "对比 XGBoost 与 LightGBM 的工程差异（预排序 vs 直方图、level-wise vs leaf-wise）",
+        "给出 GBDT 的调参顺序与关键参数的常用区间"
       ],
       "resources": [
         {
-          "title": "PyTorch 官方教程：Learning PyTorch with Examples",
-          "url": "https://pytorch.org/tutorials/beginner/pytorch_with_examples.html"
+          "title": "XGBoost: A Scalable Tree Boosting System",
+          "url": "https://arxiv.org/abs/1603.02754"
         },
         {
-          "title": "torchinfo：打印模型每层形状与参数量",
-          "url": "https://github.com/TylerYep/torchinfo"
+          "title": "LightGBM: A Highly Efficient Gradient Boosting Decision Tree (NeurIPS)",
+          "url": "https://papers.nips.cc/paper/6907-lightgbm-a-highly-efficient-gradient-boosting-decision-tree"
+        },
+        {
+          "title": "scikit-learn HistGradientBoostingClassifier 文档",
+          "url": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html"
         }
       ],
       "quiz": [
         {
-          "id": "reading-source-code-q1",
+          "id": "ensemble-boosting-q1",
           "type": "choice",
-          "prompt": "读一个论文官方实现时，复现所需超参最权威的来源通常是？",
+          "prompt": "关于 Bagging 与 Boosting，下列说法正确的是？",
           "options": [
-            "论文正文中提到的数值",
-            "仓库配置文件中的默认值与训练脚本参数",
-            "README 里给出的宣传性指标",
-            "第三方博客的复现笔记"
+            "Bagging 串行训练、主要降偏差",
+            "Bagging 并行训练多棵独立的树、主要降方差；Boosting 串行拟合残差、主要降偏差",
+            "两者都只能用于分类",
+            "Boosting 的每棵树互相独立，可以并行训练"
           ],
           "answerIndex": 1,
-          "explanation": "论文正文常省略或简化超参，实际跑出结果的往往是仓库配置里的默认值，因此复现清单应以配置文件和训练脚本为准，再与论文正文交叉核对。"
+          "explanation": "Bagging 通过有放回采样并行训练再平均来降低方差；Boosting 串行地让新树拟合前面模型的负梯度，逐步降低偏差。"
         },
         {
-          "id": "reading-source-code-q2",
+          "id": "ensemble-boosting-q2",
           "type": "short",
-          "prompt": "为什么建议用 register_forward_hook 或 torchinfo 打印每层输出形状，而不是直接读代码推断？",
-          "answer": "参考回答：直接读代码推断形状容易在 reshape、transpose、广播等操作上出错，尤其是多头注意力里的维度重排，人眼很难保证正确。用 hook 打印每层真实输出形状，可以在一个小 batch 上前向一次就得到全部张量形状与参数量，既验证理解又与论文结构逐层对齐。发现形状与预期不符时，问题定位也从「通读代码」缩小到「某一个模块」，效率高得多。",
+          "prompt": "为什么 GBDT 用负梯度拟合，而不是直接拟合残差？",
+          "answer": "参考回答：在平方损失下负梯度恰好等于残差，两者等价；但负梯度是对任意可导损失都成立的一般化形式，例如 logistic 损失、排序损失都可以求梯度并让新树去拟合它。这使得同一个框架能统一处理分类、回归与排序任务，也是 XGBoost 对目标做二阶泰勒展开后能适配自定义损失的基础。",
           "keywords": [
-            "forward hook",
-            "张量形状",
-            "小 batch",
-            "逐层对齐"
+            "负梯度",
+            "任意可导损失",
+            "统一框架"
           ],
-          "explanation": "得分点是形状靠实测而非推断、小 batch 前向即可获得全貌、便于逐层与论文对齐。"
+          "explanation": "关键在于「平方损失下等价，但负梯度可推广到任意可导损失」。"
         },
         {
-          "id": "reading-source-code-q3",
+          "id": "ensemble-boosting-q3",
           "type": "code",
-          "prompt": "实现 count_params(module, trainable_only=False)：递归统计模块参数量，trainable_only=True 时只统计 requires_grad 为 True 的参数，返回整数。",
-          "starterCode": "def count_params(module, trainable_only=False):\n    \"\"\"返回参数量（整数）\"\"\"\n    pass\n",
-          "solution": "def count_params(module, trainable_only=False):\n    \"\"\"返回参数量（整数）\"\"\"\n    params = module.parameters()\n    if trainable_only:\n        params = (p for p in params if p.requires_grad)\n    return sum(p.numel() for p in params)\n",
+          "prompt": "训练一个带早停的梯度提升分类器（learning_rate=0.05, max_depth=6, n_iter_no_change=50），打印训练集/测试集准确率与早停后实际使用的树数。",
+          "starterCode": "import numpy as np\nfrom sklearn.datasets import make_classification\nfrom sklearn.ensemble import HistGradientBoostingClassifier\nfrom sklearn.model_selection import train_test_split\n\nX, y = make_classification(n_samples=3000, n_features=20, n_informative=8, random_state=0)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)\n",
+          "solution": "import numpy as np\nfrom sklearn.datasets import make_classification\nfrom sklearn.ensemble import HistGradientBoostingClassifier\nfrom sklearn.model_selection import train_test_split\n\nX, y = make_classification(n_samples=3000, n_features=20, n_informative=8, random_state=0)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)\n\nmodel = HistGradientBoostingClassifier(learning_rate=0.05, max_iter=1000, max_depth=6,\n                                       early_stopping=True, n_iter_no_change=50, random_state=0)\nmodel.fit(X_tr, y_tr)\nprint('train', model.score(X_tr, y_tr), 'test', model.score(X_te, y_te))\nprint('使用的树数', model.n_iter_)\n",
           "checks": [
-            "module.parameters()",
-            "requires_grad",
-            "p.numel()"
+            "HistGradientBoostingClassifier",
+            "early_stopping=True",
+            "n_iter_no_change"
           ],
-          "explanation": "用 module.parameters() 递归拿到全部参数，按 requires_grad 过滤后用 numel 累加。"
+          "explanation": "开启早停后模型用内部验证集判断何时停止，n_iter_ 给出实际使用的迭代（树）数。"
         }
-      ]
+      ],
+      "track": "side"
     },
     {
-      "slug": "reproduce-transformer-lm",
-      "title": "实战：复现一个 Transformer 语言模型",
-      "order": 10,
-      "module": "复现实战",
+      "slug": "hyperparameter-experiment",
+      "title": "超参搜索与实验管理",
+      "order": 13,
+      "module": "工程实践",
       "difficulty": "高阶",
-      "estimatedMinutes": 60,
-      "summary": "用不到 60 行代码从零写出字符级迷你 GPT：token 与位置嵌入、因果自注意力、前馈、残差与 LayerNorm、下一 token 预测训练循环和采样生成，CPU 上几分钟可跑出可见效果。",
-      "intuition": "理解 Transformer 最好的方式不是再读一遍论文，而是亲手写一个能吐出人话的小模型。把它想象成一台字数接龙机器：给它一段文字，它预测下一个字符是什么；训练就是不断让它猜、按猜错的程度微调参数。骨架只有四块——把字符变成向量的嵌入、让每个位置看到左边上下文的因果注意力、逐位置加工的前馈层、以及保证深层可训练的残差与 LayerNorm。字符级模型的好处是词表只有几十个字符，不需要 tokenizer，几十行代码就能跑，且所有细节都暴露在你眼前。",
-      "formal": "模型结构：token 嵌入 (V,d) 加位置嵌入 (T,d)，堆叠 n_layer 个块，每块为 LayerNorm → 多头因果自注意力 → 残差、LayerNorm → 前馈 (d→4d→d，GELU) → 残差，最后接 LayerNorm 与输出头 (d→V)。注意力用缩放点积并对上三角置 -inf 实现因果掩码，多头通过把 d 维切成 h 份实现，每头维度 d/h。训练目标是下一 token 预测的交叉熵，输入 x 与目标 y 是同一序列错开一位。参考配置：d=64、h=4、n_layer=3、T=32、batch=32、AdamW lr=3e-3，参数量约 15.5 万，CPU 上 600 步、十几秒即可跑完，损失从约 3.3 降到 0.1 以下并生成可读英文片段（语料高度重复时损失很低，属于记忆而非泛化，这本身就是值得注意的现象）。规模上去后要按 1/sqrt(d) 缩放输出头初始化和残差路径权重，这是 GPT-2 论文里明确写过的训练稳定性技巧。",
-      "formula": "x_{t+1} \\sim \\text{softmax}(W_{\\text{out}}\\,\\text{LN}(h_t^{(L)})),\\qquad \\mathcal{L} = -\\frac{1}{T}\\sum_{t=1}^{T}\\log p_\\theta(x_{t+1}\\mid x_{\\le t})",
-      "aiConnection": "这是算法岗最拿得出手的自学项目：面试官问「Transformer 你了解多少」，能说出自己实现过、训练过、采样过，并给出参数量、训练步数、loss 曲线和生成样例，可信度远高于只背过公式。动手之后很多概念才真正落地：为什么需要因果掩码（去掉后训练 loss 会异常低而生成全是胡话）、为什么缩放因子取 √d_k、位置编码去掉会怎样、学习率太大时 loss 如何发散。这些一手经验也直接支撑推理优化工作，例如理解 KV cache 为什么能省算力、上下文长度如何影响显存。",
+      "estimatedMinutes": 40,
+      "summary": "随机搜索优于网格、贝叶斯与早停策略省算力，实验记录决定调参能否复现。",
+      "intuition": "网格搜索看起来很勤奋，但如果有 5 个超参、其中只有 2 个真正重要，网格会把 90% 的算力花在无关维度上——随机搜索在同样预算下能更密集地覆盖重要维度，这是有理论保证的结论。调参也讲究策略：先花小钱粗筛（小数据子集、少 epoch、20~50 组），锁定有希望的区域再花大钱细搜。而实验管理是最容易被忽视的一环：三周后你一定会忘记「那个 AUC 0.87 的配置到底用了什么 lr」，不记录就等于没做过。",
+      "formal": "搜索策略：网格搜索复杂度随维度指数增长，只适合不超过 2 个离散超参；随机搜索对每个超参独立采样，Bergstra 与 Bengio 证明当只有少数超参重要时其效率显著优于网格；贝叶斯优化（TPE、GP-EI）用历史结果建模 p(x|y) 并最大化期望改进，在 20~100 次评估的预算下通常比随机搜索省 2~5 倍评估次数；多臂早停（Hyperband/ASHA）给差配置提前终止，把预算集中给好配置。搜索空间建议用对数均匀：学习率 loguniform(1e-5, 1e-2)，weight decay loguniform(1e-6, 1e-1)，dropout uniform(0, 0.5)，warmup ratio uniform(0, 0.1)，batch size 从 {16, 32, 64, 128} 里选（batch 与 lr 需联动：线性缩放规则是 batch 翻倍 lr 也翻倍，保守做法是乘 √2）。流程：先粗搜（10%~20% 数据、1/3 epoch、20~50 trials），再在最优区域细搜（10~20 trials、全量数据）；每次只改一个维度便于归因。实验记录至少包含：代码 commit、数据版本、完整 config、随机种子（至少 3 个种子取均值）、硬件与耗时、全部指标曲线。",
+      "formula": "\\text{EI}(x)=\\mathbb{E}\\left[\\max\\left(0,\\; f^{*}-f(x)\\right)\\right]",
+      "aiConnection": "面试里「你怎么调参」是高频题，只答网格搜索基本会被追问。好的答法是分层：先固定随机种子跑通基线，按影响大小排序调（学习率 > batch size > weight decay/dropout > 结构参数），用随机搜索或 Optuna 的 TPE 在小预算下粗筛，配合早停砍掉差配置，最后用 3 个种子验证提升是否显著（差异小于 0.3 个点通常不显著）。实验管理用 wandb/MLflow 记录，保证任意历史结果都能一键复现，这在团队协作里是硬要求。",
       "codeExample": {
         "lang": "python",
-        "filename": "mini_gpt.py",
-        "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n\ntorch.manual_seed(0)\nTEXT = (\"to be or not to be that is the question whether tis nobler in the mind \"\n        \"to suffer the slings and arrows of outrageous fortune or to take arms\") * 20\nchars = sorted(set(TEXT))\nstoi = {c: i for i, c in enumerate(chars)}\ndata = torch.tensor([stoi[c] for c in TEXT])\nV, T, D, H, NL, B = len(chars), 32, 64, 4, 3, 32\n\n\nclass Block(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.ln1, self.ln2 = nn.LayerNorm(D), nn.LayerNorm(D)\n        self.qkv = nn.Linear(D, 3 * D)\n        self.proj = nn.Linear(D, D)\n        self.mlp = nn.Sequential(nn.Linear(D, 4 * D), nn.GELU(), nn.Linear(4 * D, D))\n\n    def forward(self, x):\n        b, t, _ = x.shape\n        q, k, v = self.qkv(self.ln1(x)).split(D, dim=2)\n        q, k, v = (z.view(b, t, H, D // H).transpose(1, 2) for z in (q, k, v))\n        att = q @ k.transpose(-2, -1) / (D // H) ** 0.5\n        mask = torch.triu(torch.ones(t, t, dtype=torch.bool), diagonal=1)\n        att = att.masked_fill(mask, float(\"-inf\"))\n        y = (F.softmax(att, -1) @ v).transpose(1, 2).reshape(b, t, D)\n        x = x + self.proj(y)\n        return x + self.mlp(self.ln2(x))\n\n\nclass MiniGPT(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.tok = nn.Embedding(V, D)\n        self.pos = nn.Embedding(T, D)\n        self.blocks = nn.Sequential(*[Block() for _ in range(NL)])\n        self.ln = nn.LayerNorm(D)\n        self.head = nn.Linear(D, V)\n\n    def forward(self, idx):\n        x = self.tok(idx) + self.pos(torch.arange(idx.size(1)))\n        return self.head(self.ln(self.blocks(x)))\n\n\ndef batch():\n    ix = torch.randint(0, len(data) - T - 1, (B,))\n    x = torch.stack([data[i:i + T] for i in ix])\n    return x, torch.stack([data[i + 1:i + T + 1] for i in ix])\n\n\nmodel = MiniGPT()\nprint(\"params\", sum(p.numel() for p in model.parameters()))\nopt = torch.optim.AdamW(model.parameters(), lr=3e-3)\nfor step in range(600):\n    x, y = batch()\n    loss = F.cross_entropy(model(x).view(-1, V), y.view(-1))\n    opt.zero_grad(); loss.backward(); opt.step()\n    if step % 150 == 0:\n        print(f\"step {step:4d} loss {loss.item():.3f}\")\n\n\n@torch.no_grad()\ndef sample(n=120):\n    idx = torch.zeros((1, 1), dtype=torch.long)\n    for _ in range(n):\n        logits = model(idx[:, -T:])[:, -1] / 0.8\n        idx = torch.cat([idx, torch.multinomial(F.softmax(logits, -1), 1)], dim=1)\n    return \"\".join(chars[i] for i in idx[0].tolist())\n\n\nprint(repr(sample()))"
+        "filename": "random_search.py",
+        "code": "import numpy as np\nfrom scipy.stats import loguniform\nfrom sklearn.datasets import make_classification\nfrom sklearn.ensemble import HistGradientBoostingClassifier\nfrom sklearn.model_selection import RandomizedSearchCV, train_test_split\n\nX, y = make_classification(n_samples=4000, n_features=30, n_informative=10, random_state=0)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)\n\n# 学习率与正则强度跨多个数量级，必须用对数均匀采样\nspace = {\n    'learning_rate': loguniform(1e-3, 3e-1),\n    'max_depth': [3, 4, 6, 8],\n    'max_leaf_nodes': [15, 31, 63, 127],\n    'l2_regularization': loguniform(1e-4, 1e1),\n    'min_samples_leaf': [5, 10, 20, 50],\n}\nsearch = RandomizedSearchCV(\n    HistGradientBoostingClassifier(max_iter=300, early_stopping=True, random_state=0),\n    space, n_iter=20, cv=3, scoring='roc_auc', random_state=0, n_jobs=-1)\nsearch.fit(X_tr, y_tr)\n\nbest = {k: (round(v, 5) if isinstance(v, float) else v) for k, v in search.best_params_.items()}\nprint('最优参数', best)\nprint('CV roc_auc', round(search.best_score_, 4))\nprint('测试集 roc_auc', round(search.score(X_te, y_te), 4))\nprint('提升小于 0.3 个点时应换 3 个随机种子复测显著性')"
       },
       "mistakes": [
-        "忘记因果掩码，模型能直接看到未来 token，训练 loss 掉得飞快但生成结果全是胡话",
-        "输入与目标没有错开一位，模型学会的是复制当前 token，loss 很低却没有语言能力",
-        "采样时温度设得过高或过低，导致输出乱码或反复重复同一句，需要实际调参观察",
-        "去掉缩放因子 1/√d_head，点积数值过大让 softmax 饱和，训练初期梯度几乎为零"
+        "用网格搜索调 5 个以上超参，算力指数爆炸且大多浪费在无关维度",
+        "只跑一个随机种子就宣布涨点，把随机波动当成方法收益",
+        "搜索空间用均匀分布而非对数均匀，学习率几乎采不到 1e-5 这种量级",
+        "实验不记录 config 与 commit，两周后无法复现最优结果"
       ],
       "interviewPoints": [
-        "从零实现一个 Transformer 语言模型需要哪几个组件，各自解决什么问题",
-        "训练 loss 正常下降但生成质量很差，你会依次检查哪些环节（掩码、错位、位置编码、采样温度）",
-        "这个模型参数量是多少、如何估算训练显存与时间，规模放大 10 倍会发生什么",
-        "KV cache 在推理时缓存什么、为什么能把生成复杂度从每步 O(t²) 降到 O(t)"
+        "说明随机搜索在什么条件下优于网格搜索及其原因",
+        "解释贝叶斯优化与 TPE 的基本思路与适用预算范围",
+        "给出学习率、weight decay 等超参的推荐搜索空间与采样分布",
+        "说明如何判断一次涨点是否统计显著（多种子、置信区间）"
       ],
       "resources": [
         {
-          "title": "nanoGPT：简洁可读的 GPT 训练实现",
-          "url": "https://github.com/karpathy/nanoGPT"
+          "title": "Random Search for Hyper-Parameter Optimization (Bergstra & Bengio)",
+          "url": "https://jmlr.org/papers/v13/bergstra12a.html"
         },
         {
-          "title": "minGPT：教学版 Transformer 实现",
-          "url": "https://github.com/karpathy/minGPT"
+          "title": "Optuna 官方文档（TPE、剪枝与分布式搜索）",
+          "url": "https://optuna.readthedocs.io/en/stable/"
         },
         {
-          "title": "GPT-2: Language Models are Unsupervised Multitask Learners",
-          "url": "https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"
+          "title": "Weights & Biases 实验跟踪文档",
+          "url": "https://docs.wandb.ai/"
         }
       ],
       "quiz": [
         {
-          "id": "reproduce-transformer-lm-q1",
+          "id": "hyperparameter-experiment-q1",
           "type": "choice",
-          "prompt": "字符级 GPT 训练中，若把因果掩码去掉，最可能出现的现象是？",
+          "prompt": "在 5 个超参、算力预算固定的情况下，随机搜索通常优于网格搜索，原因是？",
           "options": [
-            "训练损失异常低，但自回归生成时质量极差",
-            "训练损失完全无法下降",
-            "模型参数量翻倍",
-            "位置编码失效导致无法训练"
-          ],
-          "answerIndex": 0,
-          "explanation": "去掉掩码后每个位置都能看到未来 token，模型只需复制下一个字符即可把损失压得很低；但生成时没有未来信息可用，输出自然毫无质量。"
-        },
-        {
-          "id": "reproduce-transformer-lm-q2",
-          "type": "short",
-          "prompt": "为什么语言模型的输入序列与目标序列要错开一位？",
-          "answer": "参考回答：语言模型的训练目标是下一 token 预测，即在看到前 t 个 token 的条件下预测第 t+1 个。把同一段文本作为输入 x，并把它的后移一位作为目标 y，则位置 t 的预测目标正好是原文的 x[t+1]，一次前向就能在所有位置同时构造出监督信号。若不错开，模型只需学会复制当前位置的输入即可最小化损失，学不到任何语言规律，也无法用于生成。",
-          "keywords": [
-            "下一 token 预测",
-            "错开一位",
-            "并行监督",
-            "复制"
-          ],
-          "explanation": "得分点是下一 token 预测的定义、错开后一次前向得到全位置监督、不错开会退化成复制任务。"
-        },
-        {
-          "id": "reproduce-transformer-lm-q3",
-          "type": "code",
-          "prompt": "实现字符级采样函数 sample_ids(logits_fn, n, T, vocab_size, temperature=1.0)：logits_fn 接受 (1, t) 的 id 张量返回 (1, vocab_size) 的 logits，循环 n 步，每步按 temperature 缩放后做多项式采样并拼接，返回长度为 n 的 id 列表。",
-          "starterCode": "import torch\nimport torch.nn.functional as F\n\n\ndef sample_ids(logits_fn, n, T, vocab_size, temperature=1.0):\n    \"\"\"返回长度为 n 的 id 列表\"\"\"\n    pass\n",
-          "solution": "import torch\nimport torch.nn.functional as F\n\n\ndef sample_ids(logits_fn, n, T, vocab_size, temperature=1.0):\n    \"\"\"返回长度为 n 的 id 列表\"\"\"\n    idx = torch.zeros((1, 1), dtype=torch.long)\n    out = []\n    for _ in range(n):\n        logits = logits_fn(idx[:, -T:]) / temperature\n        nxt = torch.multinomial(F.softmax(logits, dim=-1), num_samples=1)\n        idx = torch.cat([idx, nxt], dim=1)\n        out.append(int(nxt.item()))\n    return out\n",
-          "checks": [
-            "torch.multinomial",
-            "/ temperature",
-            "idx[:, -T:]"
-          ],
-          "explanation": "每步只保留最后 T 个 token 作为上下文，logits 按温度缩放后做多项式采样，并拼接回序列。"
-        }
-      ]
-    },
-    {
-      "slug": "from-reproduction-to-idea",
-      "title": "从复现到创新：选题与实验设计",
-      "order": 11,
-      "module": "从复现到创新",
-      "difficulty": "高阶",
-      "estimatedMinutes": 50,
-      "summary": "把复现经验转成可发表、可落地的新想法：从论文的局限、代码与描述的不一致、超参敏感点中找选题，用控制变量、多随机种子、报告均值和标准差的方式设计实验，让结论站得住。",
-      "intuition": "创新不是凭空想一个没人做过的东西，而是发现现有方案在某个具体条件下不够好。最可靠的来源就在你复现的过程里：跑代码时发现某段实现和论文描述不一致、某个超参换个数据集就崩、某类输入总是失败——这些都是真实存在的缝隙。选题像找矿：不要在整片大陆上乱挖，而要在已知矿脉的边缘往下钻一点。判断一个想法值不值得做，就看它能不能在一周内跑出结论、有没有明确基线、失败了是否也能得到有用信息。",
-      "formal": "选题来源四类：论文明确写出的局限（future work 往往是最低垂的果实）、实现与描述不一致之处（说明真实机制尚未被理解）、对超参或数据分布异常敏感的环节（说明方法不够鲁棒）、跨领域迁移（把 A 领域已被验证的机制搬到 B 领域，例如把对比学习用于检索、把 MoE 用于多任务）。实验设计四条纪律：一是控制变量，一次只改一个因素，其他全部固定；二是多随机种子，至少 3 个，报告均值与标准差；三是划分三份数据，验证集用于选超参、测试集只在最终比较时使用一次，避免选择性偏差；四是任何小于 1 个百分点的提升都要用重复实验确认是否在噪声范围内。资源受限时按「先小规模验证假设、再放大确认」的顺序做，例如先用 1/10 数据验证趋势，再在完整数据上复跑关键配置。",
-      "formula": "\\text{是否值得做}:\\ \\Delta M > 2\\sigma_{\\text{seed}}\\ \\text{且}\\ \\Delta \\text{Cost} \\le \\text{可接受预算}",
-      "aiConnection": "算法岗的日常就是提方案、做实验、下结论：季度目标往往要求「在某指标上提升 X 个点」，你需要先找到改进点（多来自论文局限或失败案例分析），再用受控实验证明有效，最后用统计量说服评审。面试里问「如果让你改进这个模型，你会怎么做」，考察的正是这套从现象到假设到验证的链条。能说清「我先看失败样本，发现长尾类别召回低，于是加了重采样，跑 3 个种子均值提升 1.8 个点、标准差 0.2」，比罗列一堆前沿名词有说服力得多。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "ablation_runner.py",
-        "code": "import statistics\n\n\ndef run_one(config, seed):\n    \"\"\"占位：真实场景里这里调用训练脚本并返回验证指标\"\"\"\n    base = 0.80 if config[\"use_resample\"] else 0.782\n    noise = ((seed * 37) % 11 - 5) / 1000.0\n    return base + noise\n\n\ndef ablate(configs, seeds=(0, 1, 2)):\n    results = {}\n    for name, cfg in configs.items():\n        scores = [run_one(cfg, s) for s in seeds]\n        results[name] = {\n            \"mean\": statistics.fmean(scores),\n            \"std\": statistics.pstdev(scores),\n            \"n\": len(scores),\n        }\n    return results\n\n\nif __name__ == \"__main__\":\n    cfgs = {\n        \"baseline\": {\"use_resample\": False},\n        \"resample\": {\"use_resample\": True},\n    }\n    out = ablate(cfgs)\n    b, r = out[\"baseline\"], out[\"resample\"]\n    delta = r[\"mean\"] - b[\"mean\"]\n    for k, v in out.items():\n        print(f\"{k:9s} mean={v['mean']:.4f} std={v['std']:.4f} n={v['n']}\")\n    print(f\"delta={delta:+.4f} significant={abs(delta) > 2 * max(b['std'], r['std'])}\")"
-      },
-      "mistakes": [
-        "选题定得太大（例如「让大模型推理能力提升一个档次」），一周内无法验证，最后既没结论也没数据",
-        "不做基线对比，只报告自己方法的绝对指标，无法说明改进来自哪里",
-        "只跑一次就宣称有效，把 0.3 个点的随机波动当成方法收益，被追问时无法自证",
-        "用验证集反复挑选超参后直接在测试集报告最好结果，这是典型的选择性偏差"
-      ],
-      "interviewPoints": [
-        "被问「你有什么改进思路」时，应从哪几个来源找切入点（论文局限、实现差异、失败样本、跨域迁移）",
-        "如何判断一个想法值得投入：验证成本、基线可得性、失败也有信息量三条标准",
-        "实验设计里为什么要区分验证集与测试集，如何在资源受限时控制实验成本",
-        "如何向评审说明「提升 1.5 个点是真实的」：多随机种子、均值与标准差、显著性判断"
-      ],
-      "resources": [
-        {
-          "title": "Hugging Face Papers（每日热门论文与社区复现讨论）",
-          "url": "https://huggingface.co/papers"
-        },
-        {
-          "title": "Deep Learning Tuning Playbook（Google 超参与实验方法论）",
-          "url": "https://github.com/google-research/tuning_playbook"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "from-reproduction-to-idea-q1",
-          "type": "choice",
-          "prompt": "下列哪种做法最可能得到可信的改进结论？",
-          "options": [
-            "同时改动数据增强、损失函数和学习率，观察指标是否提升",
-            "只改一个因素，其余固定，跑 3 个随机种子并报告均值与标准差",
-            "在验证集上反复调参，取最好的一次结果作为最终结论",
-            "只跑一次实验，只要指标高于基线就认为方法有效"
+            "随机搜索一定能找到全局最优",
+            "当只有少数超参重要时，随机搜索能在重要维度上采样更多不同取值",
+            "随机搜索不需要交叉验证",
+            "网格搜索无法处理连续超参"
           ],
           "answerIndex": 1,
-          "explanation": "控制变量才能归因，多随机种子与统计量才能区分真实提升与噪声；同时改多个因素无法归因，只在验证集挑选最好结果属于选择性偏差。"
+          "explanation": "网格在每个维度只取固定几个值，重要维度上的覆盖被浪费；随机搜索独立采样，使重要维度获得更密集的取值覆盖。"
         },
         {
-          "id": "from-reproduction-to-idea-q2",
+          "id": "hyperparameter-experiment-q2",
           "type": "short",
-          "prompt": "为什么说「复现过程本身就是最好的选题来源」？请给出至少两个具体线索。",
-          "answer": "参考回答：复现时你会真实地碰到论文没写清或写得与实现不符的地方，这些缝隙说明机制尚未被完全理解，往往就是改进空间。具体线索包括：论文 future work 中自认的局限，通常是最容易验证的方向；官方实现与论文描述不一致的细节，例如归一化位置或初始化方式；对超参、batch size、数据分布异常敏感的环节，说明方法鲁棒性不足；以及在你的数据上失败样本集中的模式，直接指向真实短板。",
+          "prompt": "请给出一个可执行的调参流程（含预算分配与显著性判断）。",
+          "answer": "参考回答：先固定种子跑通基线；按影响排序调参（学习率 > batch size > weight decay/dropout > 结构参数）；用随机搜索或 TPE 在 10%~20% 数据、1/3 epoch 下粗筛 20~50 组，配合早停砍掉差配置；再在最优区域用全量数据细搜 10~20 组；最后用 3 个随机种子复测，提升小于 0.3 个点视为不显著。全程记录 config、commit 与种子。",
           "keywords": [
-            "future work",
-            "实现与描述不一致",
-            "超参敏感",
-            "失败样本"
+            "粗搜细搜",
+            "早停",
+            "多种子"
           ],
-          "explanation": "得分点是选题来自复现中观察到的具体缝隙，并给出可操作的线索类型而非空泛表述。"
+          "explanation": "要点是「分层预算 + 对数采样 + 多种子显著性检验 + 完整记录」。"
         },
         {
-          "id": "from-reproduction-to-idea-q3",
+          "id": "hyperparameter-experiment-q3",
           "type": "code",
-          "prompt": "实现 is_significant(base_runs, new_runs, k=2.0)：输入基线与新方法的多次运行指标列表，返回 (delta, threshold, significant)。threshold 取两组总体标准差的较大值乘以 k，significant 为 |delta| > threshold。",
-          "starterCode": "import statistics\n\n\ndef is_significant(base_runs, new_runs, k=2.0):\n    \"\"\"返回 (delta, threshold, significant)\"\"\"\n    pass\n",
-          "solution": "import statistics\n\n\ndef is_significant(base_runs, new_runs, k=2.0):\n    \"\"\"返回 (delta, threshold, significant)\"\"\"\n    delta = statistics.fmean(new_runs) - statistics.fmean(base_runs)\n    std_b = statistics.pstdev(base_runs) if len(base_runs) > 1 else 0.0\n    std_n = statistics.pstdev(new_runs) if len(new_runs) > 1 else 0.0\n    threshold = k * max(std_b, std_n)\n    return delta, threshold, abs(delta) > threshold\n\n\nif __name__ == \"__main__\":\n    print(is_significant([0.782, 0.781, 0.783], [0.801, 0.799, 0.800]))\n",
+          "prompt": "用 RandomizedSearchCV 对梯度提升分类器的 learning_rate（对数均匀 1e-3~1e-1）与 max_depth（{3,6,9}）做 10 组随机搜索、3 折 CV，以 roc_auc 为指标，打印最优参数。",
+          "starterCode": "import numpy as np\nfrom scipy.stats import loguniform\nfrom sklearn.datasets import make_classification\nfrom sklearn.ensemble import HistGradientBoostingClassifier\nfrom sklearn.model_selection import RandomizedSearchCV, train_test_split\n\nX, y = make_classification(n_samples=2000, n_features=20, random_state=0)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)\n",
+          "solution": "import numpy as np\nfrom scipy.stats import loguniform\nfrom sklearn.datasets import make_classification\nfrom sklearn.ensemble import HistGradientBoostingClassifier\nfrom sklearn.model_selection import RandomizedSearchCV, train_test_split\n\nX, y = make_classification(n_samples=2000, n_features=20, random_state=0)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)\n\nspace = {'learning_rate': loguniform(1e-3, 1e-1), 'max_depth': [3, 6, 9]}\nsearch = RandomizedSearchCV(HistGradientBoostingClassifier(random_state=0), space,\n                            n_iter=10, cv=3, scoring='roc_auc', random_state=0)\nsearch.fit(X_tr, y_tr)\nprint(search.best_params_)\nprint(search.best_score_)\n",
           "checks": [
-            "statistics.fmean",
-            "pstdev",
-            "abs(delta) > threshold"
+            "loguniform",
+            "RandomizedSearchCV",
+            "scoring='roc_auc'"
           ],
-          "explanation": "用两组均值差作为效应量，以较大标准差乘 k 作为噪声阈值，超过阈值才认为改进显著。"
+          "explanation": "loguniform 让学习率跨数量级均匀采样，n_iter 控制预算，cv 与 scoring 决定评估方式。"
         }
-      ]
+      ],
+      "track": "side"
     },
     {
-      "slug": "academic-writing",
-      "title": "学术写作与投稿基础",
-      "order": 12,
-      "module": "从复现到创新",
+      "slug": "overfit-debugging",
+      "title": "过拟合诊断与训练调试",
+      "order": 14,
+      "module": "工程实践",
       "difficulty": "高阶",
       "estimatedMinutes": 45,
-      "summary": "掌握论文各部分的职责与写作顺序、摘要的五句式模板、图表自足原则、投稿时间线与评审回复要点，让工作被读懂、被相信、被复现。",
-      "intuition": "学术写作不是文学创作，而是把研究打包成别人能读懂、能相信、能复现的形式。审稿人和读者只给你十分钟：标题和摘要决定他要不要往下看，第一张图和主结果表决定他要不要相信你，方法与附录决定他能不能复现你。所以写作顺序通常不是从引言开始，而是先把图表和实验做扎实，再写方法，最后回头写引言与摘要——因为引言要承诺的东西，必须由实验结果兜底。",
-      "formal": "各部分职责：标题与摘要是第一层过滤器；引言回答「问题是什么、为什么现在的方法不够、我们做了什么、结果如何」；相关工作用于定位差异而非罗列；方法要细到可复现，包括超参、初始化、数据预处理与实现细节；实验要给主结果、消融与失败案例分析；结论只讲已验证的内容并写明局限。摘要常用五句式：问题背景、现有方法不足、本文方法、关键结果（带具体数字）、意义或影响。投稿时间线：NeurIPS 通常 5 月截稿、9 月出结果，ICLR 9 月截稿、次年 1 月出结果，ICML 1 月截稿、5 月出结果，CVPR 11 月截稿、次年 2-3 月出结果，ACL 2 月截稿、5 月出结果，且多数会议要求同时提交复现清单与局限说明。评审意见处理原则：逐条回应、用补充实验而非辩解回应质疑、把「没做」与「做了但没写清」区分开，rebuttal 阶段新增实验要给出完整设置而不是只报数字。",
-      "formula": "\\text{摘要} = \\underbrace{\\text{问题}}_{\\text{1 句}} + \\underbrace{\\text{不足}}_{\\text{1 句}} + \\underbrace{\\text{方法}}_{\\text{1 句}} + \\underbrace{\\text{结果（含数字）}}_{\\text{1 句}} + \\underbrace{\\text{影响}}_{\\text{1 句}}",
-      "aiConnection": "算法岗写技术方案、周报、专利与内部论文，和写学术论文是同一套能力：先用一句话讲清问题与收益，再用图表给证据，最后写明局限与风险。面试中常被要求「用三分钟讲清你的项目」，结构就是摘要五句式——问题、为什么难、你怎么做、结果数字、影响。投稿经历本身也是加分项：它证明你能把一个想法推进到可复现、可被外部检验的程度，这正是算法岗最看重的研究闭环能力。",
+      "summary": "把训练异常整理成「症状 → 原因 → 验证 → 修复」的对照手册，照着排查而不是瞎试。",
+      "intuition": "训练不收敛时最怕乱试：改学习率、换优化器、加数据一起来，最后不知道哪个起了作用。工程化的做法像医生问诊：先看症状（loss 曲线形状），再列可能原因，然后用一个能快速证伪的实验确认，最后只改一处并复测。最高效的一步是「单 batch 过拟合测试」：拿一个 batch（如 32 条）反复训练，如果 loss 都降不到接近 0，说明不是数据量问题，而是代码、标签、学习率或模型容量有 bug——这一步能在 5 分钟内排除掉一半的可能性。",
+      "formal": "训练调试对照表（症状 → 可能原因 → 验证方法 → 修复手段）：\n\n| 症状 | 可能原因 | 验证方法 | 修复手段 |\n| --- | --- | --- | --- |\n| loss 完全不降或持平 | 学习率过小或过大、标签与输入错位、输入未归一化 | 用 1 个 batch 过拟合，正常应在 200 步内 loss < 0.05 | 学习率 ×10 与 ÷10 各试一次；核对 label 与 logits 对齐；加输入标准化 |\n| train loss 降、val loss 升 | 过拟合 | 曲线开口连续 3 个 epoch 扩大且 val 上升 | weight_decay 0.01~0.1、dropout 0.1~0.3、早停 patience=5、加数据或增强 |\n| loss 突然变 NaN/Inf | 学习率过大、fp16 溢出、除零或 log(0) | 打印 NaN 前 10 步的梯度范数与 lr | lr ÷10、warmup 占总步数 1%~5%、clip_grad_norm_ 1.0、改 bf16 或开 GradScaler |\n| 验证指标远高于测试 | 数据泄漏或分布不一致 | 核对预处理是否在划分前 fit、测试集是否同分布 | 预处理全部进 Pipeline，按时间或实体切分 |\n| BN 层 train 与 eval 表现差异大 | batch 过小、running 统计失配 | 打印 batch size 与 running_mean 的变化 | batch ≥ 32，或改用 GroupNorm/LayerNorm |\n| 训练后期 loss 震荡不降 | 学习率未衰减 | 看 lr 曲线是否恒定不变 | 加 cosine 衰减，η_min 取峰值的 10% |\n| loss 正常但指标不动 | 指标计算或阈值错误 | 手工算一遍混淆矩阵与 F1 | 修正评估代码与分类阈值 |\n\n通用原则：先单 batch 过拟合，再小数据全量过拟合，最后才上全量；每次只改一个变量并记录结果。",
+      "formula": "\\text{Gap}=\\mathcal{L}_{val}-\\mathcal{L}_{train}>\\delta \\;\\Rightarrow\\; \\text{过拟合（}\\delta\\text{ 取 0.1 量级并观察连续 epoch 趋势）}",
+      "aiConnection": "这套手册就是算法岗每天的排障流程。面试里「loss 不下降你怎么排查」几乎必问，答出「单 batch 过拟合测试 + 逐层梯度范数 + 学习率扫描」三点就能明显区分出有实战经验的人。上线前必做三件事：固定随机种子复现、记录完整 config、保留一条能一键跑通的基线命令。真实项目里 80% 的「模型不 work」最终定位到数据管道（标签错位、增强过强、划分泄漏），而不是模型结构本身。",
       "codeExample": {
         "lang": "python",
-        "filename": "paper_outline.py",
-        "code": "from dataclasses import dataclass, field\n\n\n@dataclass\nclass PaperOutline:\n    problem: str = \"\"\n    gap: str = \"\"\n    method: str = \"\"\n    results: list = field(default_factory=list)   # 每项含 dataset/metric/value/baseline\n    impact: str = \"\"\n    limitations: list = field(default_factory=list)\n\n    def abstract(self):\n        \"\"\"按五句式拼出摘要草稿，缺哪句一眼可见\"\"\"\n        parts = [self.problem, self.gap, self.method]\n        if self.results:\n            r = self.results[0]\n            gain = r[\"value\"] - r[\"baseline\"]\n            parts.append(\n                f\"On {r['dataset']}, we improve {r['metric']} from \"\n                f\"{r['baseline']:.2f} to {r['value']:.2f} (+{gain:.2f}).\"\n            )\n        parts.append(self.impact)\n        return \" \".join(p for p in parts if p)\n\n\noutline = PaperOutline(\n    problem=\"长尾类别在检测任务上召回偏低。\",\n    gap=\"现有重采样方法在极端长尾下会损害头部类别精度。\",\n    method=\"我们提出按类别频率自适应调整采样温度的重采样策略。\",\n    results=[{\"dataset\": \"LVIS\", \"metric\": \"AP\", \"value\": 26.4, \"baseline\": 24.8}],\n    impact=\"为长尾检测提供了一种不牺牲头部精度的简单基线。\",\n    limitations=[\"在类别数超过 1000 时收益下降\", \"未验证多模态场景\"],\n)\nprint(outline.abstract())\nprint(\"limitations:\", outline.limitations)"
+        "filename": "debug_training.py",
+        "code": "import torch\nimport torch.nn as nn\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\n\nX, y = make_classification(n_samples=3000, n_features=40, n_informative=8, random_state=0)\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, random_state=0)\nXtr, Xte = torch.tensor(X_tr, dtype=torch.float32), torch.tensor(X_te, dtype=torch.float32)\nytr, yte = torch.tensor(y_tr, dtype=torch.float32), torch.tensor(y_te, dtype=torch.float32)\n\ndef make_model():\n    return nn.Sequential(nn.Linear(40, 128), nn.ReLU(), nn.Linear(128, 1))\n\nloss_fn = nn.BCEWithLogitsLoss()\n\n# 第一步：单 batch 过拟合测试，loss 降不到 0.05 以下说明代码/标签/学习率有问题\ntorch.manual_seed(0)\nmodel, xb, yb = make_model(), Xtr[:32], ytr[:32]\nopt = torch.optim.AdamW(model.parameters(), lr=1e-2)\nfor _ in range(300):\n    opt.zero_grad()\n    loss = loss_fn(model(xb).squeeze(1), yb)\n    loss.backward()\n    opt.step()\nprint('单 batch 过拟合 loss =', round(loss.item(), 4))\n\n# 第二步：正常训练并监控 train/val 曲线，gap 持续扩大即为过拟合\nmodel = make_model()\nopt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.01)\nfor epoch in range(1, 21):\n    model.train()\n    opt.zero_grad()\n    tr = loss_fn(model(Xtr).squeeze(1), ytr)\n    tr.backward()\n    opt.step()\n    model.eval()\n    with torch.no_grad():\n        va = loss_fn(model(Xte).squeeze(1), yte)\n    if epoch % 5 == 0:\n        print(f'epoch {epoch:2d} train {tr.item():.4f} val {va.item():.4f} gap {va.item() - tr.item():+.4f}')"
       },
       "mistakes": [
-        "摘要写得含糊，只说「效果显著提升」却不给数据集、指标和具体数字，读者无法判断价值",
-        "图表不自足，正文不解释坐标轴、单位与误差棒含义，读者必须反复翻页才能看懂",
-        "不同方法用了不同的数据划分或评测口径，主结果表内部不可比，结论失去说服力",
-        "不写局限性与复现细节，审稿人会直接以「无法复现」为由质疑整篇工作"
+        "一次改多个超参，无法归因到底是哪个起了作用",
+        "跳过单 batch 过拟合测试，花几天调参最后发现是标签错位",
+        "只看 loss 数值不看曲线形状，错过「开口扩大」这种早期过拟合信号",
+        "早停时监控训练 loss 而不是验证 loss，早停完全失效"
       ],
       "interviewPoints": [
-        "如何用三分钟讲清一个项目：问题、为什么难、方法、结果数字、影响与局限",
-        "摘要的五句式结构分别对应审稿人的哪些疑问",
-        "rebuttal 时面对「实验不足」的质疑，什么样的回应最有效（补实验并给出完整设置，而非口头辩解）",
-        "写技术方案或专利与写论文的异同，哪些部分必须更强调工程约束与成本"
+        "描述「loss 不下降」的完整排查顺序（单 batch → 逐层梯度 → 学习率扫描 → 数据检查）",
+        "给出过拟合的三条量化判据与对应的修复手段",
+        "解释 NaN 出现的常见原因以及从数值角度定位的方法",
+        "说明为什么早停必须监控验证集指标而不是训练损失"
       ],
       "resources": [
         {
-          "title": "NeurIPS Paper Checklist（复现清单与写作规范）",
-          "url": "https://neurips.cc/public/guides/PaperChecklist"
+          "title": "A Recipe for Training Neural Networks (Karpathy)",
+          "url": "http://karpathy.github.io/2019/04/25/recipe/"
         },
         {
-          "title": "How to Write a Great Research Paper（Simon Peyton Jones）",
-          "url": "https://www.microsoft.com/en-us/research/academic-program/write-great-research-paper/"
+          "title": "PyTorch Autograd 文档（含异常检测与梯度调试）",
+          "url": "https://pytorch.org/docs/stable/notes/autograd.html"
         }
       ],
       "quiz": [
         {
-          "id": "academic-writing-q1",
+          "id": "overfit-debugging-q1",
           "type": "choice",
-          "prompt": "关于论文写作顺序，下列哪种做法更合理？",
+          "prompt": "模型在训练集上也训不动（loss 降不下去），最先应该做哪一步？",
           "options": [
-            "从引言第一句开始按顺序写到结论",
-            "先把图表与实验做扎实，再写方法，最后写引言与摘要",
-            "先写摘要，再据此补实验数据",
-            "先写完相关工作，再决定做什么实验"
+            "立刻增加更多训练数据",
+            "用单个 batch 做过拟合测试，确认代码、标签与学习率是否正确",
+            "换更大的模型结构",
+            "增加正则化强度"
           ],
           "answerIndex": 1,
-          "explanation": "引言与摘要需要承诺贡献与数字，只有实验结论确定后才能写得准确；先写摘要再补数据容易导致过度承诺，与最终结果不符。"
+          "explanation": "单 batch 过拟合测试能在几分钟内验证「模型有能力拟合」这一前提；若连 32 条样本都拟合不了，问题在代码、标签或学习率，加数据与换结构都是浪费。"
         },
         {
-          "id": "academic-writing-q2",
+          "id": "overfit-debugging-q2",
           "type": "short",
-          "prompt": "审稿意见指出「缺少与某基线的对比」，rebuttal 时应当怎么回应？",
-          "answer": "参考回答：首先确认该基线是否确实必要，如果是，就在 rebuttal 期间补做实验，并在回复中给出完整的实验设置（数据划分、超参、随机种子、运行次数）与新结果，说明结论是否改变；如果因资源或数据限制无法完成，要明确说明限制条件与已做的替代验证，而不是用「该方法显然更差」这类辩解。若属于已做但正文未写清的情况，直接补充说明并致谢，把「没做」和「没写清」区分开。",
+          "prompt": "训练 loss 持续下降而验证 loss 开始上升，说明什么？给出三条修复手段。",
+          "answer": "参考回答：这是典型的过拟合信号，模型开始记忆训练集的噪声。修复手段：一是加正则化，weight_decay 取 0.01~0.1、dropout 取 0.1~0.3；二是早停，patience 取 5 个 epoch 并监控验证损失；三是扩充有效数据，加数据增强或收集更多样本，也可适当减小模型容量。",
           "keywords": [
-            "补实验",
-            "完整设置",
-            "区分没做与没写清",
-            "避免辩解"
+            "过拟合",
+            "正则化",
+            "早停"
           ],
-          "explanation": "得分点是用补充实验与完整设置回应质疑，并区分「没做」与「没写清」两种情形。"
+          "explanation": "判据是「训练降、验证升」，修复要覆盖正则、早停、数据三条路径并给出具体数值。"
         },
         {
-          "id": "academic-writing-q3",
+          "id": "overfit-debugging-q3",
           "type": "code",
-          "prompt": "实现 make_table(rows)：输入列表，每项为 {'method': str, 'metric': float, 'std': float, 'ours': bool}，返回对齐的 Markdown 表格字符串，表头为 Method | Metric | Std，属于本文方法的那一行方法名后加星号，并加粗该行指标（用 ** 包裹）。",
-          "starterCode": "def make_table(rows):\n    \"\"\"返回 Markdown 表格字符串（含表头与分隔行）\"\"\"\n    pass\n",
-          "solution": "def make_table(rows):\n    \"\"\"返回 Markdown 表格字符串（含表头与分隔行）\"\"\"\n    lines = [\"| Method | Metric | Std |\", \"| --- | --- | --- |\"]\n    for r in rows:\n        name = r[\"method\"] + (\"*\" if r.get(\"ours\") else \"\")\n        metric = f\"{r['metric']:.2f}\"\n        if r.get(\"ours\"):\n            metric = f\"**{metric}**\"\n        lines.append(f\"| {name} | {metric} | {r['std']:.2f} |\")\n    return \"\\n\".join(lines)\n\n\nif __name__ == \"__main__\":\n    print(make_table([\n        {\"method\": \"Baseline\", \"metric\": 24.8, \"std\": 0.2, \"ours\": False},\n        {\"method\": \"Ours\", \"metric\": 26.4, \"std\": 0.1, \"ours\": True},\n    ]))\n",
+          "prompt": "实现单 batch 过拟合测试：取 32 条样本训练一个两层 MLP 300 步，打印最终 loss（应低于 0.05）。",
+          "starterCode": "import torch\nimport torch.nn as nn\nfrom sklearn.datasets import make_classification\n\nX, y = make_classification(n_samples=200, n_features=20, random_state=0)\nXb = torch.tensor(X[:32], dtype=torch.float32)\nyb = torch.tensor(y[:32], dtype=torch.float32)\nmodel = nn.Sequential(nn.Linear(20, 64), nn.ReLU(), nn.Linear(64, 1))\n",
+          "solution": "import torch\nimport torch.nn as nn\nfrom sklearn.datasets import make_classification\n\nX, y = make_classification(n_samples=200, n_features=20, random_state=0)\nXb = torch.tensor(X[:32], dtype=torch.float32)\nyb = torch.tensor(y[:32], dtype=torch.float32)\nmodel = nn.Sequential(nn.Linear(20, 64), nn.ReLU(), nn.Linear(64, 1))\n\nopt = torch.optim.AdamW(model.parameters(), lr=1e-2)\nloss_fn = nn.BCEWithLogitsLoss()\nfor _ in range(300):\n    opt.zero_grad()\n    loss = loss_fn(model(Xb).squeeze(1), yb)\n    loss.backward()\n    opt.step()\nprint(round(loss.item(), 4))\n",
           "checks": [
-            "| Method |",
-            "**",
-            "ours"
+            "BCEWithLogitsLoss",
+            "loss.backward()",
+            "opt.step()"
           ],
-          "explanation": "按行拼接 Markdown 表格，本文方法加星号标记并加粗指标值，标准差保留两位小数。"
+          "explanation": "固定 32 条样本反复训练，模型应能把它背下来；若 loss 不降，问题在代码、标签或学习率而非数据量。"
         }
-      ]
+      ],
+      "track": "side"
     }
   ]
 }

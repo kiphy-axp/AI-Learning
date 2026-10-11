@@ -93,6 +93,7 @@ async function handleApi(req, res, pathname) {
       projectTasks: listProjectTasks(),
       bookmarks: listBookmarks(),
       tutor: publicTutorConfig(),
+      plan: publicPlan(),
     });
   }
 
@@ -166,7 +167,9 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === '/api/settings') {
-    if (method === 'GET') return sendJson(res, 200, { tutor: publicTutorConfig(), modes: TUTOR_MODES });
+    if (method === 'GET') {
+      return sendJson(res, 200, { tutor: publicTutorConfig(), plan: publicPlan(), modes: TUTOR_MODES });
+    }
     if (method === 'POST') {
       const body = await readBody(req);
       if (typeof body.provider === 'string') setSetting('tutor_provider', body.provider);
@@ -176,7 +179,12 @@ async function handleApi(req, res, pathname) {
         if (body.apiKey.trim()) setSetting('tutor_api_key_enc', encryptSecret(body.apiKey.trim()));
         else setSetting('tutor_api_key_enc', '');
       }
-      return sendJson(res, 200, { ok: true, tutor: publicTutorConfig() });
+      if (body.planWeeklyHours !== undefined) {
+        const hours = Math.max(1, Math.min(60, Number(body.planWeeklyHours) || 6));
+        setSetting('plan_weekly_hours', String(hours));
+      }
+      if (typeof body.planStartDate === 'string') setSetting('plan_start_date', body.planStartDate.trim());
+      return sendJson(res, 200, { ok: true, tutor: publicTutorConfig(), plan: publicPlan() });
     }
   }
 
@@ -228,6 +236,14 @@ async function handleApi(req, res, pathname) {
   }
 
   return sendJson(res, 404, { error: `未知接口：${method} ${pathname}` });
+}
+
+/** 学习计划设置：每周可投入小时数 + 起始日期 */
+function publicPlan() {
+  return {
+    weeklyHours: Number(getSetting('plan_weekly_hours', '6')) || 6,
+    startDate: getSetting('plan_start_date', ''),
+  };
 }
 
 /* ------------------------------------------------------------ 静态文件 */

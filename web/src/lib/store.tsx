@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { api } from './api';
 import { LESSONS, STAGES } from './content';
-import type { AppState, AttemptRow, Note, ProgressRow, TutorConfig } from './types';
+import type { AppState, AttemptRow, Note, PlanConfig, ProgressRow, TutorConfig } from './types';
 
 type StoreValue = {
   ready: boolean;
@@ -21,6 +21,7 @@ type StoreValue = {
   projectTasks: AppState['projectTasks'];
   studyDays: AppState['studyDays'];
   tutor: TutorConfig;
+  plan: PlanConfig;
   error: string | null;
   stats: {
     mastered: number;
@@ -53,7 +54,14 @@ type StoreValue = {
     tags?: string[];
   }) => Promise<void>;
   deleteNote: (id: number) => Promise<void>;
-  saveSettings: (payload: { provider?: string; baseUrl?: string; model?: string; apiKey?: string }) => Promise<void>;
+  saveSettings: (payload: {
+    provider?: string;
+    baseUrl?: string;
+    model?: string;
+    apiKey?: string;
+    planWeeklyHours?: number;
+    planStartDate?: string;
+  }) => Promise<void>;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -172,20 +180,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [progress, state]);
 
   const wrongQuestions = useMemo(() => {
+    // 不同阶段可能存在同名知识点（如 transformer/embedding 与 llm/embedding），
+    // 题目 id 也随之重名，所以统一用「阶段/知识点 + 题目 id」作为复合键
+    const composite = (a: AttemptRow) => `${a.lesson_slug}::${a.question_id}`;
     const latest = new Map<string, AttemptRow>();
     for (const attempt of state?.attempts ?? []) {
-      if (!latest.has(attempt.question_id)) latest.set(attempt.question_id, attempt);
+      const key = composite(attempt);
+      if (!latest.has(key)) latest.set(key, attempt);
     }
     const counts = new Map<string, number>();
     for (const attempt of state?.attempts ?? []) {
-      counts.set(attempt.question_id, (counts.get(attempt.question_id) ?? 0) + 1);
+      const key = composite(attempt);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     return [...latest.values()]
       .filter((a) => !a.correct)
       .map((a) => ({
         questionId: a.question_id,
         lessonSlug: a.lesson_slug,
-        attempts: counts.get(a.question_id) ?? 1,
+        attempts: counts.get(composite(a)) ?? 1,
         lastAnswer: a.answer ?? '',
       }));
   }, [state]);
@@ -290,7 +303,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const saveSettings = useCallback<StoreValue['saveSettings']>(async (payload) => {
     const res = await api.saveSettings(payload);
-    setState((prev) => (prev ? { ...prev, tutor: res.tutor } : prev));
+    setState((prev) => (prev ? { ...prev, tutor: res.tutor, plan: res.plan } : prev));
   }, []);
 
   const value: StoreValue = {
@@ -302,6 +315,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     projectTasks: state?.projectTasks ?? [],
     studyDays: state?.studyDays ?? [],
     tutor: state?.tutor ?? { provider: '', baseUrl: '', model: '', hasKey: false },
+    plan: state?.plan ?? { weeklyHours: 6, startDate: '' },
     error,
     stats,
     wrongQuestions,

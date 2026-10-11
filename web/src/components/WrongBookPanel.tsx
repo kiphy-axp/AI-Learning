@@ -10,11 +10,12 @@ import type { QuizQuestion } from '../lib/types';
 export function WrongBookPanel() {
   const { wrongQuestions, attempts, stats } = useStore();
 
+  // 题目 id 在不同阶段可能重名，用「阶段/知识点::题目id」做键
   const questionMap = useMemo(() => {
     const map = new Map<string, { question: QuizQuestion; stageSlug: string; lessonSlug: string; title: string }>();
     for (const { stage, lesson } of LESSON_ORDER) {
       for (const question of lesson.quiz ?? []) {
-        map.set(question.id, {
+        map.set(`${stage.stageSlug}/${lesson.slug}::${question.id}`, {
           question,
           stageSlug: stage.stageSlug,
           lessonSlug: lesson.slug,
@@ -47,7 +48,7 @@ export function WrongBookPanel() {
       {grouped.length ? (
         <div className="space-y-4">
           {grouped.map(([lessonSlug, items]) => {
-            const first = questionMap.get(items[0].questionId);
+            const first = questionMap.get(`${lessonSlug}::${items[0].questionId}`);
             if (!first) return null;
             return (
               <section key={lessonSlug} className="card p-5">
@@ -70,7 +71,7 @@ export function WrongBookPanel() {
 
                 <ul className="mt-3.5 space-y-3">
                   {items.map((item) => {
-                    const entry = questionMap.get(item.questionId);
+                    const entry = questionMap.get(`${lessonSlug}::${item.questionId}`);
                     if (!entry) return null;
                     return (
                       <li key={item.questionId} className="rounded-xl border border-white/8 bg-white/[0.02] p-3.5">

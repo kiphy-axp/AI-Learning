@@ -1,563 +1,857 @@
 {
   "stage": 7,
-  "stageSlug": "deep-learning",
-  "stageTitle": "深度学习",
-  "stageEmoji": "🧠",
-  "stageDesc": "神经网络、反向传播、PyTorch、CNN 与 RNN：深度学习的起点",
-  "category": "进阶",
+  "stageSlug": "computer-science",
+  "stageTitle": "计算机基础",
+  "stageEmoji": "💻",
+  "stageDesc": "CPU、内存、操作系统、网络与 HTTP：看懂程序运行时到底发生了什么",
+  "act": 3,
+  "actName": "第三幕 · 计算机科学基础",
+  "category": "基础",
   "lessons": [
     {
-      "slug": "neural-network",
-      "title": "Neural Network 神经网络",
+      "slug": "cpu",
+      "title": "CPU 处理器",
       "order": 1,
-      "module": "神经网络基础",
-      "difficulty": "进阶",
-      "estimatedMinutes": 22,
-      "summary": "神经网络由多层神经元组成，用权重和偏置对输入做线性组合，再用激活函数引入非线性。",
-      "intuition": "想象一张由许多小节点和连线组成的网络：每个节点像一个小开关，接收上游的数值，把它们加权求和，再决定要不要激活传给下一层。第一层接收输入，最后一层给出输出，中间的隐藏层负责层层抽取特征。正是激活函数的非线性让这种简单结构能拟合任意复杂的函数，从而逼近真实世界的规律。",
-      "formal": "一个神经元把输入向量 x 与权重 w 做内积并加上偏置 b，得到 z = w^T x + b，再经过激活函数得到 a = f(z)。多个神经元堆叠成层，层与层全连接就构成一个前馈网络。权重 w 和偏置 b 是待学习的参数，网络的能力就藏在这些参数里。隐藏层叠加得越多，网络能表达的函数族就越丰富。",
-      "formula": "a = f(Wx + b)",
-      "aiConnection": "大语言模型本质上是一个极其庞大的神经网络，参数规模可达千亿。理解神经网络的结构，是理解模型如何把文字变成内部特征、又如何生成新文本的起点。所有关于训练、微调和推理的知识都建立在这套结构之上。",
+      "module": "计算机核心",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "CPU 是计算机的运算与控制核心，负责取指令、译码并顺序执行，是程序真正运行的执行单元。",
+      "intuition": "把 CPU 想成一个非常勤奋的工人，它只会一件事：不断从内存里取出一条指令，理解它，然后执行它。它跑得极快，一分钟能处理几十亿条指令。但它的短板也很明显——一次只能专心干一件事，所以现代 CPU 用多个核心来'多开'。",
+      "formal": "CPU（Central Processing Unit，中央处理器）由三个主要部分组成。`control unit` 控制单元负责从内存取指令、译码并协调其它部件的动作；`ALU` 算术逻辑单元执行加减乘除与逻辑比较；`register` 寄存器保存极少量马上要用的数据。CPU 每个时钟周期执行一条基本指令，频率（GHz）代表一秒钟能跑多少个周期。现代 CPU 通过多核心（multi-core）与超线程技术并行处理任务，同时依赖 `cache` 高速缓存缓解内存速度远慢于 CPU 的问题。对程序而言，CPU 的核心任务是按 `instruction`（指令集）串行推进，并尽量提高指令级并行度。",
+      "formula": "",
+      "aiConnection": "训练和推理大模型时，最贵的是矩阵乘加运算，这些恰好在 CPU/GPU 上执行。理解 CPU 的单核串行本质，就理解了为什么 AI 框架会优先把矩阵并行运算扔给 GPU 或专门加速器，而 CPU 仍承担数据调度、预处理等串行工作。",
       "codeExample": {
         "lang": "python",
-        "filename": "neural_network.py",
-        "code": "import numpy as np\n\n# 一个简单的两层全连接前馈网络（numpy 手动实现）\ndef sigmoid(x):\n    return 1 / (1 + np.exp(-x))\n\n# 输入：2 个样本，每个 3 维\nX = np.array([[0, 1, 0],\n              [1, 0, 1]])\n\n# 第一层权重与偏置：3 输入 -> 4 隐藏\nW1 = np.random.randn(4, 3)\nb1 = np.zeros(4)\n# 第二层：4 隐藏 -> 1 输出\nW2 = np.random.randn(1, 4)\nb2 = np.zeros(1)\n\nH = sigmoid(W1 @ X.T + b1[:, None])\nY = sigmoid(W2 @ H + b2[:, None])\nprint(Y.shape)  # (1, 2) 两个样本的输出"
+        "filename": "cpu.py",
+        "code": "import time\n\n# 模拟 CPU 串行执行：一次只做一件事\ndef task(name, n):\n    total = 0\n    for i in range(n):\n        total += i\n    print(f\"{name} 完成，结果={total}\")\n\nstart = time.time()\ntask(\"任务A\", 2_000_000)\ntask(\"任务B\", 2_000_000)\nprint(f\"串行耗时 {time.time() - start:.3f} 秒\")"
       },
       "mistakes": [
-        "误以为增加层数一定能提升效果，而忽略数据量与过拟合问题",
-        "忘记非线性激活函数，导致多层的网络退化成单个线性变换",
-        "把权重初始化成全部相同的值，导致所有神经元学到相同特征"
+        "把 CPU 频率当作衡量性能的唯一标准，忽略了核心数与每周期指令吞吐",
+        "以为 CPU 能立刻拿到任意数据，忽略了内存访问带来的延迟",
+        "混淆 CPU 与 GPU：CPU 擅长串行逻辑控制，GPU 擅长大规模并行浮点运算",
+        "认为程序越大一定越慢，其实瓶颈常出现在数据搬运而非运算本身"
       ],
       "interviewPoints": [
-        "「为什么神经网络必须有非线性激活函数？」要答到多个线性变换复合仍是线性变换，没有 f 时再深的网络也只等价于一个仿射映射",
-        "「权重为什么不能初始化为全 0 或相同值？」要答到对称性会让所有神经元得到相同梯度、永远学成同一个特征，必须随机初始化",
-        "「隐藏层越多效果一定越好吗？」要答到深度提升表达力但参数量与优化难度上升，数据不足时直接过拟合，还需残差与归一化配合",
-        "「通用逼近定理说明了什么、又没说什么？」要答到单隐层即可逼近任意连续函数，但没给出需要多少宽度，也没保证 SGD 训得到"
+        "「CPU 为什么需要多级 cache？」要答到 CPU 与内存存在数量级速度差、时间与空间局部性，以及数据预处理为何常成为训练瓶颈",
+        "「CPU 和 GPU 在 AI 里怎么分工？」要答到 CPU 擅串行调度、GPU 擅并行矩阵运算，说明框架为何把矩阵乘交给 GPU",
+        "「主频越高程序就越快吗？」要答到 IPC、核心数、访存延迟与 Amdahl 定律，解释为何不能只看 GHz 判断推理性能"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "neural-network-q1",
+          "id": "cpu-q1",
           "type": "choice",
-          "prompt": "神经网络中引入激活函数的主要目的是什么？",
+          "prompt": "CPU 中负责执行加减乘除等运算的部件是？",
           "options": [
-            "加快计算速度",
-            "引入非线性，使网络能逼近复杂函数",
-            "减少参数数量",
-            "防止过拟合"
+            "控制单元",
+            "寄存器",
+            "ALU 算术逻辑单元",
+            "高速缓存"
           ],
-          "answerIndex": 1,
-          "explanation": "没有非线性激活函数，多层线性变换叠加后仍是一个线性函数，无法表达复杂模式。激活函数提供了拟合任意函数所需的非线性能力。"
+          "answerIndex": 2,
+          "explanation": "ALU（Arithmetic Logic Unit）负责执行算术与逻辑运算；控制单元负责取指译码，寄存器临时存数据，缓存加速内存访问。"
         },
         {
-          "id": "neural-network-q2",
+          "id": "cpu-q2",
           "type": "short",
-          "prompt": "简述一个神经元完成的计算步骤。",
-          "answer": "参考回答：神经元先对输入向量与权重做内积（加权求和）并加上偏置，得到线性组合 z = w^T x + b；再通过一个非线性激活函数 f 得到输出 a = f(z)。",
+          "prompt": "简述 CPU 取指令-译码-执行的过程，并说明为什么缓存对 CPU 很重要。",
+          "answer": "CPU 先从内存取下一条指令，控制单元对其译码，再由相关部件执行。内存速度远慢于 CPU，若每次都直接访问内存，CPU 会大量空闲。缓存把常用数据提前放到靠近 CPU 的高速小容量存储中，大幅减少等待时间。",
           "keywords": [
-            "激活函数",
-            "权重",
-            "偏置"
+            "cache",
+            "内存",
+            "执行"
           ],
-          "explanation": "神经元 = 线性组合(z=w^T x+b) + 激活函数(f)。权重与偏置是学习到的参数。"
+          "explanation": "关键在缓存缓解 CPU 与内存的速度差距。"
         },
         {
-          "id": "neural-network-q3",
+          "id": "cpu-q3",
           "type": "code",
-          "prompt": "用 numpy 实现一个神经元：输入向量 x、权重 w、偏置 b，返回激活后的输出（激活函数用 sigmoid）。",
-          "starterCode": "import numpy as np\n\ndef neuron(x, w, b):\n    pass\n",
-          "solution": "import numpy as np\n\ndef neuron(x, w, b):\n    z = np.dot(w, x) + b\n    return 1 / (1 + np.exp(-z))\n",
+          "prompt": "写一个函数 sum_n(n)，用循环计算 0 到 n-1 的和，模拟 CPU 串行累加。",
+          "starterCode": "def sum_n(n):\n    pass",
+          "solution": "def sum_n(n):\n    total = 0\n    for i in range(n):\n        total += i\n    return total\n\nprint(sum_n(5))",
           "checks": [
-            "np.dot",
-            "exp"
+            "def sum_n",
+            "for i in range",
+            "total"
           ],
-          "explanation": "先算线性组合 np.dot(w, x) + b，再套 sigmoid 激活函数。"
+          "explanation": "用循环逐次累加，就是 CPU 逐条指令串行工作的写照。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "forward-propagation",
-      "title": "Forward Propagation 前向传播",
+      "slug": "memory",
+      "title": "Memory 内存",
       "order": 2,
-      "module": "神经网络基础",
-      "difficulty": "进阶",
-      "estimatedMinutes": 23,
-      "summary": "前向传播是数据从输入层逐层流向输出层、最终得到预测结果的量化过程。",
-      "intuition": "把前向传播想成一大堆工厂流水线：原材料从最左边进入，经过一道道生产工序（每一层），每道工序把上一步的产物加工成更有用的中间品，最后在出口端得到成品——也就是网络的预测值。整个过程只朝一个方向流动，不回头，所以叫前向。",
-      "formal": "给定输入 x，第一层计算 a^[1] = f(W^[1] x + b^[1])，其中 f 为激活函数。第二层用第一层的输出作为输入，继续计算 a^[2] = f(W^[2] a^[1] + b^[2])。如此逐层传播，直到最后一层得到输出 ŷ = a^[L]。这个过程可以写成逐层迭代的 a^[l] = f(W^[l] a^[l-1] + b^[l])，其中 a^[0] = x。",
-      "formula": "a^{[l]} = f(W^{[l]}a^{[l-1]} + b^{[l]})",
-      "aiConnection": "当你向一个大语言模型输入一句提示词，提示词被编码后从第一层一路流向最后一层，最后输出下一个 token 的概率分布——这就是一次前向传播。推理阶段（inference）只做前向传播，不做反向传播，因此它的计算量决定了服务的成本与延迟。",
+      "module": "计算机核心",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "内存（RAM）是程序运行时存放数据与指令的临时工作区，断电即失，速度快于硬盘但小于它。",
+      "intuition": "把你的桌面想象成内存：你正在处理的文件、草稿都摊在桌上，伸手就能拿到，很快；但书桌是有限的，东西太多就摆不下。存到硬盘就像放进抽屉或仓库，容量大但拿起来要站起来走几步。内存就是那块'正在摊开的桌面'，一关机就被清空。",
+      "formal": "Memory（随机存取存储器 RAM）是程序的运行时工作空间。程序加载后，其代码、数据段、堆和栈都位于内存中。内存按字节编址，允许以近乎恒定的随机访问延迟读取任一地址，这与硬盘的块式访问明显不同。内存的关键特性是`volatile`（易失性）：断电后数据丢失。典型的内存分层结构是：寄存器（最小最快）→ 各级 Cache → 主内存（RAM）→ 大容量存储。内存有限意味着程序不能无限占用；`stack` 存放函数调用帧与局部变量，`heap` 存放动态分配的对象，两者容易用尽导致程序崩溃。",
+      "formula": "",
+      "aiConnection": "大模型的权重参数和中间激活值都要驻留在内存中。模型的参数量直接决定了需要多少显存/内存；例如一个 7B 模型仅权重就要约 7×2 字节 = 14GB。理解内存与显存的容量限制，就能理解为什么大模型需要量化、分片和批处理来降低内存占用。",
       "codeExample": {
         "lang": "python",
-        "filename": "forward_prop.py",
-        "code": "import numpy as np\n\n# 逐层前向传播的简化实现\ndef sigmoid(x):\n    return 1 / (1 + np.exp(-x))\n\nclass SimpleLayer:\n    def __init__(self, w, b):\n        self.w = w\n        self.b = b\n\n    def forward(self, x):\n        # 单层前向传播：a = f(w x + b)\n        return sigmoid(self.w @ x + self.b)\n\n# 随机初始化两层\nW1, b1 = np.random.randn(4, 3), np.zeros(4)\nW2, b2 = np.random.randn(1, 4), np.zeros(1)\n\nx = np.random.randn(3)\nh = SimpleLayer(W1, b1).forward(x)   # 第一层输出\ny = SimpleLayer(W2, b2).forward(h)   # 第二层输出\nprint(y)"
+        "filename": "memory.py",
+        "code": "import sys\n\n# 观察一个可变对象在内存中的行为\nlst = [1, 2, 3]\nprint(\"list 对象占用内存(bytes):\", sys.getsizeof(lst))\n\n# 引用语义：lst2 只是指向同一块内存\nlst2 = lst\nlst2.append(4)\nprint(\"修改 lst2 后 lst 也会变化:\", lst)\n\n# 大数据集时注意内存占用\nbig = [i for i in range(1000000)]\nprint(\"百万元素列表占内存(bytes):\", sys.getsizeof(big) // 1024 // 1024, \"MB\")"
       },
       "mistakes": [
-        "混淆输入维度与层数，导致矩阵相乘维度不匹配报错",
-        "忘记在每层输出后添加激活函数，得到的只是线性堆叠",
-        "把每一层的输出都当成最终输出，没有层层传递而已中途截断"
+        "把内存当永久存储，重启程序后以为数据还在",
+        "以为内存越大越好，完全忽视算法本身的空间复杂度",
+        "混淆内存地址与数据值，以为改引用就是改数据副本",
+        "在程序里一次创建过多大对象导致 MemoryError，或干脆用内存换不必要的速度"
       ],
       "interviewPoints": [
-        "「前向传播中每一层的计算是什么？」要答到先做线性变换 z=W a+b、再过激活 a=f(z)，上一层输出即本层输入，维度必须对齐",
-        "「推理阶段为什么只做前向传播？」要答到推理没有标签、不需要梯度，只需算出预测，因此成本由前向 FLOPs 与显存带宽决定",
-        "「LLM 的一次推理里前向传播是怎样的？」要答到 prompt 逐层流过、末层输出下一 token 的概率分布",
-        "「自回归生成时为什么还要缓存 KV？」要答到逐 token 生成会重复计算全部历史，缓存 K/V 把每步复杂度从 O(n²) 降到 O(n)"
+        "「栈和堆有什么区别？」要答到栈自动管理调用帧、分配快而小，堆容量大但易碎片泄漏，并联系 Python 对象其实都在堆上",
+        "「为什么 7B 模型光权重就要约 14GB 内存？」要答到参数量乘精度字节数、激活值与 KV cache 的额外占用，以及量化与分片的动机",
+        "「内存越大越好吗？」要答到空间复杂度、显存容量对 batch size 的硬约束，以及 OOM 时该减小 batch 还是换优化器"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "forward-propagation-q1",
+          "id": "memory-q1",
           "type": "choice",
-          "prompt": "关于网络的前向传播，下列说法正确的是？",
+          "prompt": "关于内存（RAM）的描述，正确的一项是？",
           "options": [
-            "数据从输出层流向输入层",
-            "数据从输入层逐层流向输出层，得到预测",
-            "前向传播用来更新权重",
-            "前向传播只在训练阶段发生"
+            "断电后数据仍然保留",
+            "容量通常比硬盘大",
+            "访问速度快于硬盘但断电数据丢失",
+            "只能顺序访问不能随机访问"
           ],
-          "answerIndex": 1,
-          "explanation": "前向传播是输入数据逐层向前流动得到预测值的过程，训练和推理阶段都会发生；反向传播才负责更新权重。"
+          "answerIndex": 2,
+          "explanation": "RAM 是易失性存储，速度快、容量小于硬盘、支持随机访问，但断电即丢失数据。"
         },
         {
-          "id": "forward-propagation-q2",
+          "id": "memory-q2",
           "type": "short",
-          "prompt": "前向传播中某一层的计算流程是什么？",
-          "answer": "参考回答：先做线性变换 z = W^[l] a^[l-1] + b^[l]，即上一层的输出 a^[l-1] 与权重 W 相乘再加偏置 b；再经过激活函数得到本层输出 a^[l] = f(z)。",
+          "prompt": "解释内存中的栈（stack）与堆（heap）有什么区别。",
+          "answer": "栈用于保存函数调用帧和局部变量，由系统自动管理，分配和释放都很快，但容量较小。堆用于动态分配的对象，由程序员或运行时管理，容量大但分配与释放开销更大，可能出现碎片或泄漏。",
           "keywords": [
-            "线性变换",
-            "激活函数",
-            "上一层"
+            "栈",
+            "堆",
+            "局部变量"
           ],
-          "explanation": "每一层 = 线性变换(乘权重加偏置) + 激活函数，输出作为下一层的输入。"
+          "explanation": "栈自动化管理、快而小；堆手动/运行时管理、大而慢。"
         },
         {
-          "id": "forward-propagation-q3",
+          "id": "memory-q3",
           "type": "code",
-          "prompt": "实现函数 forward，给定输入 x、权重 W、偏置 b，使用 sigmoid 激活，返回该层输出。",
-          "starterCode": "import numpy as np\n\ndef forward(x, W, b):\n    pass\n",
-          "solution": "import numpy as np\n\ndef forward(x, W, b):\n    z = W @ x + b\n    return 1 / (1 + np.exp(-z))\n",
+          "prompt": "写一个函数 max_memory_example(n)，创建一个包含 0 到 n-1 的列表并返回其长度，验证创建大数据集时的内存使用。",
+          "starterCode": "def max_memory_example(n):\n    pass",
+          "solution": "def max_memory_example(n):\n    data = list(range(n))\n    return len(data)\n\nprint(max_memory_example(100000))",
           "checks": [
-            "@",
-            "exp"
+            "def max_memory_example",
+            "list(range"
           ],
-          "explanation": "用矩阵乘法实现线性变换加偏置，再套 sigmoid。"
+          "explanation": "创建大列表即占用内存，考察对象在内存中的空间开销。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "back-propagation",
-      "title": "Back Propagation 反向传播",
+      "slug": "storage",
+      "title": "Storage 存储",
       "order": 3,
-      "module": "神经网络基础",
-      "difficulty": "进阶",
-      "estimatedMinutes": 25,
-      "summary": "反向传播利用链式法则，从输出层向输入层逐层计算损失对每个参数的梯度，用于更新权重。",
-      "intuition": "如果说前向传播是顺着流水线把原料加工成产品，那么反向传播就是逆着流水线把'哪里错了'的反馈信号往回传。产品端先评价'距离目标差了多少'（损失），然后把这个偏差信息沿着来路一层层分摊给每道工序——每道工序因此知道自己是该多做一点还是少做一点，最终每个人各自调整参数来减少误差。",
-      "formal": "反向传播的核心是链式法则。损失 L 对第 l 层权重 W^[l] 的梯度，可以通过传播误差项 δ^[l] 来计算：δ^[L] = ∇_a L ⊙ f'(z^[L])，然后逐层向前 δ^[l] = (W^[l+1])^T δ^[l+1] ⊙ f'(z^[l])。得到梯度后，使用权重的梯度来更新参数：W^[l] 沿 ∂L/∂W^[l] 的反方向更新。",
-      "formula": "\\frac{\\partial L}{\\partial W^{[l]}} = \\delta^{[l]} (a^{[l-1]})^T",
-      "aiConnection": "大模型训练中，反向传播要在数千亿参数上计算梯度，需要巨大的显存与算力。而推理阶段不反向传播，只做前向，这正是训练大模型远比使用大模型昂贵的原因。理解反向传播才能理解为什么训练如此困难与耗资源。",
+      "module": "计算机核心",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "存储是断电仍然保留数据的持久化设备，如机械硬盘、固态硬盘，容量大但访问慢。",
+      "intuition": "内存是正在用的桌面，存储就是关灯后也不会清空的仓库。你关机再开机，文件还在，就是因为它们被写进了硬盘。代价是：从仓库取东西比较慢。硬盘分两种：像老式留声机那样靠磁盘旋转和磁头移动读取的机械硬盘（HDD），以及像一块大内存芯片但能断电保存的固态硬盘（SSD）。",
+      "formal": "Storage（持久化存储）是指断电后数据仍能保留的设备。主要分为两类：`HDD`（机械硬盘）通过旋转磁盘与磁头机械移动读写，容量大、单位容量便宜，但有机械延迟和震动风险；`SSD`（固态硬盘）基于闪存芯片，无机械部件，随机读写快得多且更耐震。存储以`file`为单位组织数据，操作系统通过`file system`管理这些文件。相比内存，存储延迟高 数百倍到数千倍，因此程序总希望能把常用数据提前加载到内存（缓存）。常见接口有 SATA、NVMe，其中 NVMe SSD 在现代系统中显著提升 I/O 性能。",
+      "formula": "",
+      "aiConnection": "训练数据集、模型权重、检查点（checkpoint）都存放在持久化存储里。训练过程中定期保存 checkpoint，就是为了防止机器重启或崩溃丢失已训练的权重。同时，把大数据集读取到显存/内存的前置 I/O 常常成为训练瓶颈，这也推动了数据加载与预取优化。",
       "codeExample": {
         "lang": "python",
-        "filename": "back_prop.py",
-        "code": "import numpy as np\n\ndef sigmoid(x):\n    return 1 / (1 + np.exp(-x))\n\ndef sigmoid_d(x):\n    s = sigmoid(x)\n    return s * (1 - s)\n\n# 单层网络：一个神经元\nX = np.array([[0.5], [1.0]])   # 2 个样本\nY = np.array([[1.0], [0.0]])   # 目标\nw = np.random.randn(1)\nb = np.zeros(1)\n\nlr = 0.1\nfor epoch in range(20):\n    z = w * X + b\n    a = sigmoid(z)\n    loss = np.mean((a - Y) ** 2)\n    # 反向传播：误差项的梯度\n    dL_da = 2 * (a - Y) / len(X)\n    da_dz = sigmoid_d(z)\n    dL_dw = np.sum(dL_da * da_dz * X)   # 对权重的梯度\n    dL_db = np.sum(dL_da * da_dz)       # 对偏置的梯度\n    w -= lr * dL_dw\n    b -= lr * dL_db\n    print(f\"epoch {epoch}: loss={loss:.4f}\")"
+        "filename": "storage.py",
+        "code": "# 把数据写入存储中的文件，重启后依然存在\nwith open(\"data.txt\", \"w\", encoding=\"utf-8\") as f:\n    f.write(\"保存在存储里的一句话\\n\")\n\n# 从文件读回\nwith open(\"data.txt\", \"r\", encoding=\"utf-8\") as f:\n    content = f.read()\nprint(\"读到的内容:\", content.strip())\n\n# 观察文件在磁盘上确实存在\nimport os\nprint(\"文件大小(bytes):\", os.path.getsize(\"data.txt\"))"
       },
       "mistakes": [
-        "忘记在梯度中乘上激活函数的导数（链式法则步骤缺失）",
-        "把前向传播和反向传播的维度弄反，导致矩阵形状不匹配",
-        "学习率设置过大，导致参数震荡或发散"
+        "把存储和内存等同，以为关机后内存数据还在",
+        "以为 SSD 是内存的一种，忽略其持久化特性",
+        "频繁读写磁盘造成 I/O 瓶颈，而不是用缓存优化",
+        "没有及时把重要计算结果持久化到文件，进程崩溃后全部丢失"
       ],
       "interviewPoints": [
-        "「反向传播的本质是什么？」要答到链式法则加上计算图上的动态规划，复用中间梯度，因此比数值梯度快几个数量级",
-        "「为什么反向传播必须从输出层往输入层算？」要答到损失只定义在输出端，每层梯度依赖后一层已算出的误差项 δ，顺序不能颠倒",
-        "「梯度消失和梯度爆炸的根源是什么？」要答到误差项逐层乘以 Wᵀ 与激活函数导数，连乘因子小于 1 就衰减、大于 1 就爆炸",
-        "「梯度检查（gradient check）怎么做？」要答到用中心差分数值梯度与解析梯度比对相对误差，注意用双精度并避开 ReLU 折点"
+        "「HDD 和 SSD 的区别？」要答到机械寻道与闪存随机读、IOPS 和延迟的差距，说明训练数据为何要放本地 NVMe 而不是网络盘",
+        "「为什么要定期存 checkpoint？」要答到持久化与易失性的区别、训练中断后的重跑成本，以及存档频率与 I/O 开销的权衡",
+        "「数据加载为什么常成训练瓶颈？」要答到存储延迟比内存高数百倍、预取与多进程 DataLoader 如何掩盖 I/O，以及小文件读放大"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "back-propagation-q1",
+          "id": "storage-q1",
           "type": "choice",
-          "prompt": "反向传播主要依赖下列哪个数学工具？",
+          "prompt": "断电后仍能保留数据的是？",
           "options": [
-            "泰勒展开",
-            "链式法则",
-            "牛顿迭代",
-            "贝叶斯公式"
+            "RAM 内存",
+            "CPU 寄存器",
+            "固态硬盘 SSD",
+            "CPU 高速缓存"
           ],
-          "answerIndex": 1,
-          "explanation": "反向传播通过链式法则从输出层向输入层逐层传播误差梯度，把输出端的损失信号分摊到每一层的参数上。"
+          "answerIndex": 2,
+          "explanation": "SSD 是持久化存储，断电数据仍在；RAM、寄存器、缓存都是易失性存储。"
         },
         {
-          "id": "back-propagation-q2",
+          "id": "storage-q2",
           "type": "short",
-          "prompt": "为什么反向传播要从输出层往输入层逐层计算？",
-          "answer": "参考回答：因为损失只定义在输出端，梯度需要借助链式法则从输出层向回传播。每一层的梯度依赖其后一层的计算结果，因此必须从最后一层依次向前计算，最终得到每个参数的梯度。",
+          "prompt": "比较 HDD 与 SSD 的主要差异。",
+          "answer": "HDD 用旋转磁盘和磁头机械读写，容量大、单位便宜但延迟高、有机械噪音易震损；SSD 用闪存芯片，无机械部件，随机读写快、更耐震、耗电低但单位容量更贵。",
           "keywords": [
-            "链式法则",
-            "输出层",
-            "向前"
+            "hdd",
+            "ssd",
+            "闪存"
           ],
-          "explanation": "梯度由输出端损失依赖链式法则逐层回传，最后一层先算，逐层向前。"
+          "explanation": "核心差异在于机械 vs 闪存，导致速度与可靠性不同。"
         },
         {
-          "id": "back-propagation-q3",
+          "id": "storage-q3",
           "type": "code",
-          "prompt": "实现一个函数 dL_dw(X, a, Y, dz) 计算权重梯度：其中 z=w X + b，a=sigmoid(z)，请返回对 w 的梯度（使用 dL_da=2*(a-Y)/n，da_dz 自行计算）。",
-          "starterCode": "import numpy as np\n\ndef dL_dw(X, a, Y):\n    pass\n",
-          "solution": "import numpy as np\n\ndef dL_dw(X, a, Y):\n    da_dz = a * (1 - a)\n    dL_da = 2 * (a - Y) / len(X)\n    return np.sum(dL_da * da_dz * X)\n",
+          "prompt": "写一个函数 save_and_load(filename, text)，把 text 写入 filename 文件，随后读回并返回。",
+          "starterCode": "def save_and_load(filename, text):\n    pass",
+          "solution": "def save_and_load(filename, text):\n    with open(filename, \"w\", encoding=\"utf-8\") as f:\n        f.write(text)\n    with open(filename, \"r\", encoding=\"utf-8\") as f:\n        return f.read()\n\nprint(save_and_load(\"demo.txt\", \"持久化\"))",
           "checks": [
-            "da_dz",
-            "dL_da"
+            "def save_and_load",
+            "open(",
+            "read"
           ],
-          "explanation": "利用 sigmoid 导数 da_dz=a*(1-a)，再链式相乘并求和得到权重梯度。"
+          "explanation": "写入再读回即演示了存储的持久化能力。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "loss-function",
-      "title": "Loss Function 损失函数",
+      "slug": "operating-system",
+      "title": "Operating System 操作系统",
       "order": 4,
-      "module": "神经网络基础",
-      "difficulty": "进阶",
-      "estimatedMinutes": 22,
-      "summary": "损失函数衡量模型预测与真实标签之间的差距，是训练优化的目标与监控指标。",
-      "intuition": "损失函数就像一把'误差标尺'。模型猜完答案后，拿标尺量一下：猜得离正确答案差多远。标尺越接近零，说明模型越准。训练的目的就是不断调整参数，让这把标尺上的读数越越小。不同的任务用不同的标尺——回归用均方误差（MSE），分类用交叉熵。",
-      "formal": "均方误差是回归任务常用损失：L = (1/n) Σ (ŷ_i - y_i)^2。交叉熵是分类常用损失：L = -Σ y_i log(ŷ_i)，其中 ŷ 是模型输出的概率。更一般地，损失函数 L(θ) 是参数 θ 的函数，训练即寻找使 L 最小的 θ。损失函数的形状与光滑性直接影响梯度下降能否顺利收敛。",
-      "formula": "L_{CE} = -\\sum y_i \\log \\hat{y}_i",
-      "aiConnection": "大语言模型用交叉熵损失训练：给定上文预测下一个 token，输出的概率分布与真实 token 的 one-hot 编码计算交叉熵。语言模型任务的损失因此常称为 next-token prediction loss，它决定了模型学到的语言能力。",
+      "module": "计算机核心",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "操作系统是管理硬件与软件资源的中介，负责进程调度、内存管理、文件系统与设备驱动。",
+      "intuition": "如果没有操作系统，每个程序员都要自己跟磁盘、屏幕、键盘这些硬件打交道，那将是一场灾难。操作系统就像一个总管家，它把复杂的硬件细节藏起来，给你一个干净的接口（比如'打开文件'），并负责公平地分配 CPU、内存等资源给各个程序，防止它们互相打架。",
+      "formal": "操作系统（Operating System）是位于硬件与应用软件之间的系统软件，核心职责包括：`process`（进程）与 `thread`（线程）的调度，把有限的 CPU 时间片公平分配给多个运行中的程序；`memory management` 内存管理，为每个进程提供隔离的虚拟地址空间；`file system` 文件系统，以树状目录组织持久化数据；`device driver` 管理鼠标、键盘、磁盘等外围设备；以及提供系统调用 `syscall` 作为应用访问硬件资源的唯一合法入口。常见操作系统有 Linux、Windows、macOS。现代操作系统通过虚拟内存让每个进程以为自己独占整块内存，并通过多任务让单核看似同时运行多个程序。",
+      "formula": "",
+      "aiConnection": "训练大模型往往需要在 Linux 服务器上跑分布式任务，操作系统负责在多卡多机上调度进程、管理 GPU 显存和网络资源。理解进程、内存管理与文件权限，才能正确配置训练环境、排查进程被杀（OOM）等问题，这也是 AI 工程师必须熟悉 Linux 的原因。",
       "codeExample": {
-        "lang": "python",
-        "filename": "loss_fn.py",
-        "code": "import numpy as np\n\n# 均方误差（回归用）\ndef mse(y_true, y_pred):\n    return np.mean((y_true - y_pred) ** 2)\n\n# 交叉熵（分类用，y_pred 为概率）\ndef cross_entropy(y_true, y_pred):\n    y_pred = np.clip(y_pred, 1e-12, 1.0)\n    return -np.sum(y_true * np.log(y_pred))\n\n# 示例：三个类别的预测概率\ny_true = np.array([0, 0, 1])   # 真实为第三类\ny_pred = np.array([0.1, 0.2, 0.7])\nprint(\"MSE:\", mse(y_true, y_pred))\nprint(\"CrossEntropy:\", cross_entropy(y_true, y_pred))"
+        "lang": "bash",
+        "filename": "os.sh",
+        "code": "#!/bin/bash\n# 查看当前操作系统的进程与资源分配\nuname -a                 # 内核信息\nnproc                    # CPU 核心数\nfree -h                  # 内存使用\nps aux | head -n 5       # 查看当前进程\n# 查看当前用户与所在目录\nwhoami\npwd"
       },
       "mistakes": [
-        "回归任务误用交叉熵，或分类任务误用均方误差，导致收敛困难",
-        "对概率取对数时不加 epsilon 限幅，出现 log(0) 的 NaN 报错",
-        "把损失理解为越小越绝对好，忽略过拟合（训练损失小但验证损失大）"
+        "把操作系统等同于应用软件，忽略它是硬件与应用之间的管理层",
+        "以为一个程序独占所有资源，忽略多进程共享 CPU 与内存",
+        "直接绕过系统调用去操作硬件，这在现代系统是不被允许的",
+        "混淆进程（系统资源分配单位）与线程（CPU 调度单位）"
       ],
       "interviewPoints": [
-        "「MSE 和交叉熵为什么不能互换？」要答到 MSE 对应高斯噪声下的回归极大似然、交叉熵对应类别分布极大似然，互换则梯度不匹配",
-        "「交叉熵为什么总和 softmax 一起用？」要答到二者组合后梯度化简为 ŷ−y，实现上要用 log-sum-exp 技巧避免数值上溢",
-        "「为什么算 log 前要 clip 或加 epsilon？」要答到概率可能为 0，log(0) 得到 NaN，一步就污染整个训练",
-        "「训练损失下降但验证损失上升说明什么？」要答到已经过拟合，应加正则、早停或补充数据，而不是继续压低训练损失"
+        "「操作系统的核心职责有哪些？」要答到进程调度、虚拟内存隔离、文件系统与系统调用，说明训练任务为何几乎都跑在 Linux 上",
+        "「训练进程为什么会莫名其妙被杀？」要答到 OOM Killer、cgroup 内存上限与虚拟内存机制，联系进程被 kill 时的排查思路",
+        "「虚拟内存有什么用？」要答到地址空间隔离、按需分页与 swap 的代价，解释 swap 抖动为何让训练吞吐骤降"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "loss-function-q1",
+          "id": "os-q1",
           "type": "choice",
-          "prompt": "二分类任务最常用下列哪种损失函数？",
+          "prompt": "操作系统的核心职责不包括？",
           "options": [
-            "均方误差 MSE",
-            "交叉熵 Cross-Entropy",
-            "绝对误差 MAE",
-            "Hinge Loss"
+            "进程与线程调度",
+            "内存管理",
+            "提供系统调用接口",
+            "直接编译高级语言代码"
           ],
-          "answerIndex": 1,
-          "explanation": "分类任务输出概率分布，常与真实标签计算交叉熵，这正是大模型 next-token prediction 所用的损失。"
+          "answerIndex": 3,
+          "explanation": "编译高级语言是编译器的工作；操作系统负责调度、内存管理、文件系统与提供系统调用。"
         },
         {
-          "id": "loss-function-q2",
+          "id": "os-q2",
           "type": "short",
-          "prompt": "损失函数在训练中的作用是什么？",
-          "answer": "参考回答：损失函数量化模型预测与真实标签之间的差距，是优化算法（如梯度下降）最小化的目标。训练通过减小损失来更新参数，使预测越来越接近真实值；它也是衡量训练效果的监控指标。",
+          "prompt": "简述操作系统如何让多个程序看起来'同时运行'。",
+          "answer": "通过时间片轮转等调度算法，操作系统把 CPU 时间分成极短的时间片，轮流分配给不同进程。由于切换极快，用户感觉像多个程序同时在运行。同时通过虚拟内存和进程隔离，让每个进程拥有独立的内存空间。",
           "keywords": [
-            "差距",
-            "目标",
-            "最小化"
+            "时间片",
+            "调度",
+            "进程"
           ],
-          "explanation": "损失函数定义了优化目标，训练不断最小化它，同时作为训练监控指标。"
+          "explanation": "核心是多任务调度 + 进程隔离的虚拟内存。"
         },
         {
-          "id": "loss-function-q3",
+          "id": "os-q3",
           "type": "code",
-          "prompt": "实现 cross_entropy(y_true, y_pred)，其中 y_pred 为概率（注意用 clip 避免 log(0)）。",
-          "starterCode": "import numpy as np\n\ndef cross_entropy(y_true, y_pred):\n    pass\n",
-          "solution": "import numpy as np\n\ndef cross_entropy(y_true, y_pred):\n    y_pred = np.clip(y_pred, 1e-12, 1.0)\n    return -np.sum(y_true * np.log(y_pred))\n",
+          "prompt": "使用 bash 补全一段命令：先打印系统内核信息，再打印 CPU 核心数。",
+          "starterCode": "#!/bin/bash\n# 查看内核与核心数\n",
+          "solution": "#!/bin/bash\nuname -a\nnproc",
           "checks": [
-            "np.clip",
-            "np.log"
+            "uname",
+            "nproc"
           ],
-          "explanation": "对概率做 clip 下限保护后计算 -sum(y_true*log(y_pred))。"
+          "explanation": "两条命令分别查看内核信息和 CPU 核心数。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "optimizer",
-      "title": "Optimizer 优化器",
+      "slug": "process",
+      "title": "Process 进程",
       "order": 5,
-      "module": "神经网络基础",
-      "difficulty": "进阶",
-      "estimatedMinutes": 24,
-      "summary": "优化器根据梯度决定参数如何更新，常见的有 SGD、Momentum、Adam 等，直接影响收敛速度与稳定性。",
-      "intuition": "优化器像一个在山坡上找最低点的登山者。梯度告诉你'往哪走能下坡'，但走多大一步（学习率）、如何利用历史经验避免原地抖动，就是优化器的职责。普通梯度下降像只走当前最陡坡；带动量的优化器像有惯性的滚球，能冲平缓区域；Adam 则给每个参数单独调节步子，又快又稳。",
-      "formal": "批量梯度下降更新规则为 θ_{t+1} = θ_t - η ∇L(θ_t)，η 是学习率。SGD 每次用一个样本估计梯度，噪声大但快。Momentum 引入历史梯度的累积：v_{t+1} = β v_t + (1-β)∇L(θ_t)，θ_{t+1}=θ_t - η v_{t+1}。Adam 结合动量（一阶矩）与 RMSProp（二阶矩），并做偏差校正，是当前最常用的优化器之一。",
-      "formula": "\\theta_{t+1} = \\theta_t - \\eta m_t / (\\sqrt{v_t} + \\epsilon)",
-      "aiConnection": "大型语言模型的训练普遍使用 AdamW 优化器并配以学习率预热和余弦退火，因为参数量巨大、梯度尺度不一，自适应步长能显著提升训练稳定性。优化器选择与学习率调度策略，是决定大规模训练能否成功的关键工程环节。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "optimizer.py",
-        "code": "import numpy as np\n\n# 手写一个简单的带有动量的梯度下降优化器\nclass Momentum:\n    def __init__(self, lr=0.01, beta=0.9):\n        self.lr = lr\n        self.beta = beta\n        self.v = None\n\n    def step(self, params, grads):\n        if self.v is None:\n            self.v = [np.zeros_like(p) for p in params]\n        for i, p in enumerate(params):\n            self.v[i] = self.beta * self.v[i] + (1 - self.beta) * grads[i]\n            params[i] = p - self.lr * self.v[i]\n        return params\n\n# 简单二次函数 f(x)=x^2，最小值在 0\nparams = [np.array([10.0])]\ngrads = [np.array([20.0])]   # 2x\nopt = Momentum(lr=0.1)\nfor t in range(10):\n    grads[0] = 2 * params[0]\n    params = opt.step(params, grads)\n    print(params[0])"
-      },
-      "mistakes": [
-        "学习率设置过大导致发散，过小导致收敛极其缓慢",
-        "以为 Adam 不需要调学习率，但默认与具体任务仍需调整",
-        "梯度爆炸时不做梯度裁剪（clip），导致训练不稳定"
-      ],
-      "interviewPoints": [
-        "「SGD、Momentum、Adam 的更新式分别是什么？」要答到 θ-=ηg、累积一阶矩当惯性、以及一阶矩除以二阶矩开方并做偏差校正",
-        "「Adam 为什么要做偏差校正？」要答到一阶矩与二阶矩都初始化为 0、前期估计偏向 0，除以 1-βᵗ 才无偏，否则最初几步步长异常小",
-        "「Adam 和 AdamW 的区别是什么？」要答到 Adam 把 weight decay 混进梯度与自适应步长耦合，AdamW 解耦",
-        "「为什么要用学习率预热和梯度裁剪？」要答到前期梯度尺度不稳，预热避免大步长发散，裁剪防梯度爆炸，是大模型训练标配"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "optimizer-q1",
-          "type": "choice",
-          "prompt": "关于 Adam 优化器，下列说法正确的是？",
-          "options": [
-            "它不使用梯度",
-            "它结合了动量与自适应学习率",
-            "它只适用于线性模型",
-            "它完全不需要设置学习率"
-          ],
-          "answerIndex": 1,
-          "explanation": "Adam 结合了一阶矩（动量）与二阶矩（自适应步长），是当前训练大模型最常用的优化器之一。"
-        },
-        {
-          "id": "optimizer-q2",
-          "type": "short",
-          "prompt": "Momentum（动量）优化器解决了普通 SGD 的什么问题？",
-          "answer": "参考回答：普通 SGD 只依赖当前梯度，容易在山谷或平缓区域抖动、收敛慢。Momentum 累积历史梯度作为速度项（v），相当于给更新加上了惯性，能平滑震荡并加速穿过平缓区域，使收敛更稳定快速。",
-          "keywords": [
-            "惯性",
-            "历史梯度",
-            "震荡"
-          ],
-          "explanation": "动量利用历史梯度累积形成惯性，平滑梯度震荡、加速穿越平缓区域。"
-        },
-        {
-          "id": "optimizer-q3",
-          "type": "code",
-          "prompt": "实现一个简单的 SGD 更新函数：给定参数 param 和梯度 grad、学习率 lr，返回更新后的参数。",
-          "starterCode": "def sgd_step(param, grad, lr):\n    pass\n",
-          "solution": "def sgd_step(param, grad, lr):\n    return param - lr * grad\n",
-          "checks": [
-            "lr",
-            "param -"
-          ],
-          "explanation": "标准 SGD 规则：沿梯度的反方向减去 lr 乘以梯度。"
-        }
-      ]
-    },
-    {
-      "slug": "pytorch",
-      "title": "PyTorch",
-      "order": 6,
-      "module": "深度学习框架与应用",
-      "difficulty": "进阶",
-      "estimatedMinutes": 24,
-      "summary": "PyTorch 是一个以张量为核心的深度学习框架，用自动求导和强大生态简化了模型定义与训练。",
-      "intuition": "前面几课用 numpy 手写神经网络很辛苦：梯度都要自己推、自己算。PyTorch 就是帮你把这些杂活全包了的'托管工厂'。你只需用张量（Tensor）描述数据和参数，像搭积木一样定义网络层，PyTorch 会自动记录每次运算并计算梯度，你专心设计结构、调优即可。",
-      "formal": "PyTorch 的核心数据结构是 torch.Tensor，支持 GPU 加速。nn.Module 用于组织网络层，通过定义 forward 方法描述前向计算。autograd 引擎会在前向时构建计算图，并在调用 loss.backward() 时自动求出所有 requires_grad 参数的梯度。结合 torch.optim 中的优化器与 nn 中的损失函数，一套标准的训练循环只需前向、计算损失、反向、更新参数四步。",
-      "formula": "loss.backward() \\;\\; \\Rightarrow \\;\\; \\text{autograd 计算} \\;\\; \\partial L / \\partial \\theta",
-      "aiConnection": "几乎所有主流开源大语言模型（如 Llama、Qwen、DeepSeek）都基于 PyTorch 训练与部署。PyTorch 的自动求导与灵活的动态图机制，让科研到工程化的迁移变得顺畅，是大模型开发的事实标准框架。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "pytorch_basic.py",
-        "code": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\n# 定义一个简单线性层网络\nmodel = nn.Sequential(\n    nn.Linear(3, 8),\n    nn.ReLU(),\n    nn.Linear(8, 1),\n)\n\n# 输入一个 batch：2 个样本，每个 3 维\nx = torch.randn(2, 3)\ny = torch.randn(2, 1)\n\ncriterion = nn.MSELoss()\noptimizer = optim.Adam(model.parameters(), lr=0.01)\n\n# 标准训练循环四步\nfor epoch in range(5):\n    pred = model(x)\n    loss = criterion(pred, y)\n    optimizer.zero_grad()\n    loss.backward()\n    optimizer.step()\n    print(f\"epoch {epoch}: loss={loss.item():.4f}\")"
-      },
-      "mistakes": [
-        "忘记在反向传播前调用 optimizer.zero_grad()，导致梯度累加错误",
-        "把数据当作普通 numpy 数组，未转为 torch.Tensor 而报错",
-        "调用 .item() 前把张量直接用于 numpy 运算，导致类型不一致"
-      ],
-      "interviewPoints": [
-        "「PyTorch 的 autograd 是怎么工作的？」要答到前向时动态构建计算图，backward 时按链式法则自动求出所有梯度",
-        "「训练循环的四步是什么？zero_grad 能省吗？」要答到前向→损失→zero_grad→backward→step，梯度不清零会累加",
-        "「动态图和静态图的区别？」要答到 PyTorch 边跑边建图、便于调试与变长控制流；静态图先定义后执行、利于整体优化与部署",
-        "「detach()、no_grad()、item() 什么时候用？」要答到切断梯度、关图省显存、把单元素张量取成 Python 数值"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "pytorch-q1",
-          "type": "choice",
-          "prompt": "PyTorch 训练循环中，正确顺序正确的是？",
-          "options": [
-            "optimizer.step -> loss.backward -> zero_grad",
-            "zero_grad -> loss.backward -> optimizer.step",
-            "loss.backward -> optimizer.step -> zero_grad",
-            "zero_grad -> optimizer.step -> loss.backward"
-          ],
-          "answerIndex": 1,
-          "explanation": "标准顺序：先清空梯度 zero_grad，前向并算损失后 loss.backward() 求梯度，最后 optimizer.step() 更新参数。"
-        },
-        {
-          "id": "pytorch-q2",
-          "type": "short",
-          "prompt": "PyTorch 的 autograd 机制是如何工作的？",
-          "answer": "参考回答：在前向传播时，autograd 会动态记录每一步运算，构建计算图（computational graph），并标记哪些张量需要梯度（requires_grad=True）。当调用 loss.backward() 时，它依据链式法则沿计算图反向传播，自动计算所有叶张量的梯度，从而省去手动推导梯度。",
-          "keywords": [
-            "计算图",
-            "链式法则",
-            "backward"
-          ],
-          "explanation": "autograd 在前向时记录计算图，backward 时用链式法则自动求梯度。"
-        },
-        {
-          "id": "pytorch-q3",
-          "type": "code",
-          "prompt": "补全训练循环中缺失的三行：清空梯度、反向传播、更新参数。",
-          "starterCode": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\nmodel = nn.Linear(3, 1)\nx, y = torch.randn(2, 3), torch.randn(2, 1)\ncriterion = nn.MSELoss()\noptimizer = optim.SGD(model.parameters(), lr=0.01)\n\npred = model(x)\nloss = criterion(pred, y)\n# 在此补全三行\n",
-          "solution": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\nmodel = nn.Linear(3, 1)\nx, y = torch.randn(2, 3), torch.randn(2, 1)\ncriterion = nn.MSELoss()\noptimizer = optim.SGD(model.parameters(), lr=0.01)\n\npred = model(x)\nloss = criterion(pred, y)\noptimizer.zero_grad()\nloss.backward()\noptimizer.step()\n",
-          "checks": [
-            "zero_grad",
-            "backward",
-            "optimizer.step"
-          ],
-          "explanation": "补齐 zero_grad、loss.backward()、optimizer.step() 三行。"
-        }
-      ]
-    },
-    {
-      "slug": "cnn",
-      "title": "CNN 卷积网络",
-      "order": 7,
-      "module": "深度学习框架与应用",
-      "difficulty": "进阶",
-      "estimatedMinutes": 24,
-      "summary": "卷积神经网络利用卷积核在局部滑动提取空间特征，尤其擅长处理图像等网格化数据。",
-      "intuition": "看一张图时，你不会把每个像素孤立地读，而是先注意到局部的小图案——边缘、纹理、形状。卷积核就像一小块'放大镜'，在整个图上滑来滑去，在每处提取局部特征；堆叠起来，前面几层看到边缘，中间层看到部件，深层看到完整物体。这正是 CNN 与人眼相似的层次化理解方式。",
-      "formal": "卷积操作把核 W 与输入局部区域做点积再滑窗：y[i,j] = Σ_m Σ_n x[i+m, j+n] * W[m,n]。卷积核共享权重，大大减少了参数量并具备平移不变性。通常在卷积后接池化（pooling）降低分辨率、增强鲁棒性，再接激活函数和多层堆叠。输出特征图尺寸由卷积核大小、步长（stride）与填充（padding）共同决定。",
-      "formula": "y[i,j] = \\sum_m \\sum_n x[i+m,\\,j+n] \\, W[m,n]",
-      "aiConnection": "大语言模型虽以文本为主，但多模态模型（如能看图的大模型）常借助视觉编码器（多为 CNN 或视觉 Transformer）把图像转成特征向量，再与文本特征融合。理解卷积的局部性与参数共享，是把握图像理解模型的基础。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "cnn_mnist.py",
-        "code": "import torch\nimport torch.nn as nn\n\n# 一个简单的 CNN 用于 MNIST（28x28 灰度图）\nclass SimpleCNN(nn.Module):\n    def __init__(self):\n        super().__init__()\n        # 卷积层：1 通道输入，16 个 3x3 核\n        self.conv1 = nn.Conv2d(in_channels=1, out_channels=16, kernel_size=3)\n        self.relu = nn.ReLU()\n        self.pool = nn.MaxPool2d(2)\n        self.fc = nn.Linear(16 * 13 * 13, 10)  # 展平后接全连接\n\n    def forward(self, x):\n        x = self.pool(self.relu(self.conv1(x)))\n        x = x.view(x.size(0), -1)\n        return self.fc(x)\n\nmodel = SimpleCNN()\nx = torch.randn(1, 1, 28, 28)\nout = model(x)\nprint(out.shape)  # (1, 10) 10 个类别分数"
-      },
-      "mistakes": [
-        "输入通道数与卷积层 in_channels 不匹配而报错",
-        "卷积核大小与步长导致输出尺寸计算错误，全连接层维度对不上",
-        "以为 CNN 只能处理图像，忽略了它在文本、音频中的一维卷积变体"
-      ],
-      "interviewPoints": [
-        "「卷积为什么比全连接更适合图像？」要答到局部感受野、权重共享与平移不变性，参数量从与像素数同量级降到只与核大小有关",
-        "「输出特征图的尺寸怎么算？」要答到 (H+2P-K)/S+1，并说清 K、S、P 各自的影响，算错就会让后面全连接层维度对不上",
-        "「1x1 卷积有什么用？」要答到它不改变空间尺寸、只做跨通道的线性组合，常用于升降维与压缩计算量，是瓶颈结构的关键",
-        "「CNN 和视觉 Transformer 怎么取舍？」要答到 CNN 自带局部性先验、小数据效率高；ViT 建模全局但更依赖数据量"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "cnn-q1",
-          "type": "choice",
-          "prompt": "卷积核权重共享的主要好处是？",
-          "options": [
-            "加快 GPU 加载",
-            "大幅减少参数量并提升平移不变性",
-            "防止过拟合到特定位置",
-            "让网络只能看局部"
-          ],
-          "answerIndex": 1,
-          "explanation": "同一卷积核在整个图像上共享权重，既极大降低参数量，又使特征检测对不同位置的同类模式响应一致（平移不变性）。"
-        },
-        {
-          "id": "cnn-q2",
-          "type": "short",
-          "prompt": "为什么 CNN 适合处理图像数据？",
-          "answer": "参考回答：图像具有空间局部性与平移不变性——相邻像素高度相关，且同一模式（如边缘）可能出现在图像任意位置。卷积核在局部滑动提取特征并共享权重，正好契合这种局部性与平移不变性；层级堆叠还能从边缘逐层组合成部件再到整体。",
-          "keywords": [
-            "局部",
-            "平移",
-            "共享"
-          ],
-          "explanation": "CNN 的局部感受野、权重共享与分层特征提取契合图像的空间结构与平移不变性。"
-        },
-        {
-          "id": "cnn-q3",
-          "type": "code",
-          "prompt": "用 PyTorch 定义一个卷积层：输入通道 3，输出通道 32，卷积核大小为 3x3。",
-          "starterCode": "import torch.nn as nn\n\nconv = None\n",
-          "solution": "import torch.nn as nn\n\nconv = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3)\nprint(conv)\n",
-          "checks": [
-            "nn.Conv2d",
-            "out_channels=32"
-          ],
-          "explanation": "用 nn.Conv2d 指定 in_channels、out_channels 与 kernel_size。"
-        }
-      ]
-    },
-    {
-      "slug": "rnn",
-      "title": "RNN 循环网络",
-      "order": 8,
-      "module": "深度学习框架与应用",
-      "difficulty": "进阶",
+      "module": "计算机核心",
+      "difficulty": "基础",
       "estimatedMinutes": 22,
-      "summary": "循环神经网络按时间步依次处理序列，用隐藏状态记忆历史信息，适合文本、语音等序列数据。",
-      "intuition": "读一句话时，你的理解是逐词推进的：读到第六个词，大脑还记着前面五个词的意思。RNN 就像一个这样'边读边记'的读者——它维护一个隐藏状态，每读进一个新词就更新一次记忆，把新词和旧记忆融合起来，再传给下一时刻的自己。因为有记忆，它才能理解上下文、顺序和依赖关系。",
-      "formal": "在时刻 t，RNN 用当前输入 x_t 与上一时刻的隐藏状态 h_{t-1} 计算当前隐藏状态：h_t = tanh(W_x x_t + W_h h_{t-1} + b)。输出通常是 h_t 经变换得到。RNN 通过参数共享，在所有时间步复用同一组权重。但长序列会出现梯度消失/爆炸问题，因此实践中常用 LSTM 或 GRU 这类改进结构，并引入门控机制来调节记忆的写入与遗忘。",
-      "formula": "h_t = \\tanh(W_x x_t + W_h h_{t-1} + b)",
-      "aiConnection": "大语言模型取代了经典 RNN 成为序列建模主力，但 RNN 的思想——用隐藏状态顺序地记忆上下文——仍是理解语言模型的基础。LSTM 的门控、GRU 的简化思想，在理解 Transformer 之前能帮助你把握序列模型如何捕捉时序依赖。",
+      "summary": "进程是程序的一次执行实例，是操作系统分配资源（内存、文件）的基本单位，彼此隔离。",
+      "intuition": "程序是菜谱，进程是实际下厨的那一次。同一本菜谱，你可以在不同时间、不同厨房做很多次，每次都有一份独立的材料（内存）。当你打开两个浏览器窗口，系统就跑起了两个进程。进程之间互相隔离，一个崩溃不会拖垮另一个。",
+      "formal": "进程（Process）是操作系统分配资源的最小单位。每个进程拥有独立的虚拟地址空间、打开的文件描述符、信号处理器等资源，彼此通过隔离机制互不干扰。操作系统通过 `process control block`（PCB）保存进程状态，并在进程间切换（context switch）。进程拥有状态机：`ready`、`running`、`blocked/waiting` 等。进程之间的通信称为 `IPC`（Inter-Process Communication），常见方式有管道、消息队列、共享内存、信号。创建进程的系统调用在 Linux 上是 `fork()`，随后用 `exec()` 加载新程序。相较于线程，进程更重、创建与切换开销更大，但隔离性更好。",
+      "formula": "",
+      "aiConnection": "在分布式训练中，每个 GPU 或每台机器上常会启动独立的训练进程，进程之间通过 NCCL 等通信库交换梯度。理解进程独立内存的性质，就能理解为什么多进程需要显式交换数据，而共享内存或消息传递是必要的。",
       "codeExample": {
         "lang": "python",
-        "filename": "rnn_step.py",
-        "code": "import numpy as np\n\ndef rnn_step(x_t, h_prev, W_x, W_h, b):\n    # 单个时间步：h_t = tanh(W_x x_t + W_h h_{t-1} + b)\n    h_t = np.tanh(W_x @ x_t + W_h @ h_prev + b)\n    return h_t\n\n# 词向量维度 3，隐藏维度 4\nW_x = np.random.randn(4, 3)\nW_h = np.random.randn(4, 4)\nb = np.zeros(4)\n\nh = np.zeros(4)   # 初始隐藏状态\nseq = [np.random.randn(3) for _ in range(5)]  # 5 个时间步的输入\nfor t, x in enumerate(seq):\n    h = rnn_step(x, h, W_x, W_h, b)\n    print(f\"t={t}: h={np.round(h, 3)}\")"
+        "filename": "process.py",
+        "code": "import multiprocessing\nimport os\n\n\ndef worker(name):\n    # 每个进程都有独立的变量与内存空间\n    print(f\"子进程 {name}，PID={os.getpid()}\")\n\n\nif __name__ == \"__main__\":\n    print(f\"父进程 PID={os.getpid()}\")\n    p1 = multiprocessing.Process(target=worker, args=(\"A\",))\n    p2 = multiprocessing.Process(target=worker, args=(\"B\",))\n    p1.start()\n    p2.start()\n    p1.join()\n    p2.join()\n    print(\"所有子进程结束\")"
       },
       "mistakes": [
-        "以为 RNN 能无限记住长序列，实际长距离依赖会因梯度消失变差",
-        "把隐藏状态维度与输入维度混用，导致矩阵乘法维度不匹配",
-        "忽略时间步循环，只处理单个时间步就以为完成了序列建模"
+        "把进程和程序混为一谈，进程是程序的一次执行实例",
+        "以为多进程自动共享内存，忘了进程间需要 IPC 协作",
+        "混淆进程与线程，进程是资源分配单位、线程是执行单位",
+        "频繁创建进程导致开销大，误以为多进程总是最快"
       ],
       "interviewPoints": [
-        "「RNN 的隐藏状态怎么更新？」要答到 h_t=tanh(W_x x_t+W_h h_{t-1}+b)，且权重在所有时间步共享",
-        "「RNN 为什么会有梯度消失？」要答到反向要连乘 W_h 与 tanh 导数，谱半径小于 1 时随时间指数衰减，长依赖学不到",
-        "「LSTM 的门控是怎么缓解梯度消失的？」要答到 cell state 走加法更新的常数误差传送带，遗忘门、输入门、输出门调节保留与写入",
-        "「RNN 和 Transformer 的核心差别？」要答到 RNN 串行、隐状态定长、难并行；注意力看到全序列可并行，代价是 O(n²)"
+        "「进程和线程的区别？」要答到地址空间、切换开销、通信方式，并说明 Python GIL 对多线程的实际影响",
+        "「进程之间怎么通信？」要答到 IPC 的管道、消息队列、共享内存与信号，说明分布式训练为何用 NCCL 显式交换梯度",
+        "「fork 和 spawn 有什么区别？」要答到写时复制、内存继承与序列化开销，解释 DataLoader 在不同平台启动方式的差异"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "rnn-q1",
+          "id": "process-q1",
           "type": "choice",
-          "prompt": "RNN 维持'记忆'的方式是？",
+          "prompt": "进程是操作系统中的何种单位？",
           "options": [
-            "把每个词独立编码",
-            "通过隐藏状态 h_t 在时间步之间传递历史信息",
-            "用卷积核在序列上滑动",
-            "把整个序列一次性放进来"
+            "CPU 调度的最小单位",
+            "资源分配的基本单位",
+            "存储文件的最小单位",
+            "网络传输的最小单位"
           ],
           "answerIndex": 1,
-          "explanation": "RNN 每步结合当前输入与上一时刻隐藏状态 h_{t-1} 更新 h_t，从而在时间步间传递历史上下文信息。"
+          "explanation": "进程是资源分配的基本单位；线程才是 CPU 调度的最小单位。"
         },
         {
-          "id": "rnn-q2",
+          "id": "process-q2",
           "type": "short",
-          "prompt": "RNN 的主要局限是什么？",
-          "answer": "参考回答：一方面存在梯度消失/爆炸问题，导致对长序列远距离依赖的学习困难；另一方面它按时间步串行计算，难以并行、训练效率低。因此实践中常改用 LSTM/GRU 缓解梯度问题，而堆叠与并行能力更强的 Transformer 则成为现代序列模型的主流。",
+          "prompt": "为什么说进程之间是隔离的？这对程序健壮性有什么好处？",
+          "answer": "每个进程拥有独立的虚拟地址空间和资源，一个进程的崩溃或越界不会影响其它进程。因此即使一个程序崩溃，其它进程仍然正常，系统整体更稳定、更安全。",
           "keywords": [
-            "梯度",
-            "依赖",
-            "并行"
+            "隔离",
+            "独立",
+            "崩溃"
           ],
-          "explanation": "RNN 的局限包括梯度消失/爆炸导致的远距离依赖困难，以及串行计算导致的低并行效率。"
+          "explanation": "独立的地址空间保证了隔离性，提升稳定性与安全性。"
         },
         {
-          "id": "rnn-q3",
+          "id": "process-q3",
           "type": "code",
-          "prompt": "实现函数 rnn_step(x_t, h_prev, W_x, W_h, b)，返回当前时刻隐藏状态 h_t = tanh(W_x x_t + W_h h_{t-1} + b)。",
-          "starterCode": "import numpy as np\n\ndef rnn_step(x_t, h_prev, W_x, W_h, b):\n    pass\n",
-          "solution": "import numpy as np\n\ndef rnn_step(x_t, h_prev, W_x, W_h, b):\n    return np.tanh(W_x @ x_t + W_h @ h_prev + b)\n",
+          "prompt": "用 multiprocessing 创建两个子进程，各自打印自己的 PID。",
+          "starterCode": "import multiprocessing\nimport os\n\ndef worker():\n    print(os.getpid())\n",
+          "solution": "import multiprocessing\nimport os\n\ndef worker():\n    print(os.getpid())\n\nif __name__ == \"__main__\":\n    p = multiprocessing.Process(target=worker)\n    p.start()\n    p.join()",
           "checks": [
-            "np.tanh",
-            "W_h"
+            "multiprocessing.Process",
+            "start"
           ],
-          "explanation": "按公式合并当前输入与上一隐藏状态，再经 tanh 激活。"
+          "explanation": "用 Process 创建并 start 子进程。"
         }
-      ]
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "thread",
+      "title": "Thread 线程",
+      "order": 6,
+      "module": "计算机核心",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "线程是进程内的执行单元，同一进程的线程共享内存，是 CPU 调度的基本单位。",
+      "intuition": "一个进程就像一个办公室，里面有多个工位（线程），大家都共享同一个办公室的资源（内存、文件），各自干各自的活。线程切换比进程便宜多了，因为不用换'房间'，只要换个'工位'。缺点也明显：大家共用一张桌子，一个人乱丢东西，别人也可能被波及——共享内存带来数据竞争问题。",
+      "formal": "线程（Thread）是进程内部的一条执行流，是 CPU 调度的最小单位。同一进程内的多个线程共享进程的地址空间、打开的文件与全局数据，因而线程间通信只需读写共享内存，非常高效。正因共享，多线程访问共享变量时可能产生 `race condition`（竞态条件），需要借助锁（`lock`/`mutex`）等同步机制保证原子性。线程拥有独立的调用栈与寄存器的上下文，但共享堆。线程切换（context switch）开销小于进程切换。在 Python 中，由于 `GIL`（全局解释器锁），CPU 密集型多线程无法真正并行执行，而 I/O 密集型任务因等待 I/O 释放 GIL 仍能提升吞吐。",
+      "formula": "",
+      "aiConnection": "数据加载、推理时常用线程池并发处理多个请求或并行读取数据。理解 GIL 与线程共享内存的性质，就能明白为什么深度学习框架用多进程或底层 C++/CUDA 线程来做真正的并行，而 Python 多线程更适合 I/O 密集的请求服务场景。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "thread.py",
+        "code": "import threading\n\n\ndef worker(name):\n    print(f\"线程 {name} 开始\")\n    for i in range(3):\n        print(f\"线程 {name} 运行第 {i} 次\")\n    print(f\"线程 {name} 结束\")\n\n\nthreads = []\nfor i in range(2):\n    t = threading.Thread(target=worker, args=(f\"T{i}\",))\n    threads.append(t)\n    t.start()\n\nfor t in threads:\n    t.join()\n\nprint(\"所有线程结束\")"
+      },
+      "mistakes": [
+        "把线程和进程混为一谈，线程共享进程内存",
+        "以为多线程总是提升速度，在 Python CPU 密集场景受 GIL 限制",
+        "多线程访问共享变量不加锁，产生竞态条件",
+        "混淆线程安全与原子性，以为简单递增操作必然安全"
+      ],
+      "interviewPoints": [
+        "「什么是竞态条件，怎么避免？」要答到共享可变状态、执行时序不确定、锁与原子操作，并提到死锁和锁粒度的权衡",
+        "「Python 多线程能真正加速吗？」要答到 GIL 让 CPU 密集无法并行、I/O 等待会释放 GIL，说明推理服务为何用线程池",
+        "「线程切换为什么比进程便宜？」要答到共享地址空间、只需保存寄存器与栈，以及上下文切换对吞吐的隐性开销"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "thread-q1",
+          "type": "choice",
+          "prompt": "同一进程内的线程之间共享的是？",
+          "options": [
+            "各自的寄存器状态",
+            "进程的地址空间和全局数据",
+            "各自的调用栈",
+            "各自的高度隔离内存"
+          ],
+          "answerIndex": 1,
+          "explanation": "线程共享所属进程的地址空间、全局数据与文件；但各自持有独立的栈和寄存器上下文。"
+        },
+        {
+          "id": "thread-q2",
+          "type": "short",
+          "prompt": "什么是竞态条件（race condition）？如何避免？",
+          "answer": "当多个线程同时访问并修改同一共享数据且没有同步时，最终结果取决于执行时序，导致不可预期，这就是竞态条件。通常用锁（mutex）将关键区设为原子操作，或用原子变量来避免。",
+          "keywords": [
+            "race",
+            "共享",
+            "锁"
+          ],
+          "explanation": "核心是共享数据无同步导致的不确定性，用锁保证原子性。"
+        },
+        {
+          "id": "thread-q3",
+          "type": "code",
+          "prompt": "使用 threading 创建两个线程，每个线程打印自己的名字，并用 join 等待结束。",
+          "starterCode": "import threading\n\ndef worker(name):\n    print(name)\n",
+          "solution": "import threading\n\ndef worker(name):\n    print(name)\n\nthreads = []\nfor i in range(2):\n    t = threading.Thread(target=worker, args=(f\"T{i}\",))\n    threads.append(t)\n    t.start()\nfor t in threads:\n    t.join()",
+          "checks": [
+            "threading.Thread",
+            "start",
+            "join"
+          ],
+          "explanation": "创建、启动线程并用 join 等待完成。"
+        }
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "file-system",
+      "title": "File System 文件系统",
+      "order": 7,
+      "module": "文件与网络",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "文件系统用树状目录组织存储设备上的文件，提供路径、权限与读写接口。",
+      "intuition": "文件系统就像你电脑里的柜子系统：每个磁盘是一个大柜子，里面分了层层抽屉（文件夹/目录），每个抽屉里放着文件。你通过'路径'找到某个文件，就像说'走到第二层第三个抽屉里的那个文件'。它还负责记录每个文件夹能进去、谁有权限动它。",
+      "formal": "文件系统（File System）是操作系统组织和管理持久化数据的方式。它以树状层次结构组织目录（directory/folder）和文件，通过`path`（路径）定位，路径分绝对路径（从根目录 `/` 开始）与相对路径。文件系统维护元数据：文件名、大小、创建/修改时间、所有者与访问权限（`read/write/execute`）。常见的文件系统有 ext4、NTFS、APFS。它把文件映射到磁盘上的数据块，并支持创建、读取、写入、删除、重命名等操作。在 Linux 中一切皆文件，设备、socket 也以文件形式呈现，可通过挂载（mount）把不同存储设备挂到目录树上。",
+      "formula": "",
+      "aiConnection": "模型权重、数据集、日志都以文件形式存放在磁盘上，训练代码经常要遍历目录、批量读取、按权限访问。理解文件系统的路径与权限，有助于正确组织数据、避免权限报错，也便于用 glob、os 模块批量处理数据集文件。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "file_system.py",
+        "code": "import os\n\n# 查看当前目录与路径\nprint(\"当前目录:\", os.getcwd())\n\n# 创建目录与文件，模拟树状结构\nos.makedirs(\"data/raw\", exist_ok=True)\nwith open(\"data/raw/sample.txt\", \"w\", encoding=\"utf-8\") as f:\n    f.write(\"文件系统示例\")\n\n# 遍历目录结构\nfor root, dirs, files in os.walk(\"data\"):\n    print(root, \"->\", files)\n\n# 查看文件是否存在于该路径\nprint(\"文件存在:\", os.path.exists(\"data/raw/sample.txt\"))"
+      },
+      "mistakes": [
+        "混淆绝对路径与相对路径，导致找不到文件",
+        "以为删除文件只是移除名字，忽略了它对磁盘数据块的作用",
+        "在权限不足的目录里创建文件而不处理 PermissionError",
+        "忽略大小写与路径分隔符在不同系统的差异"
+      ],
+      "interviewPoints": [
+        "「绝对路径和相对路径有什么区别？」要答到起点是根目录还是当前目录，说明训练脚本为何要用绝对路径避免找不到数据集",
+        "「Linux 权限 755 和 644 代表什么？」要答到 owner/group/other 与 rwx 位，说明脚本没执行权限为何报错",
+        "「为什么说 Linux 一切皆文件？」要答到设备与 socket 也以文件抽象、统一 read/write 接口，并联系数据管线的目录遍历"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "file-system-q1",
+          "type": "choice",
+          "prompt": "在 Linux 中，从根目录开始定位文件的路径称为？",
+          "options": [
+            "相对路径",
+            "绝对路径",
+            "相对文件名",
+            "目录指针"
+          ],
+          "answerIndex": 1,
+          "explanation": "从根目录 `/` 开始的路径称为绝对路径；从当前目录开始的是相对路径。"
+        },
+        {
+          "id": "file-system-q2",
+          "type": "short",
+          "prompt": "简述什么是绝对路径和相对路径，并各举一例。",
+          "answer": "绝对路径从根目录开始，如 /home/user/data.txt，任何位置都一致；相对路径从当前工作目录开始，如 data/sample.txt，会随当前目录变化而不同。",
+          "keywords": [
+            "绝对",
+            "相对",
+            "根目录"
+          ],
+          "explanation": "区分起点：根目录（绝对）vs 当前目录（相对）。"
+        },
+        {
+          "id": "file-system-q3",
+          "type": "code",
+          "prompt": "用 os 模块创建目录 data/raw，并写入一个文件 sample.txt，再检查它是否存在。",
+          "starterCode": "import os\n",
+          "solution": "import os\n\nos.makedirs(\"data/raw\", exist_ok=True)\nwith open(\"data/raw/sample.txt\", \"w\", encoding=\"utf-8\") as f:\n    f.write(\"hello\")\nprint(os.path.exists(\"data/raw/sample.txt\"))",
+          "checks": [
+            "makedirs",
+            "open(",
+            "exists"
+          ],
+          "explanation": "创建目录、写文件、检查存在性即覆盖文件系统基本操作。"
+        }
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "network",
+      "title": "Network 网络",
+      "order": 8,
+      "module": "文件与网络",
+      "difficulty": "基础",
+      "estimatedMinutes": 20,
+      "summary": "网络让多台计算机互传数据，按分层模型组织，核心是传输层与网络层的可靠性协调。",
+      "intuition": "网络就像一套庞大的邮政系统。你要寄信给远方的朋友，信被分成一个个包裹（数据包），每个包裹上写好地址，经过一个个中转站（路由器），最终到达目的地再拼起来。为了让这套系统可靠又高效，大家约定了一套分层规则：各干各的活，上层请求下层服务。",
+      "formal": "网络（Network）遵循分层模型，最常用的是 OSI 七层或 TCP/IP 四层模型。`应用层`处理具体应用协议（HTTP、DNS）；`传输层`负责端到端传输，其中 `TCP` 提供可靠、有序的连接传输，`UDP` 提供快速但有丢包风险的无连接传输；`网络层`负责寻址与路由，核心协议是 `IP`；`链路层`处理物理传输。网络以`数据包`为单位传输，TCP 用序号、确认应答与重传保证可靠性，用三次握手建立连接、四次挥手断开发连接。数据的封装解封过程：发送方逐层加头，接收方逐层去头。",
+      "formula": "",
+      "aiConnection": "从服务器下载模型权重、调用远程 LLM API、分布式训练时多卡间的梯度同步，都依赖网络。理解 TCP 的可靠传输与握手，以及网络延迟与带宽对训练/推理的速度影响，是优化分布式 AI 系统与云端推理时延的关键。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "network.py",
+        "code": "import socket\n\n# 演示 DNS 解析：把域名解析为 IP 地址\ndef resolve(host):\n    try:\n        ip = socket.gethostbyname(host)\n        print(f\"{host} -> {ip}\")\n    except socket.gaierror as e:\n        print(f\"解析失败: {e}\")\n\n\nresolve(\"www.baidu.com\")\nresolve(\"google.com\")"
+      },
+      "mistakes": [
+        "以为 TCP 和 UDP 都保证可靠，UDP 是无连接快速但有丢包风险",
+        "混淆 IP 层寻址与传输层端口，端口是区分同一主机上不同应用",
+        "忽略握手与重传带来的延迟，误以为网络传输零开销",
+        "把延迟与带宽混为一谈，二者是不同性能指标"
+      ],
+      "interviewPoints": [
+        "「TCP 和 UDP 怎么选？」要答到可靠有序与低延迟无连接、握手重传开销，说明推理服务与梯度同步各自的取舍",
+        "「三次握手为什么不能改成两次？」要答到双向确认收发能力、同步初始序号与防止历史连接，说明握手 RTT 对 API 首包延迟的影响",
+        "「延迟和带宽是一回事吗？」要答到两者是不同指标、分布式训练受带宽约束而在线推理受延迟约束，以及流水线并行的通信瓶颈"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "network-q1",
+          "type": "choice",
+          "prompt": "下列哪个传输层协议提供可靠、有序的连接传输？",
+          "options": [
+            "UDP",
+            "IP",
+            "TCP",
+            "HTTP"
+          ],
+          "answerIndex": 2,
+          "explanation": "TCP 提供可靠、有序、面向连接的传输；UDP 是无连接、快速但可能丢包；IP 是网络层；HTTP 是应用层协议。"
+        },
+        {
+          "id": "network-q2",
+          "type": "short",
+          "prompt": "简述 TCP 三次握手的作用。",
+          "answer": "三次握手用于建立可靠的连接：客户端发送 SYN，服务端回复 SYN+ACK，客户端再发 ACK。双方由此确认各自的发送和接收能力正常，并同步初始序号，为后续可靠传输做准备。",
+          "keywords": [
+            "syn",
+            "ack",
+            "握手"
+          ],
+          "explanation": "三次握手确立双向可靠的连接并同步序号。"
+        },
+        {
+          "id": "network-q3",
+          "type": "code",
+          "prompt": "用 socket 写一个函数 resolve_host(host)，将域名解析为 IP 地址并打印。",
+          "starterCode": "import socket\n\ndef resolve_host(host):\n    pass",
+          "solution": "import socket\n\ndef resolve_host(host):\n    ip = socket.gethostbyname(host)\n    print(ip)\n\nresolve_host(\"www.baidu.com\")",
+          "checks": [
+            "socket.gethostbyname",
+            "def resolve_host"
+          ],
+          "explanation": "用 gethostbyname 完成域名到 IP 的解析。"
+        }
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "ip",
+      "title": "IP 地址",
+      "order": 9,
+      "module": "文件与网络",
+      "difficulty": "基础",
+      "estimatedMinutes": 20,
+      "summary": "IP 地址是网络上每个设备的逻辑地址，用于在网络层定位与路由数据包。",
+      "intuition": "IP 地址就像是每台联网设备的'门牌号'，负责在网络大海里找到你。假设你要给别人发包裹，必须先知道对方的门牌号（IP）。你的电脑、手机、服务器都有一个这样的号码，数据包顺着这个号码一层层转送，最终送到你家门口。",
+      "formal": "IP 地址是网络层的逻辑地址，用于唯一标识网络中的一台主机。`IPv4` 使用 32 位地址，格式为四个 0-255 数字如 `192.168.1.1`；`IPv6` 使用 128 位地址解决 IPv4 耗尽问题。IP 地址分为`网络号`和`主机号`，由`子网掩码`划分。私有 IP（如 192.168.x.x）只能在局域网内部使用，通过 `NAT` 转换与公网通信。客户端一般使用动态 IP（DHCP 分配），服务器常用静态 IP。定位主机还需配合`端口`（transport layer 的 port）区分同一主机上的不同服务。每个数据包携带源 IP 与目的 IP，路由器据此转发。",
+      "formula": "",
+      "aiConnection": "调用云端 GPU 服务器或 LLM API 时，都是通过 IP 与端口定位到具体机器和服务。理解公网 IP、私有 IP 与 NAT，就能明白为什么本地训练集群的内网地址与公网 API 不同，也便于排查连接超时、防火墙导致无法访问等问题。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "ip.sh",
+        "code": "#!/bin/bash\n# 查看本机网络接口与 IP 地址\nip a          # Linux 查看全部接口\n# 或使用 ifconfig（部分系统）\n# ifconfig\n# 测试与目标 IP 的连通性\nping -c 3 8.8.8.8\n# 查看本机对外公网 IP（需联网）\ncurl -s ifconfig.me"
+      },
+      "mistakes": [
+        "把 IP 地址和 MAC 地址混为一谈，前者是逻辑地址、后者是物理地址",
+        "以为私有 IP 能在公网直接访问，实际上需经 NAT",
+        "混淆 IP 地址与端口，IP 定位主机、端口定位服务",
+        "以为 IP 是永久不变的，客户端多为动态分配"
+      ],
+      "interviewPoints": [
+        "「IP 和端口分别解决什么问题？」要答到网络层定位主机、传输层区分服务，说明调用 LLM API 时 base_url 与端口的关系",
+        "「私有 IP 为什么不能直接从公网访问？」要答到 NAT 转换与地址复用，解释本地训练集群内网地址与公网 API 地址的差别",
+        "「IP 和 MAC 地址有什么区别？」要答到逻辑地址与物理地址、可路由与同一链路内寻址，并提到 DHCP 动态分配"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "ip-q1",
+          "type": "choice",
+          "prompt": "IPv4 地址的位数是？",
+          "options": [
+            "16 位",
+            "32 位",
+            "64 位",
+            "128 位"
+          ],
+          "answerIndex": 1,
+          "explanation": "IPv4 使用 32 位地址，通常写成四个 0-255 的数字；IPv6 才是 128 位。"
+        },
+        {
+          "id": "ip-q2",
+          "type": "short",
+          "prompt": "IP 地址和端口分别用来干什么？",
+          "answer": "IP 地址在网络层用来定位网络中某一台主机；端口在传输层用来区分同一台主机上的不同应用/服务。两者结合（IP:port）才能精确定位到某个具体的网络服务。",
+          "keywords": [
+            "ip",
+            "端口",
+            "主机"
+          ],
+          "explanation": "IP 定主机、端口定应用服务。"
+        },
+        {
+          "id": "ip-q3",
+          "type": "code",
+          "prompt": "使用 bash 补全：先查看所有网络接口信息，再 ping 一下 8.8.8.8 测试连通性。",
+          "starterCode": "#!/bin/bash\n# 查看网络接口\n",
+          "solution": "#!/bin/bash\nip a\nping -c 3 8.8.8.8",
+          "checks": [
+            "ip a",
+            "ping"
+          ],
+          "explanation": "ip a 查看接口，ping 测试连通。"
+        }
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "http",
+      "title": "HTTP",
+      "order": 10,
+      "module": "文件与网络",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "HTTP 是客户端与服务端之间的请求-响应协议，由方法、状态码与消息头组成，是 Web 世界的基础。",
+      "intuition": "HTTP 就像你在餐厅点餐：你（客户端）说'我要一份宫保鸡丁'（请求），服务员（服务器）去后厨做好端上来（响应）。整个过程你只管点餐和收菜，不用关心后厨怎么做。每一顿饭都有菜名（URL）、要点（请求方法）和结果（状态码，比如 200 表示'搞定'，404 表示'没有这道菜'）。",
+      "formal": "HTTP（HyperText Transfer Protocol）是无状态、基于请求-响应模式的应用层协议。请求由`请求行`（方法+URL+版本）、`请求头`和可选的`请求体`组成；响应由`状态行`（状态码+原因短语）、`响应头`和`响应体`组成。常用方法有 `GET`（获取资源）、`POST`（提交数据）、`PUT`（更新）等。常见状态码：`200` 成功、`301/302` 重定向、`400` 请求错误、`404` 找不到、`500` 服务器内部错误。HTTP 无状态，因此用 `Cookie` 和 `Session` 维持会话状态。`HTTPS` 在 HTTP 之上增加 TLS 加密，保证传输安全。",
+      "formula": "",
+      "aiConnection": "调用大模型 API（如 OpenAI、DeepSeek）就是通过 HTTP POST 请求发送 prompt，服务器返回生成的文本。理解 HTTP 方法、状态码与请求头（如 auth token、content-type），是正确调用 LLM API、排查 401/429/500 等错误的基础。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "http.py",
+        "code": "import urllib.request\nimport json\n\n# 发起 HTTP GET 请求并读取响应\ndef http_get(url):\n    req = urllib.request.Request(url, headers={\"User-Agent\": \"Python\"})\n    with urllib.request.urlopen(req) as resp:\n        print(\"状态码:\", resp.status)\n        return resp.read().decode(\"utf-8\")\n\n\nbody = http_get(\"https://httpbin.org/json\")\nprint(body[:100])"
+      },
+      "mistakes": [
+        "混淆 GET 与 POST，GET 一般用于获取且参数在 URL，POST 一般提交数据",
+        "对不同状态码含义记混，尤其 4xx 客户端错误与 5xx 服务器错误",
+        "以为 HTTP 有状态，其实它无状态，靠 Cookie/Session 维持会话",
+        "忽视 HTTPS 的加密必要性，明文传输敏感信息"
+      ],
+      "interviewPoints": [
+        "「HTTP 无状态，登录怎么保持状态？」要答到 Cookie 与 Session，说明 LLM API 为何用 token 鉴权",
+        "「调模型 API 遇到 401、429、500 分别说明什么？」要答到鉴权失败、限流与服务器错误，以及重试与指数退避该怎么写",
+        "「流式响应是怎么实现的？」要答到 chunked 传输与 SSE 长连接，说明流式输出为何能显著改善首 token 延迟的体感"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "http-q1",
+          "type": "choice",
+          "prompt": "下列哪个状态码表示'服务器内部出错'？",
+          "options": [
+            "200",
+            "404",
+            "500",
+            "301"
+          ],
+          "answerIndex": 2,
+          "explanation": "500 表示服务器内部错误；200 成功、404 找不到资源、301 重定向。"
+        },
+        {
+          "id": "http-q2",
+          "type": "short",
+          "prompt": "HTTP 是无状态协议，它靠什么维持用户会话？",
+          "answer": "由于 HTTP 无状态，服务器不会记住之前的请求。通常用 Cookie 在客户端保存会话标识，服务端用 Session 保存会话数据，客户端每次请求带上 Cookie，从而在多次请求间维持登录等状态。",
+          "keywords": [
+            "cookie",
+            "session",
+            "无状态"
+          ],
+          "explanation": "用 Cookie/Session 在无状态 HTTP 上模拟出会话状态。"
+        },
+        {
+          "id": "http-q3",
+          "type": "code",
+          "prompt": "写一个函数 http_get(url)，用 urllib 发送 GET 请求并返回状态码和响应体前 100 字符。",
+          "starterCode": "import urllib.request\n\ndef http_get(url):\n    pass",
+          "solution": "import urllib.request\n\ndef http_get(url):\n    req = urllib.request.Request(url, headers={\"User-Agent\": \"Python\"})\n    with urllib.request.urlopen(req) as resp:\n        return resp.status, resp.read().decode(\"utf-8\")[:100]\n\nprint(http_get(\"https://httpbin.org/json\"))",
+          "checks": [
+            "urllib.request.urlopen",
+            "status"
+          ],
+          "explanation": "用 urlopen 发起请求并读取状态码与响应体。"
+        }
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "api",
+      "title": "API",
+      "order": 11,
+      "module": "文件与网络",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "API 是软件之间约定的调用接口，封装内部实现，通过请求与响应交换数据。",
+      "intuition": "API 就像餐厅的服务窗口：你不需要走进后厨看他们怎么做菜，只要在窗口说出想点的（请求），他们就会按标准做法端给你（响应）。只要窗口规矩不变，后厨怎么改进你都不用管。API 把复杂内部逻辑藏起来，只暴露一套清晰、稳定的调用方式。",
+      "formal": "API（Application Programming Interface，应用程序编程接口）是不同程序或模块之间交互的契约。`RESTful API` 基于 HTTP，用资源（URL）和方法（GET/POST/PUT/DELETE）表达操作，通常返回 `JSON` 数据，用状态码表示结果。一个 API 定义包括`endpoint`（接口地址）、方法、请求参数、返回结构与错误格式。API 设计注重`版本化`（如 /v1/）、`鉴权`（API key、OAuth token）与`文档`。好的 API 应具备一致性、幂等性、明确错误信息。调用方不需要关心服务端实现语言与架构，只看接口契约。",
+      "formula": "",
+      "aiConnection": "几乎所有 LLM 能力都以 API 形式开放，如 OpenAI、Anthropic、DeepSeek 等。你把 prompt、参数（temperature、max_tokens）作为请求发送到 API endpoint，模型返回生成的文本。理解 API 的请求结构、鉴权与错误码，是编写真实 AI 应用的第一步。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "api.py",
+        "code": "import urllib.request\nimport json\n\n# 模拟调用一个 REST API：将输入数据作为 JSON 请求发送\ndef call_api(url, payload):\n    data = json.dumps(payload).encode(\"utf-8\")\n    req = urllib.request.Request(url, data=data, headers={\"Content-Type\": \"application/json\"})\n    with urllib.request.urlopen(req) as resp:\n        return resp.status, resp.read().decode(\"utf-8\")\n\n\nstatus, body = call_api(\"https://httpbin.org/post\", {\"name\": \"AI\"})\nprint(\"状态码:\", status)\nprint(\"返回:\", body[:80])"
+      },
+      "mistakes": [
+        "把 API 当作具体库函数，它是一种服务/接口的调用契约",
+        "忽略鉴权与错误处理，直接假设请求一定成功",
+        "误解 HTTP 方法与语义，用 GET 去做有副作用的写操作",
+        "不读接口文档，参数名称、类型、结构对不上导致 400"
+      ],
+      "interviewPoints": [
+        "「RESTful API 的设计要点是什么？」要答到资源化 URL、HTTP 方法语义、状态码与幂等性，并联系模型服务的接口版本化",
+        "「调用大模型 API 要注意什么？」要答到鉴权 header、content-type、超时重试与 temperature 等参数",
+        "「为什么 API 要做版本化和限流？」要答到契约兼容、灰度升级与配额保护，说明模型升级时 /v1 路径为何不能随便改"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "api-q1",
+          "type": "choice",
+          "prompt": "REST API 中通常用哪个 HTTP 方法创建资源？",
+          "options": [
+            "GET",
+            "POST",
+            "DELETE",
+            "HEAD"
+          ],
+          "answerIndex": 1,
+          "explanation": "POST 常用于创建资源；GET 获取、PUT 更新、DELETE 删除资源。"
+        },
+        {
+          "id": "api-q2",
+          "type": "short",
+          "prompt": "什么是 API 接口契约？好的 API 应该具备哪些特点？",
+          "answer": "API 接口契约是请求与响应的格式约定，包括 endpoint、方法、参数、返回结构及错误格式。好的 API 应具备一致性、清晰的错误信息、版本化和鉴权机制，让调用方无需了解服务端实现即可稳定调用。",
+          "keywords": [
+            "契约",
+            "endpoint",
+            "参数"
+          ],
+          "explanation": "契约定义了交互格式；一致性、版本化、鉴权、清晰错误是好 API 的关键。"
+        },
+        {
+          "id": "api-q3",
+          "type": "code",
+          "prompt": "写一个函数 call_api(url, payload)，把 payload 作为 JSON 通过 POST 发送，并返回状态码与响应体。",
+          "starterCode": "import urllib.request\nimport json\n\ndef call_api(url, payload):\n    pass",
+          "solution": "import urllib.request\nimport json\n\ndef call_api(url, payload):\n    data = json.dumps(payload).encode(\"utf-8\")\n    req = urllib.request.Request(url, data=data, headers={\"Content-Type\": \"application/json\"})\n    with urllib.request.urlopen(req) as resp:\n        return resp.status, resp.read().decode(\"utf-8\")\n\nprint(call_api(\"https://httpbin.org/post\", {\"x\": 1}))",
+          "checks": [
+            "json.dumps",
+            "urllib.request.urlopen",
+            "status"
+          ],
+          "explanation": "把 Python 对象序列化为 JSON 后作为请求体发送，读取响应。"
+        }
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "json",
+      "title": "JSON",
+      "order": 12,
+      "module": "数据格式",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "JSON 是一种轻量的文本数据交换格式，用键值对与数组表达结构化数据，广泛用于 API 与配置文件。",
+      "intuition": "JSON 就像是程序界通用的'表格填写单'。它用大括号括起来的'键: 值'来描述信息，比如{'name': '小明', 'age': 18}。任何人都能一眼看懂，而且几乎每种编程语言都能轻松读写它。因为简单、直观、跨语言，它成了互联网上交换数据的'世界语'。",
+      "formal": "JSON（JavaScript Object Notation）是一种基于文本的数据交换格式，主要结构有两种：`object`（对象）用花括号 `{ }` 包含一组键值对，`array`（数组）用方括号 `[ ]` 表示有序列表。值（value）的类型包括字符串、数字、布尔值（true/false）、null、对象和数组。JSON 键必须是字符串，字符串用双引号。JSON 不能直接携带 Python 的集合、元组或自定义对象，因此语言间转换常有差异：Python 的 `dict` ↔ JSON object，`list` ↔ JSON array。标准库 `json` 提供 `dumps`（序列化）与 `loads`（反序列化）。JSON 优点是可读、轻量、跨语言；缺点是没有注释、不支持日期等类型。",
+      "formula": "",
+      "aiConnection": "LLM API 的输入输出基本都是 JSON：请求里 {model, messages, temperature}，返回里 {choices, message}。训练数据的常用格式、配置文件和工具调用（function calling）也大量使用 JSON。理解 JSON 结构是解析模型输出、组装请求和做数据处理的必备技能。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "json.py",
+        "code": "import json\n\n# 构造一个 JSON 对象（dict）\ndata = {\"name\": \"AI\", \"tags\": [\"llm\", \"agent\"], \"is_active\": True, \"score\": 95.5}\n\n# 序列化为 JSON 字符串（ensure_ascii=False 保留中文）\njson_str = json.dumps(data, ensure_ascii=False, indent=2)\nprint(\"序列化:\\n\", json_str)\n\n# 反序列化回 Python 对象\nback = json.loads(json_str)\nprint(\"反序列化后 name:\", back[\"name\"])"
+      },
+      "mistakes": [
+        "JSON 必须用双引号，单引号不是合法 JSON",
+        "用 Python 字典直接当 JSON，丢失了序列化/反序列化步骤",
+        "在 JSON 里写注释、日期对象或 undefined，这些都不是合法 JSON",
+        "混淆 JSON 与字典，JSON 是文本，dict 是 Python 对象"
+      ],
+      "interviewPoints": [
+        "「JSON 和 Python dict 有什么区别？」要答到 JSON 是文本序列化格式、dict 是内存对象，以及双引号与类型的限制",
+        "「怎么稳定解析大模型的 JSON 输出？」要答到 json.loads 容错、模型常带多余文本，用 function calling 约束",
+        "「JSON 不适合哪些场景？」要答到无注释、无日期类型、大数字精度与体积开销，说明模型权重为何用二进制格式存"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "json-q1",
+          "type": "choice",
+          "prompt": "下列哪个是合法的 JSON 字符串？",
+          "options": [
+            "{'name': 'Tom'}",
+            "{'name': \"Tom\"}",
+            "{\"name\": \"Tom\"}",
+            "{name: 'Tom'}"
+          ],
+          "answerIndex": 2,
+          "explanation": "JSON 的键和字符串必须用双引号。前三个都用了单引号或未加引号的键，非法。"
+        },
+        {
+          "id": "json-q2",
+          "type": "short",
+          "prompt": "JSON 支持哪些数据类型？它与 Python 字典有何区别？",
+          "answer": "JSON 支持字符串、数字、布尔值、null、对象和数组。Python 字典是内存中的一个数据结构，而 JSON 是序列化后的文本字符串；两者通过 json.dumps/loads 转换。",
+          "keywords": [
+            "字符串",
+            "数组",
+            "对象"
+          ],
+          "explanation": "JSON 类型限定且为文本，Python dict 是内存对象。"
+        },
+        {
+          "id": "json-q3",
+          "type": "code",
+          "prompt": "写一个函数 json_roundtrip(data)，把 data 序列化为 JSON 字符串再反序列化回来并返回。",
+          "starterCode": "import json\n\ndef json_roundtrip(data):\n    pass",
+          "solution": "import json\n\ndef json_roundtrip(data):\n    s = json.dumps(data, ensure_ascii=False)\n    return json.loads(s)\n\nprint(json_roundtrip({\"a\": 1, \"b\": [1, 2]}))",
+          "checks": [
+            "json.dumps",
+            "json.loads"
+          ],
+          "explanation": "dumps 序列化文本，loads 反序列化回对象。"
+        }
+      ],
+      "track": "main"
     }
   ]
 }

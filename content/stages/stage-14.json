@@ -1,1365 +1,515 @@
 {
   "stage": 14,
-  "stageSlug": "llm-engineering",
-  "stageTitle": "LLM 训练与推理工程",
-  "stageEmoji": "🏭",
-  "stageDesc": "算法岗硬技能：分布式训练、LoRA 微调、RLHF 与 DPO、KV Cache 与量化部署",
-  "category": "算法岗核心",
+  "stageSlug": "machine-learning",
+  "stageTitle": "机器学习",
+  "stageEmoji": "🤖",
+  "stageDesc": "回归、树模型、SVM、聚类与 PCA：经典机器学习算法全貌",
+  "act": 5,
+  "actName": "第五幕 · 数据与经典机器学习",
+  "category": "进阶",
   "lessons": [
     {
-      "slug": "pretraining-pipeline",
-      "title": "预训练流程与数据管线",
+      "slug": "linear-regression",
+      "title": "Linear Regression 线性回归",
       "order": 1,
-      "module": "预训练",
+      "module": "机器学习算法",
       "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "预训练是一整套工程管线：清洗、去重、分词、打包、分片、断点续训，数据质量比数量更早决定模型上限。",
-      "intuition": "预训练像给一个从没上过学的孩子喂完整个图书馆：喂什么书、有没有重复喂同一本、一次喂多少页、读到一半停电了从哪一页接着读，全都得先安排好。Common Crawl 原始网页里 60% 以上是模板页、广告、乱码和重复内容，直接训练等于让孩子背垃圾。工程师真正花时间的不是写训练脚本，而是把 100TB 原始网页洗成 2T 干净 token，并且保证每个 token 恰好被模型看一次、每一步都能断点恢复。",
-      "formal": "典型预训练管线分五段：（1）从 Common Crawl 等快照抽取文本；（2）质量过滤，用长度、符号比、停用词等启发式规则加分类器打分，剔除模板页与机器生成内容；（3）去重，MinHash + LSH 做文档级近似去重，重复文档会让模型背答案并放大记忆效应；（4）分词与打包，把多篇文档拼成恰好等于上下文长度（如 4096）的序列，消除 padding 浪费；（5）训练侧：数据并行分片、按 global batch 取数、记录 loss 与 grad norm、每 N 步存 checkpoint。Llama 2 用 2T token 训练 7B~70B，Llama 3 用到 15T token；中文语料常见清洗保留率为原始网页的 5%~15%。",
-      "formula": "N_{\\text{step}} = \\frac{N_{\\text{token}}}{B_{\\text{global}} \\cdot L_{\\text{seq}}}, \\qquad N_{\\text{accum}} = \\frac{B_{\\text{global}}}{B_{\\text{micro}} \\cdot N_{\\text{gpu}} \\cdot L_{\\text{seq}}}",
-      "aiConnection": "面试里高频出现的是「给你 10TB 原始语料，怎么变成能训的数据」和「loss 在第 3 天突然尖刺（spike）你怎么排查」。工作里你要能读懂并改造 dataloader：为什么训练日志里 tokens/s 忽高忽低（packing 没做好、变长序列）、为什么续训后 loss 跳变（数据顺序与 optimizer 状态没一起恢复）、为什么验证集 loss 比训练 loss 低（去重不彻底导致验证集泄漏）。",
+      "estimatedMinutes": 23,
+      "summary": "线性回归用一条直线（超平面）拟合输入与输出的关系，是最基础的回归模型，常作预测模型与被解释的基线。",
+      "intuition": "想象在二维平面上一堆散点，你想画条直线来大致穿过它们，好根据 x 猜测 y。模型要学的就是直线的斜率（权重）和截距（偏置）。找到让预测值和实际值差距最小的那条线，就是线性回归。",
+      "formal": "模型为 $\\hat{y} = w_0 + w_1x_1 + \\dots + w_dx_d = \\mathbf{w}^T\\mathbf{x}$。用均方误差（MSE）衡量损失：$L = \\frac{1}{n}\\sum_i (\\hat{y}_i - y_i)^2$。可用最小二乘解析解 $\\mathbf{w}=(\\mathbf{X}^T\\mathbf{X})^{-1}\\mathbf{X}^T\\mathbf{y}$ 或梯度下降求最优权重。它假设特征与目标近似线性，简单可解释；当关系非线性时需特征变换或改用更复杂的模型。",
+      "formula": "\\hat{y} = \\mathbf{w}^T\\mathbf{x} + b, \\quad L = \\frac{1}{n}\\sum_{i=1}^{n}(\\hat{y}_i - y_i)^2, \\quad \\mathbf{w} = (\\mathbf{X}^T\\mathbf{X})^{-1}\\mathbf{X}^T\\mathbf{y}",
+      "aiConnection": "线性回归既是价格预测、趋势估计的常用工具，也是许多复杂模型（如神经网络线性层）的最小单元。理解它的损失与梯度，为理解更大模型的训练奠定基础，其系数也可用于解释各特征的贡献。",
       "codeExample": {
         "lang": "python",
-        "filename": "packing_dataloader.py",
-        "code": "import numpy as np\n\nclass PackedTokenStream:\n    # 把变长文档流拼成恰好 seq_len 的定长序列，消除 padding\n    def __init__(self, docs, seq_len):\n        self.buffer = []\n        self.seq_len = seq_len\n        for d in docs:\n            self.buffer.extend(d)\n            self.buffer.append(2)  # EOS 分隔符\n\n    def __len__(self):\n        return len(self.buffer) // (self.seq_len + 1)\n\n    def __iter__(self):\n        n = self.seq_len + 1\n        for i in range(0, len(self.buffer) - n + 1, n):\n            chunk = self.buffer[i:i + n]\n            yield np.array(chunk[:-1]), np.array(chunk[1:])  # 输入与 shift 一位的标签\n\nif __name__ == '__main__':\n    rng = np.random.default_rng(0)\n    docs = [rng.integers(3, 30000, size=rng.integers(50, 400)).tolist() for _ in range(64)]\n    ds = PackedTokenStream(docs, seq_len=16)\n    x, y = next(iter(ds))\n    print('序列数:', len(ds), '输入形状:', x.shape, '标签形状:', y.shape)\n    print('是否为下一个 token 预测:', bool((x[1:] == y[:-1]).all()))"
+        "filename": "linear_regression.py",
+        "code": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.linear_model import LinearRegression\n\n# 造一点带噪声的线性数据\nnp.random.seed(0)\nX = np.random.rand(50, 1) * 10\ny = 2 * X.ravel() + 3 + np.random.normal(0, 1, 50)\n\nmodel = LinearRegression()\nmodel.fit(X, y)\n\nprint('w =', round(model.coef_[0], 3))   # ≈ 2\nprint('b =', round(model.intercept_, 3)) # ≈ 3\nprint('R2 =', round(model.score(X, y), 3))\n\n# 预测并画图\npred = model.predict(X)\nplt.scatter(X, y)\nplt.plot(X, pred, color='red')\nplt.show()"
       },
       "mistakes": [
-        "不做文档级去重就开训，验证集容易被「背」出来，评测虚高",
-        "变长序列不做 packing，padding 占比过半，显存与算力被白白浪费",
-        "断点续训只存模型权重，不存优化器状态与数据游标，loss 直接跳变",
-        "质量过滤阈值调得过狠，语料多样性下降，长尾领域表现变差"
+        "用 linear 模型拟合明显非线性的数据而不做特征变换",
+        "忽略特征量纲差异，导致系数大小失真",
+        "把正则与无正则混用，未做训练/测试划分就评估",
+        "把相关性强当作因果关系"
       ],
       "interviewPoints": [
-        "「你负责过数据管线吗？100TB 网页怎么洗成 1T token，每一步的保留率大概是多少？」",
-        "「训练 loss 在 12000 步突然 spike 到 8，你怎么定位是数据问题还是数值问题？」",
-        "「预训练为什么要去重？不去重会从训练 loss、验证 loss、下游评测三个角度分别出什么问题？」",
-        "「global batch size 4M token 在 8 卡上跑，gradient accumulation 该设多少？显存和时间怎么权衡？」"
+        "「线性回归为什么用均方误差而不是绝对值误差？」要答到高斯噪声假设下的极大似然、MSE 处处可导，以及它对异常值更敏感",
+        "「正规方程和梯度下降怎么选？」要答到正规方程要算 (XᵀX)⁻¹、复杂度约 O(n³) 且可能不可逆，大样本高维只能用梯度下降",
+        "「回归系数 w 该怎么解释？」要答到控制其他特征不变时 x_j 每增一单位 y 的平均变化，以及必须先标准化才能比较系数大小",
+        "「线性回归的假设被违反会怎样？」要答到非线性、异方差、多重共线会让系数不稳、检验失效，需要特征变换或改用 Ridge"
       ],
-      "resources": [
-        {
-          "title": "The RefinedWeb Dataset for Falcon LLM（数据过滤与去重的工程细节）",
-          "url": "https://arxiv.org/abs/2306.01116"
-        },
-        {
-          "title": "Llama 2: Open Foundation and Fine-Tuned Chat Models",
-          "url": "https://arxiv.org/abs/2307.09288"
-        },
-        {
-          "title": "HuggingFace datasets：流式与分片处理文档",
-          "url": "https://huggingface.co/docs/datasets/stream"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "pretraining-pipeline-q1",
+          "id": "linear-regression-q1",
           "type": "choice",
-          "prompt": "预训练数据管线中做文档级近似去重（MinHash + LSH）的主要目的是？",
+          "prompt": "线性回归常用的损失函数是？",
           "options": [
-            "把语料压缩以节省磁盘",
-            "减少重复样本造成的记忆与评测泄漏，提升有效数据多样性",
-            "加快分词速度",
-            "让模型词表更小"
+            "均方误差 MSE",
+            "交叉熵",
+            "准确率",
+            "F1-score"
           ],
-          "answerIndex": 1,
-          "explanation": "重复文档会被模型反复记忆，既浪费算力又让验证/评测集容易被「背」出来，去重让每个 token 的信息量更高。压缩磁盘、加速分词、缩小词表都不是去重的目的。"
+          "answerIndex": 0,
+          "explanation": "连续值回归常用均方误差 MSE 来衡量预测与真实值的平方差均值。"
         },
         {
-          "id": "pretraining-pipeline-q2",
+          "id": "linear-regression-q2",
           "type": "short",
-          "prompt": "为什么预训练要做 packing（把多篇文档拼成定长序列）？",
-          "answer": "参考回答：预训练语料文档长度差异极大，若按 batch 内最长序列 padding，短文档会带来大量无效计算与显存浪费。packing 把多篇文档首尾相接（用 EOS 分隔）拼成恰好等于上下文长度的序列，使每个 token 都参与 loss 计算，把 GPU 利用率从不足 50% 提升到 90% 以上，同时让 tokens/s 更稳定可预测。",
+          "prompt": "线性回归模型的系数 w 有什么含义？",
+          "answer": "参考回答：每个系数 w_j 表示当其它特征不变时，特征 x_j 每增加一个单位，预测目标 y 平均增加 w_j。它刻画了各特征对输出的贡献大小，因此线性回归具有较好的可解释性。",
           "keywords": [
-            "padding 浪费",
-            "定长序列",
-            "EOS 分隔",
-            "GPU 利用率"
+            "权重",
+            "特征",
+            "解释"
           ],
-          "explanation": "核心得分点是「消除 padding 带来的无效计算」和「每个 token 都算 loss」，能提到 EOS 分隔与利用率数字更好。"
+          "explanation": "系数表示特征对目标的影响/贡献，衡量解释性。"
         },
         {
-          "id": "pretraining-pipeline-q3",
+          "id": "linear-regression-q3",
           "type": "code",
-          "prompt": "实现 packed_stream(docs, seq_len)：把若干篇 token id 列表（每篇之间插入 EOS=2）拼接后切成恰好 seq_len+1 的块，返回 (input_ids, labels) 列表，其中 labels 是 input_ids 右移一位。",
-          "starterCode": "def packed_stream(docs, seq_len):\n    # docs: List[List[int]]，返回 List[Tuple[List[int], List[int]]]\n    pass\n",
-          "solution": "def packed_stream(docs, seq_len):\n    buf = []\n    for d in docs:\n        buf.extend(d)\n        buf.append(2)\n    out = []\n    n = seq_len + 1\n    for i in range(0, len(buf) - n + 1, n):\n        chunk = buf[i:i + n]\n        out.append((chunk[:-1], chunk[1:]))\n    return out\n",
+          "prompt": "用 sklearn 的 LinearRegression 拟合 X、y 并打印 w 与 b。",
+          "starterCode": "import numpy as np\nfrom sklearn.linear_model import LinearRegression\n\nX = np.array([[1], [2], [3], [4]])\ny = np.array([3, 5, 7, 9])\n",
+          "solution": "import numpy as np\nfrom sklearn.linear_model import LinearRegression\n\nX = np.array([[1], [2], [3], [4]])\ny = np.array([3, 5, 7, 9])\n\nmodel = LinearRegression()\nmodel.fit(X, y)\nprint(model.coef_, model.intercept_)",
           "checks": [
-            "buf.extend",
-            "chunk[:-1]",
-            "chunk[1:]"
+            "fit",
+            "coef",
+            "intercept"
           ],
-          "explanation": "先把所有文档拼进一个 buffer 并用 EOS 分隔，再按 seq_len+1 滑窗切块，输入取前 seq_len 个、标签取后 seq_len 个即完成 shift 一位。"
+          "explanation": "用 model.fit(X,y) 训练，读 model.coef_ 与 model.intercept_ 得到斜率与截距。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "scaling-laws",
-      "title": "Scaling Laws 与算力估算",
+      "slug": "logistic-regression",
+      "title": "Logistic Regression 逻辑回归",
       "order": 2,
-      "module": "预训练",
-      "difficulty": "高阶",
-      "estimatedMinutes": 55,
-      "summary": "损失随参数量、数据量、算力呈幂律下降，Chinchilla 给出「参数量与 token 数大致 1:20」的配比，算力估算 C≈6ND 是面试必考口算题。",
-      "intuition": "Scaling Law 是给大模型训练做「预算规划」的那张表：钱（算力）是固定的，你可以在「买更大的模型」和「喂更多的数据」之间分配。2020 年大家以为模型越大越好，于是 GPT-3 用 175B 参数只喂了 300B token；2022 年 Chinchilla 发现这严重「营养不良」——同样算力下，70B 参数喂 1.4T token 的效果反而超过 175B 喂 300B。这就是为什么今天的 7B 模型要训 2T token，而不是训 200B token 就收工。",
-      "formal": "Kaplan 的幂律形式为 L(N) = (N_c/N)^{\\alpha_N}，\\alpha_N ≈ 0.076；同时考虑数据 D 时 L(N,D) = E + A N^{-\\alpha} + B D^{-\\beta}，E 为不可约损失。Hoffmann 等人（Chinchilla）在给定算力 C 下最小化该式，得到 N_opt ∝ C^{0.5}、D_opt ∝ C^{0.5}，即 D_opt ≈ 20 N_opt：训练 token 数约为参数量的 20 倍。训练算力按 C ≈ 6 N D 估算（前向 2ND，反向 4ND），推理约为 2N 每 token。注意：指数是在特定数据分布与架构上拟合的，换数据质量或换 MoE 架构后常数会变。",
-      "formula": "L(N, D) = E + \\frac{A}{N^{\\alpha}} + \\frac{B}{D^{\\beta}}, \\qquad C \\approx 6ND, \\qquad D_{\\text{opt}} \\approx 20\\,N",
-      "aiConnection": "这是算法岗面试的「口算题」：给你 1000 张 A100、两周时间，能训多大的模型？答案要用 C ≈ 6ND 反推。工作中你要用它做三件事：写训练预算（GPU 小时、电费、存储）、判断「模型太小数据太多」还是「数据不足」、决定继续加数据还是加参数。MoE 与推理成本还需要加上「激活参数量」这一维——总参数决定显存，激活参数决定算力。",
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "逻辑回归用 sigmoid 函数把线性输出映射为概率，用于二分类，是分类问题的基础模型。",
+      "intuition": "名字虽叫回归，其实做的是分类。它把线性得分压缩到 0~1 之间，变成\"属于正类的概率\"，再跟 0.5 比较来决定类别。越接近 1 越可能是正类，越接近 0 越可能是负类。",
+      "formal": "先算线性得分 $z = \\mathbf{w}^T\\mathbf{x} + b$，再用 sigmoid 压缩：$\\hat{p} = \\sigma(z) = \\frac{1}{1+e^{-z}}$。损失用二分类交叉熵：$L = -\\frac{1}{n}\\sum_i [y_i\\log\\hat{p}_i + (1-y_i)\\log(1-\\hat{p}_i)]$。预测规则：$\\hat{p}\\geq 0.5 \\Rightarrow$ 正类。它输出的是概率而非硬标签，可微且易扩展为多分类（softmax），且系数同样具有可解释性。",
+      "formula": "\\hat{p} = \\sigma(z) = \\frac{1}{1+e^{-z}}, \\quad z = \\mathbf{w}^T\\mathbf{x}+b, \\quad L = -\\frac{1}{n}\\sum_i [y_i\\log\\hat{p}_i + (1-y_i)\\log(1-\\hat{p}_i)]",
+      "aiConnection": "逻辑回归是分类的基石，其 sigmoid + 交叉熵结构正是神经网络输出层与损失的核心组成。模型给出的概率可用于置信度判断与排序（如风险打分），也是许多大型分类模型的线性baseline。",
       "codeExample": {
         "lang": "python",
-        "filename": "compute_budget.py",
-        "code": "def training_flops(n_params, n_tokens):\n    return 6.0 * n_params * n_tokens\n\ndef chinchilla_optimal(compute_budget):\n    # C = 6ND 且 D = 20N  =>  N = sqrt(C / 120)\n    n = (compute_budget / 120.0) ** 0.5\n    return n, 20.0 * n\n\ndef gpu_days(flops, n_gpu, tflops_peak=312.0, mfu=0.4):\n    per_gpu = tflops_peak * 1e12 * mfu   # A100 bf16 峰值 312 TFLOPS，MFU 取 40%\n    return flops / (per_gpu * n_gpu) / 86400.0\n\nif __name__ == '__main__':\n    n, d = chinchilla_optimal(1e23)\n    print(f'算力 1e23 FLOPs -> 最优参数 {n/1e9:.1f}B, 最优 token {d/1e12:.2f}T')\n    f = training_flops(7e9, 2e12)\n    print(f'7B 模型训 2T token 需 {f:.2e} FLOPs')\n    print(f'8x A100 需要 {gpu_days(f, 8):.1f} 天 (MFU 40%)')"
+        "filename": "logistic_regression.py",
+        "code": "import numpy as np\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\n\n# 造二分类数据\nX, y = make_classification(n_samples=200, n_features=2, n_redundant=0, random_state=0)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\nmodel = LogisticRegression()\nmodel.fit(X_train, y_train)\n\n# 输出概率\nprob = model.predict_proba(X_test)[:5]\nprint('前 5 个样本的正类概率:')\nprint(np.round(prob[:, 1], 3))\n\nprint('准确率 =', round(model.score(X_test, y_test), 3))\nprint('系数 =', np.round(model.coef_[0], 3))"
       },
       "mistakes": [
-        "只按参数量估算力，忘了 C≈6ND 里 token 数的乘数，预算低估一个数量级",
-        "把 Chinchilla 的 20:1 当铁律，忽略数据质量提升会改变最优配比",
-        "用 GPU 理论峰值算时间，不除 MFU（实际 35%~50%），得出错误结论",
-        "忽略 checkpoint 与优化器状态的存储需求，训练中途磁盘写满"
+        "把逻辑回归当回归用，直接拿概率当连续值而不做阈值判断",
+        "误以为用 MSE 训练分类模型合适（应为交叉熵）",
+        "把输入特征未标准化就训练，导致梯度下降收敛不稳定",
+        "混淆概率值与硬类标签的用途"
       ],
       "interviewPoints": [
-        "「1000 张 A100 训两周，按 Chinchilla 最优配比你能训多大的模型？写出推导过程。」",
-        "「为什么是 C≈6ND 而不是 2ND？前向和反向的 FLOPs 各是多少？」",
-        "「Scaling Law 预测 loss 会平滑下降，但实际训练常出现 loss spike，两者矛盾吗？你怎么解释？」",
-        "「数据质量提升和增加参数量，哪个对 loss 的边际收益更大？怎么用实验验证？」"
+        "「逻辑回归为什么用交叉熵而不用 MSE？」要答到交叉熵等价于伯努利极大似然，且 MSE 配 sigmoid 会梯度消失、收敛极慢",
+        "「sigmoid 的导数是什么？为什么会梯度消失？」要答到 σ'=σ(1-σ) 最大仅 0.25，多层连乘指数衰减，深层网络因此难训",
+        "「分类阈值一定是 0.5 吗？」要答到不一定，应按业务代价调阈值，不平衡或高召回场景要结合 PR 曲线选点而非看准确率",
+        "「逻辑回归和神经网络输出层是什么关系？」要答到它就是一个没有隐藏层的单层网络，sigmoid 加交叉熵正是二分类输出头的原型"
       ],
-      "resources": [
-        {
-          "title": "Scaling Laws for Neural Language Models (Kaplan et al., 2020)",
-          "url": "https://arxiv.org/abs/2001.08361"
-        },
-        {
-          "title": "Training Compute-Optimal Large Language Models (Chinchilla, 2022)",
-          "url": "https://arxiv.org/abs/2203.15556"
-        },
-        {
-          "title": "LLM Training FLOPs 与 MFU 的工程估算（HuggingFace blog）",
-          "url": "https://huggingface.co/blog/train_memory"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "scaling-laws-q1",
+          "id": "logistic-regression-q1",
           "type": "choice",
-          "prompt": "按 C ≈ 6ND 估算，一个 13B 模型在 1T token 上训练，总训练算力约为多少？",
+          "prompt": "逻辑回归输出层常用的激活函数是？",
           "options": [
-            "7.8e22 FLOPs",
-            "1.3e22 FLOPs",
-            "2.6e22 FLOPs",
-            "7.8e25 FLOPs"
+            "sigmoid",
+            "ReLU",
+            "tanh",
+            "identity"
           ],
           "answerIndex": 0,
-          "explanation": "6 × 13e9 × 1e12 = 7.8e22 FLOPs。选项 B/C 是漏乘系数或用 2ND/ND 的结果，D 量级错了三个数量级。"
+          "explanation": "逻辑回归用 sigmoid 把线性得分映射到 (0,1) 表示正类概率。"
         },
         {
-          "id": "scaling-laws-q2",
+          "id": "logistic-regression-q2",
           "type": "short",
-          "prompt": "Chinchilla 的核心结论是什么？它对今天的模型训练有什么影响？",
-          "answer": "参考回答：Chinchilla 指出在固定算力预算下，模型参数量与训练 token 数应大致同比例增长，最优配比约为每个参数 20 个 token，此前的大模型普遍「参数过大、数据不足」。因此今天 7B 级模型普遍训练 1T~2T 甚至 15T token，而不是靠堆参数；同时也说明数据质量与数量是可以换取参数规模的资源。",
+          "prompt": "为什么逻辑回归用交叉熵而不用均方误差做损失？",
+          "answer": "参考回答：因为交叉熵更适合概率输出的分类任务，其梯度更平稳、收敛更快；而 MSE 在 sigmoid 两侧梯度接近 0，收敛慢且容易陷入局部差解。交叉熵对应最大似然，与概率建模一致。",
           "keywords": [
-            "算力固定",
-            "20 倍 token",
-            "数据不足",
-            "同比例"
+            "交叉熵",
+            "概率",
+            "收敛"
           ],
-          "explanation": "要点是「固定算力下 N 与 D 同比例增长」和「20 token/参数」这两个可量化的结论。"
+          "explanation": "交叉熵与概率建模一致、梯度更稳；MSE 在此易梯度消失、收敛慢。"
         },
         {
-          "id": "scaling-laws-q3",
+          "id": "logistic-regression-q3",
           "type": "code",
-          "prompt": "实现 chinchilla_params(compute_budget)：在 C=6ND 且 D=20N 的假设下，返回最优参数量 N（浮点数）。",
-          "starterCode": "def chinchilla_params(compute_budget):\n    pass\n",
-          "solution": "def chinchilla_params(compute_budget):\n    # C = 6 * N * (20 * N) = 120 * N^2\n    return (compute_budget / 120.0) ** 0.5\n\nprint(chinchilla_params(1e23) / 1e9)\n",
+          "prompt": "用 sklearn 的 LogisticRegression 在 X、y 上训练，打印预测概率。",
+          "starterCode": "from sklearn.linear_model import LogisticRegression\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n",
+          "solution": "from sklearn.linear_model import LogisticRegression\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n\nmodel = LogisticRegression()\nmodel.fit(X, y)\nprint(model.predict_proba(X))",
           "checks": [
-            "120",
-            "** 0.5"
+            "fit",
+            "predict_proba"
           ],
-          "explanation": "把 D=20N 代入 C=6ND 得 C=120N²，故 N=sqrt(C/120)。"
+          "explanation": "用 model.fit 训练，predict_proba(X) 返回各类别的概率。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "training-objectives",
-      "title": "训练目标：CLM、MLM 与 Span Corruption",
+      "slug": "decision-tree",
+      "title": "Decision Tree 决策树",
       "order": 3,
-      "module": "预训练",
+      "module": "机器学习算法",
       "difficulty": "进阶",
-      "estimatedMinutes": 45,
-      "summary": "CLM 逐 token 预测下一个词，MLM 随机挖空双向填空，Span Corruption 挖掉连续片段再生成，目标决定模型能不能生成。",
-      "intuition": "训练目标就是给模型出的考题类型。CLM 是「续写」：给前文猜下一个字，必须一个字一个字往后写，天然会生成，但每个位置只能看到左边。MLM 是「完形填空」：把句子中间挖掉几个字让模型填，模型能同时看左右两边，理解更强，但它没学过怎么从头写一整段话。Span Corruption 是「挖掉一整段再补回来」，把填空变成短序列生成，兼顾理解与生成，但补出来的内容和原文不一定逐字一致。选哪种目标，等于选模型将来能干什么活。",
-      "formal": "CLM（Causal Language Modeling）对序列做自回归分解，损失为所有位置负对数似然之和，配合因果掩码保证位置 t 只能看到 1..t，是 GPT/Llama/Qwen 等解码器模型的默认目标。MLM（Masked Language Modeling）随机把 15% token 替换为 [MASK]（其中 80% 换 MASK、10% 换随机词、10% 不变），只对掩码位置计算损失，双向注意力，代表模型 BERT。Span Corruption（T5）按平均长度 3 的片段挖空并替换为哨兵 token，解码器生成被挖掉的片段，属于去噪目标。算力效率也不同：MLM 只对 15% 位置算损失，监督信号更稀疏；CLM 对 100% 位置算损失，每 token 信息利用率最高。",
-      "formula": "\\mathcal{L}_{\\text{CLM}} = -\\sum_{t=1}^{T} \\log p_\\theta(x_t \\mid x_{<t}), \\qquad \\text{PPL} = \\exp\\left(\\frac{1}{T}\\mathcal{L}_{\\text{CLM}}\\right)",
-      "aiConnection": "面试常问「BERT 和 GPT 的训练目标差异，为什么 BERT 不适合直接做生成」。工程上你会遇到：SFT 阶段沿用 CLM 损失但只对回答部分算 loss（把 prompt 的 label 置为 -100）；继续预训练（continued pretraining）时要判断是换领域词表还是直接 CLM 续训；做 embedding 模型时要切回 MLM 或对比学习目标。目标函数选错，后面所有微调都是白费。",
+      "estimatedMinutes": 24,
+      "summary": "决策树通过一系列\"是/否\"判断把数据划分到叶子类别，规则直观、可解释，既能分类也能回归。",
+      "intuition": "决策树就像一场\"20 个问题\"游戏：从根节点开始，不断问\"这个特征大于某个值吗？\"，按答案走向不同分支，最后落到一个叶子，给出预测。树上每条路径都是一条可读的 if-else 规则。",
+      "formal": "树的构建通过递归选择最佳划分特征与阈值来最大化信息增益（或最小化不纯度）。分类常用基尼不纯度 $G = 1 - \\sum_k p_k^2$ 或熵 $H = -\\sum_k p_k\\log p_k$；回归用均方误差。信息增益是划分前后不纯度的下降：$\\text{IG} = H_{\\text{parent}} - \\sum_j \\frac{n_j}{n} H_j$。为防止过拟合需限制深度、最小样本数或做剪枝。",
+      "formula": "H(S) = -\\sum_{k} p_k \\log p_k, \\quad \\text{IG} = H_{\\text{parent}} - \\sum_j \\frac{|S_j|}{|S|} H(S_j), \\quad \\text{深度/剪枝可约束模型复杂度",
+      "aiConnection": "决策树因可解释性强，常用于风控、医疗等需要解释的场景；它也是随机森林、梯度提升等强大集成模型的基础组件。通过特征重要性我们还能看出哪些特征在判断中起关键作用。",
       "codeExample": {
         "lang": "python",
-        "filename": "objectives.py",
-        "code": "import torch\nimport torch.nn.functional as F\n\ndef clm_loss(logits, labels):\n    # logits: (B, T, V)  labels: (B, T)，-100 位置忽略\n    return F.cross_entropy(logits.view(-1, logits.size(-1)), labels.view(-1), ignore_index=-100)\n\ndef mlm_batch(input_ids, mask_prob=0.15, mask_id=103, vocab_size=30522, rng=None):\n    rng = rng or torch.Generator().manual_seed(0)\n    labels = input_ids.clone()\n    mask = torch.rand(input_ids.shape, generator=rng) < mask_prob\n    labels[~mask] = -100                      # 只对掩码位置算损失\n    rand = torch.rand(input_ids.shape, generator=rng)\n    masked = input_ids.clone()\n    masked[mask & (rand < 0.8)] = mask_id      # 80% 换成 [MASK]\n    replace = mask & (rand >= 0.8) & (rand < 0.9)\n    masked[replace] = torch.randint(0, vocab_size, (int(replace.sum()),), generator=rng)\n    return masked, labels\n\nif __name__ == '__main__':\n    ids = torch.randint(0, 1000, (2, 8))\n    logits = torch.randn(2, 8, 1000)\n    print('CLM loss:', round(clm_loss(logits, ids).item(), 3))\n    masked, labels = mlm_batch(ids)\n    print('被掩码位置数:', int((labels != -100).sum()))"
+        "filename": "decision_tree.py",
+        "code": "from sklearn.tree import DecisionTreeClassifier, plot_tree\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nimport matplotlib.pyplot as plt\n\n# 用鸢尾花数据集\nX, y = load_iris(return_X_y=True)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 限制深度防止过拟合\nclf = DecisionTreeClassifier(max_depth=3, random_state=0)\nclf.fit(X_train, y_train)\n\nprint('准确率 =', round(clf.score(X_test, y_test), 3))\n\n# 特征重要性\nnames = ['sepal_len', 'sepal_wid', 'petal_len', 'petal_wid']\nprint('特征重要性:')\nfor n, imp in zip(names, clf.feature_importances_):\n    print(n, round(imp, 3))\n\n# 可视化树\nplt.figure(figsize=(10, 5))\nplot_tree(clf, feature_names=names, filled=True)\nplt.show()"
       },
       "mistakes": [
-        "用 MLM 训练的模型直接做自回归生成，训练与推理目标不一致",
-        "SFT 时忘记把 prompt 的 label 置为 -100，模型学会复述问题",
-        "MLM 掩码比例设得过高（如 40%），上下文信息不足，模型退化成猜词",
-        "混淆 span corruption 与 CLM：前者只算被挖掉片段的损失"
+        "不限制深度让树无限生长，导致严重过拟合",
+        "忽略类别不平衡，导致叶子偏向多数类",
+        "把数值特征直接用于切分而不考虑过拟合风险",
+        "只用准确率评估，忽视类别分布与召回"
       ],
       "interviewPoints": [
-        "「BERT 和 GPT 的训练目标有什么区别？为什么 BERT 不能直接用来写文章？」",
-        "「SFT 阶段 loss 是在整段文本上算还是只在回答上算？为什么？label 怎么处理？」",
-        "「MLM 的 80/10/10 掩码策略分别解决什么问题？不这么做会怎样？」",
-        "「如果要在垂直领域继续预训练一个 7B 模型，你会用 CLM 还是 MLM？为什么？」"
+        "「信息增益、增益率、基尼不纯度怎么选？」要答到 ID3 的增益偏向多取值特征、C4.5 用增益率校正、CART 用基尼且更快",
+        "「决策树为什么容易过拟合？」要答到不加约束时它能切分到每个叶子都纯，把噪声和个别样本也记住，导致方差极大",
+        "「预剪枝和后剪枝的区别？」要答到预剪枝边建树边限制深度与最小样本数、快但可能欠拟合；后剪枝先长满再回剪、更准但更贵",
+        "「特征重要性怎么算？有什么坑？」要答到按各节点不纯度下降加权求和，坑是它偏向高基数特征，相关特征还会互相分摊"
       ],
-      "resources": [
-        {
-          "title": "BERT: Pre-training of Deep Bidirectional Transformers",
-          "url": "https://arxiv.org/abs/1810.04805"
-        },
-        {
-          "title": "Exploring the Limits of Transfer Learning with T5",
-          "url": "https://arxiv.org/abs/1910.10683"
-        },
-        {
-          "title": "HuggingFace 任务指南：Causal / Masked LM",
-          "url": "https://huggingface.co/docs/transformers/tasks/language_modeling"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "training-objectives-q1",
+          "id": "decision-tree-q1",
           "type": "choice",
-          "prompt": "关于 CLM 与 MLM 的区别，下列说法正确的是？",
+          "prompt": "决策树选择划分特征时常用什么准则？",
           "options": [
-            "MLM 对所有位置计算损失，CLM 只对掩码位置计算",
-            "CLM 使用因果掩码逐 token 预测，MLM 双向可见并只对掩码位置计算损失",
-            "两者都只能做生成任务",
-            "CLM 的损失函数是均方误差"
-          ],
-          "answerIndex": 1,
-          "explanation": "CLM 用因果掩码做自回归预测、全部位置算损失；MLM 双向注意力、只对 15% 掩码位置算损失，因此擅长理解但不擅长直接生成。"
-        },
-        {
-          "id": "training-objectives-q2",
-          "type": "short",
-          "prompt": "SFT 训练时为什么要对 prompt 部分的 token 屏蔽损失？",
-          "answer": "参考回答：SFT 的目标是让模型学会「给定指令后如何作答」，而不是复述指令。如果把 prompt 也计入损失，模型会把大量算力用于拟合用户输入，甚至学会只重复问题。做法是把 prompt 区间的 label 置为 -100，交叉熵的 ignore_index 会跳过这些位置，使梯度只来自回答部分，同时回答部分的 loss 也被归一化到有效 token 数上。",
-          "keywords": [
-            "-100",
-            "ignore_index",
-            "只学回答",
-            "复述问题"
-          ],
-          "explanation": "得分点在于「只让回答贡献梯度」和具体实现手段 -100 / ignore_index。"
-        },
-        {
-          "id": "training-objectives-q3",
-          "type": "code",
-          "prompt": "实现 clm_loss(logits, labels)：logits 形状 (B, T, V)，labels 形状 (B, T) 且含 -100 忽略位，返回交叉熵损失（标量 tensor）。",
-          "starterCode": "import torch\nimport torch.nn.functional as F\n\ndef clm_loss(logits, labels):\n    pass\n",
-          "solution": "import torch\nimport torch.nn.functional as F\n\ndef clm_loss(logits, labels):\n    return F.cross_entropy(logits.view(-1, logits.size(-1)), labels.view(-1), ignore_index=-100)\n",
-          "checks": [
-            "logits.view(-1",
-            "ignore_index=-100"
-          ],
-          "explanation": "把 (B,T,V) 展平成 (B*T,V)、labels 展平成 (B*T)，用 ignore_index=-100 跳过 prompt 位置。"
-        }
-      ]
-    },
-    {
-      "slug": "data-parallel-ddp",
-      "title": "数据并行与 DDP",
-      "order": 4,
-      "module": "分布式训练",
-      "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "数据并行让每张卡持一份完整模型、各吃一部分数据，反向结束后用 AllReduce 平均梯度；DDP 靠分桶与反向重叠把通信藏进计算里。",
-      "intuition": "一个人改稿太慢，就叫 8 个编辑各看一部分稿子、各自写批注，然后开个会把 8 份批注合并成一份统一修改意见——这就是数据并行：每张卡都有完整的模型副本，各算一部分数据的梯度，最后把梯度平均。问题是「开会」要花时间：8 张卡每次迭代都得同步一次，卡越多会议越长。DDP 的聪明之处是边写批注边开会：反向传播算完一层就把这层的梯度发出去，等最后一层算完，前面的通信早就做完了。",
-      "formal": "数据并行把 global batch 均分到 N 张卡，每卡前向+反向得到局部梯度 g_i，再用 AllReduce 求平均 g = (1/N)\\sum g_i，所有副本用同一份梯度更新，因此数值上等价于单卡大 batch 训练（前提是没有 BatchNorm 之类的跨样本统计量，Transformer 用 LayerNorm 天然满足）。有效 batch 为 B_global = B_micro × N_gpu × N_accum。PyTorch DDP 在反向过程中按参数逆序分桶（默认 bucket_cap_mb=25），桶满即异步发起 AllReduce。代价是显存不省：每卡都要存完整参数、梯度与优化器状态，因此 DDP 只适合 ≤3B 的模型。",
-      "formula": "B_{\\text{global}} = B_{\\text{micro}} \\times N_{\\text{gpu}} \\times N_{\\text{accum}}, \\qquad g = \\frac{1}{N}\\sum_{i=1}^{N} g_i",
-      "aiConnection": "面试必问：「DDP 和 DataParallel 有什么区别」「为什么 DDP 快」「8 卡 DDP 训练 7B 会 OOM 吗，为什么」。工作里你每天都在和它打交道：调 batch size 时要知道改的是 micro batch 还是 global batch，loss 不收敛时先检查是不是有效 batch 变了却没调学习率（线性缩放规则 lr ∝ batch size），NCCL 卡死时先看是不是某张卡的数据长度和别人不一致导致 AllReduce 无法配对。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "ddp_train.py",
-        "code": "# 运行: torchrun --nproc_per_node=8 ddp_train.py\nimport os\nimport torch\nimport torch.distributed as dist\nimport torch.nn as nn\nfrom torch.nn.parallel import DistributedDataParallel as DDP\nfrom torch.utils.data import DataLoader, DistributedSampler, TensorDataset\n\ndef main():\n    dist.init_process_group(backend='nccl')\n    rank = int(os.environ['LOCAL_RANK'])\n    torch.cuda.set_device(rank)\n\n    model = nn.Sequential(nn.Linear(256, 512), nn.GELU(), nn.Linear(512, 10)).to(rank)\n    model = DDP(model, device_ids=[rank])          # 反向中自动分桶 AllReduce 梯度\n    ds = TensorDataset(torch.randn(4096, 256), torch.randint(0, 10, (4096,)))\n    sampler = DistributedSampler(ds, shuffle=True)  # 每张卡只取 1/N 的数据\n    loader = DataLoader(ds, batch_size=32, sampler=sampler)\n    opt = torch.optim.AdamW(model.parameters(), lr=1e-3)\n\n    for epoch in range(2):\n        sampler.set_epoch(epoch)                   # 保证每个 epoch 的切分不同\n        for x, y in loader:\n            opt.zero_grad(set_to_none=True)\n            loss = nn.functional.cross_entropy(model(x.to(rank)), y.to(rank))\n            loss.backward()                        # 梯度在此时被 AllReduce 平均\n            opt.step()\n        if rank == 0:\n            print('epoch', epoch, 'loss', round(loss.item(), 4))\n    dist.destroy_process_group()\n\nif __name__ == '__main__':\n    main()"
-      },
-      "mistakes": [
-        "忘记 sampler.set_epoch，每个 epoch 数据切分完全相同",
-        "增大卡数后没有同步调大学习率，有效 batch 变了但 lr 没变，收敛变慢",
-        "手写 all_reduce 梯度后又调用 backward()，梯度被重复累加",
-        "以为 DDP 能省显存，直接拿 8 卡 DDP 训 13B，结果每张卡都 OOM"
-      ],
-      "interviewPoints": [
-        "「DDP 和 DataParallel（DP）有什么区别？为什么 DP 基本被淘汰了？」",
-        "「8 卡 DDP 训练 7B 模型会 OOM 吗？算一下每张卡的显存占用。」",
-        "「DDP 是怎么把通信隐藏在计算里的？bucket 大小设大设小各有什么影响？」",
-        "「global batch 从 32 扩到 256，学习率要怎么调？依据是什么？」"
-      ],
-      "resources": [
-        {
-          "title": "PyTorch DDP 官方教程与设计说明",
-          "url": "https://pytorch.org/tutorials/intermediate/ddp_tutorial.html"
-        },
-        {
-          "title": "PyTorch Distributed 性能调优指南",
-          "url": "https://pytorch.org/tutorials/recipes/distributed_training_tuning.html"
-        },
-        {
-          "title": "DeepSpeed 论文：ZeRO 与数据并行的显存对比",
-          "url": "https://arxiv.org/abs/1910.02054"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "data-parallel-ddp-q1",
-          "type": "choice",
-          "prompt": "PyTorch DDP 相比 DataParallel（DP）的核心优势是？",
-          "options": [
-            "显存占用更低",
-            "每进程独立 Python 解释器、梯度分桶通信与反向重叠，避免 GIL 与单点广播瓶颈",
-            "不需要 AllReduce",
-            "可以训练任意大的模型"
-          ],
-          "answerIndex": 1,
-          "explanation": "DDP 是多进程、每卡一个进程，通信与反向重叠、无 GIL 争抢；DP 是单进程多线程、每步从主卡广播参数，主卡显存与带宽成为瓶颈。两者显存占用基本相同，都省不了显存。"
-        },
-        {
-          "id": "data-parallel-ddp-q2",
-          "type": "short",
-          "prompt": "为什么数据并行等价于单卡大 batch 训练？有什么前提？",
-          "answer": "参考回答：数据并行中各副本的初始参数相同，每张卡用局部数据算梯度，AllReduce 取平均后得到与把整个 global batch 放在一起算相同的平均梯度，因此参数更新完全一致。前提是模型内没有依赖 batch 统计量的层（如 BatchNorm 的 running stats），否则各卡统计量不同会破坏等价性；Transformer 使用 LayerNorm，满足该前提。",
-          "keywords": [
-            "梯度平均",
-            "参数一致",
-            "BatchNorm",
-            "LayerNorm"
-          ],
-          "explanation": "核心是「平均梯度等价」，加分项是点出 BatchNorm 会破坏等价性而 LayerNorm 不会。"
-        },
-        {
-          "id": "data-parallel-ddp-q3",
-          "type": "code",
-          "prompt": "补全 data_parallel_setup(rank, world_size)：初始化 NCCL 进程组、设置当前设备、用 DDP 包装模型并返回模型。",
-          "starterCode": "import os\nimport torch\nimport torch.distributed as dist\nfrom torch.nn.parallel import DistributedDataParallel as DDP\n\ndef data_parallel_setup(model, rank):\n    pass\n",
-          "solution": "import os\nimport torch\nimport torch.distributed as dist\nfrom torch.nn.parallel import DistributedDataParallel as DDP\n\ndef data_parallel_setup(model, rank):\n    dist.init_process_group(backend='nccl')\n    torch.cuda.set_device(rank)\n    model = model.to(rank)\n    return DDP(model, device_ids=[rank])\n",
-          "checks": [
-            "init_process_group",
-            "set_device",
-            "DDP("
-          ],
-          "explanation": "三步：初始化 NCCL 进程组、把模型搬到本卡、用 DDP 包装并指定 device_ids。"
-        }
-      ]
-    },
-    {
-      "slug": "model-pipeline-parallel",
-      "title": "模型并行与流水线并行",
-      "order": 5,
-      "module": "分布式训练",
-      "difficulty": "高阶",
-      "estimatedMinutes": 55,
-      "summary": "张量并行把矩阵切到多卡（通信密集、需 NVLink），流水线并行把层切成阶段（通信稀疏、有气泡），Megatron 用三维并行训千亿模型。",
-      "intuition": "模型大到一张卡装不下，就得拆。两种拆法：张量并行像把一道大菜分成 8 个灶台同时炒，每一步都要互相递食材（通信频繁，但必须在一个机箱里用 NVLink 才够快）；流水线并行像工厂流水线，第 1 个人拧螺丝、第 2 个人装外壳、第 3 个人贴标签，件货在工位间传递的次数少得多（通信稀疏），但刚开工和快收工时总有人在等——这段等待就是「气泡」。工程上通常先用流水线把模型摊到多机，机内再用张量并行榨带宽。",
-      "formal": "张量并行（TP，Megatron-LM）：把 Linear 权重按列/行切分，列切分后接 GeLU 无需通信，行切分后需一次 AllReduce，因此每层前向 2 次、反向 2 次 AllReduce，通信量约 2×激活×字节数，必须放在 NVLink（同机 8 卡 600GB/s）域内。流水线并行（PP）：把 L 层切成 P 个 stage，micro-batch 数 M，气泡占比约 (P-1)/(M+P-1)，M 取 4P 以上可把气泡压到 15% 以内；激活在 stage 间点对点传输，常用 1F1B 调度。典型配置：TP=8 机内、PP=4~16 跨机、DP 补足剩余卡数，例如 96 卡训 175B 用 TP=8、PP=6、DP=2。",
-      "formula": "\\text{bubble} \\approx \\frac{P-1}{M+P-1}, \\qquad N_{\\text{gpu}} = N_{\\text{TP}} \\times N_{\\text{PP}} \\times N_{\\text{DP}}",
-      "aiConnection": "面试常问：「给你 8 张 A100 训 13B 用什么并行策略？」——13B fp16 权重 26GB、优化器状态上百 GB，单卡放不下，常见答案是 TP=4/PP=2 或直接用 ZeRO-3/FSDP，而不是硬上 PP。工作中要能算清三件事：TP 是否超出单机 NVLink 域（跨机会慢 5~10 倍）、PP 的 micro-batch 够不够填满流水线、以及 checkpoint 怎么按 TP/PP 维度重切（换个并行度继续训是常见需求）。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "pipeline_stage.py",
-        "code": "import torch\nimport torch.nn as nn\n\nclass Block(nn.Module):\n    def __init__(self, d):\n        super().__init__()\n        self.net = nn.Sequential(nn.Linear(d, 4 * d), nn.GELU(), nn.Linear(4 * d, d), nn.LayerNorm(d))\n\n    def forward(self, x):\n        return x + self.net(x)\n\nclass PipelineStage(nn.Module):\n    # 只持有全局第 [start, end) 层的 Transformer 块\n    def __init__(self, d, n_layers, start, end):\n        super().__init__()\n        self.layers = nn.ModuleList([Block(d) for _ in range(end - start)])\n\n    def forward(self, x):\n        for layer in self.layers:\n            x = layer(x)\n        return x\n\ndef split_layers(n_layers, n_stages):\n    base, rest = divmod(n_layers, n_stages)\n    bounds, cur = [], 0\n    for i in range(n_stages):\n        size = base + (1 if i < rest else 0)\n        bounds.append((cur, cur + size))\n        cur += size\n    return bounds\n\nif __name__ == '__main__':\n    d, n_layers, n_stages = 64, 24, 4\n    bounds = split_layers(n_layers, n_stages)\n    stages = [PipelineStage(d, n_layers, s, e) for s, e in bounds]\n    print('各 stage 层数区间:', bounds)\n    x = torch.randn(2, 8, d)\n    for i, st in enumerate(stages):\n        x = st(x)\n    print('流水线末端输出:', tuple(x.shape))\n    print('气泡占比 (M=8):', round((n_stages - 1) / (8 + n_stages - 1), 3))"
-      },
-      "mistakes": [
-        "把 TP 跨机部署，AllReduce 走以太网，单步通信时间比计算还长",
-        "micro-batch 数小于 stage 数，流水线长期填充排空，利用率低",
-        "层切分不均匀，整体速度由最慢的 stage 决定，其余 stage 空等",
-        "以为 PP 能减少总显存需求，忽略了激活在 stage 间的传输与保存开销"
-      ],
-      "interviewPoints": [
-        "「给你 8 张 A100 80G 训 13B 模型，你会选 TP、PP、ZeRO 还是组合？把显存账算给我听。」",
-        "「张量并行一个 Transformer 层需要几次 AllReduce？为什么列切分后不需要通信？」",
-        "「流水线并行的气泡是怎么产生的？M 和 P 满足什么关系时气泡可忽略？」",
-        "「TP 为什么必须在 NVLink 域内？跨机 TP 的性能损失大概是多少量级？」"
-      ],
-      "resources": [
-        {
-          "title": "Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism",
-          "url": "https://arxiv.org/abs/1909.08053"
-        },
-        {
-          "title": "Efficient Large-Scale Language Model Training on GPU Clusters (PTD-P)",
-          "url": "https://arxiv.org/abs/2104.04473"
-        },
-        {
-          "title": "NVIDIA Megatron-LM 代码仓库",
-          "url": "https://github.com/NVIDIA/Megatron-LM"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "model-pipeline-parallel-q1",
-          "type": "choice",
-          "prompt": "流水线并行的气泡占比 (P-1)/(M+P-1) 中，增大 M（micro-batch 数）的效果是？",
-          "options": [
-            "气泡占比增大",
-            "气泡占比减小但单次 micro-batch 变小、显存峰值下降",
-            "气泡占比不变",
-            "完全消除通信开销"
-          ],
-          "answerIndex": 1,
-          "explanation": "M 越大，填充/排空占总时间比例越低，气泡越小；但 micro-batch 变小会使每卡计算粒度变细、kernel 效率下降，因此通常取 M≈4P。"
-        },
-        {
-          "id": "model-pipeline-parallel-q2",
-          "type": "short",
-          "prompt": "张量并行和流水线并行的通信特性有何本质区别？分别适合什么网络环境？",
-          "answer": "参考回答：张量并行在每个 Transformer 层内部就产生通信（前向反向各两次 AllReduce），通信频繁、单次数据量小、对延迟极敏感，必须放在同机 NVLink 域内。流水线并行只在 stage 边界传输激活，通信稀疏、单次数据量大、对带宽要求相对低，可以跨机甚至跨机房部署。因此常见组合是机内 TP、跨机 PP、再叠加 DP。",
-          "keywords": [
-            "层内通信",
-            "AllReduce",
-            "stage 边界",
-            "NVLink"
-          ],
-          "explanation": "得分点是「TP 通信在层内、频繁且延迟敏感」与「PP 通信在边界、稀疏且可跨机」这一对比。"
-        },
-        {
-          "id": "model-pipeline-parallel-q3",
-          "type": "code",
-          "prompt": "实现 split_layers(n_layers, n_stages)：把 n_layers 层尽量均匀地分给 n_stages 个 stage，返回 [(start, end), ...] 列表。",
-          "starterCode": "def split_layers(n_layers, n_stages):\n    pass\n",
-          "solution": "def split_layers(n_layers, n_stages):\n    base, rest = divmod(n_layers, n_stages)\n    bounds, cur = [], 0\n    for i in range(n_stages):\n        size = base + (1 if i < rest else 0)\n        bounds.append((cur, cur + size))\n        cur += size\n    return bounds\n\nprint(split_layers(24, 4))\n",
-          "checks": [
-            "divmod",
-            "bounds.append",
-            "cur + size"
-          ],
-          "explanation": "用 divmod 算出每段基准层数与余数，前 rest 个 stage 各多分一层，保证最慢 stage 与最快 stage 相差不超过 1 层。"
-        }
-      ]
-    },
-    {
-      "slug": "zero-fsdp",
-      "title": "ZeRO 与 FSDP 显存分片",
-      "order": 6,
-      "module": "分布式训练",
-      "difficulty": "高阶",
-      "estimatedMinutes": 55,
-      "summary": "ZeRO 把优化器状态、梯度、参数按数据并行度切开存到各卡，用「用时通信、不用就扔」换显存；FSDP 是 PyTorch 原生的 ZeRO-3。",
-      "intuition": "数据并行里每张卡都存了一份完整模型和完整优化器状态，8 张卡存了 8 份一模一样的东西，纯属浪费。ZeRO 的想法像合租：每个人的房间只放自己那份行李（分片），要用的时候喊一声，室友把缺的部分递过来（AllGather），用完立刻还回去。省下了大量空间，代价是喊话的次数变多了——所以 ZeRO-3 通信量最高、ZeRO-1 最低。另一个副作用是每张卡随时只握着 1/N 的参数，想在训练中途做推理或存完整权重都要先 gather 回来。",
-      "formal": "ZeRO 分三级：Stage-1 只切优化器状态（fp32 主权重 + Adam 的 m/v），每卡显存从 16\\Psi 降到 4\\Psi + 12\\Psi/N；Stage-2 再切梯度，约 2\\Psi + 14\\Psi/N；Stage-3 连参数也切，约 16\\Psi/N，但每层前向/反向都要 AllGather 参数、反向后再 ReduceScatter 梯度。以 \\Psi=7B 为例（bf16 权重 + fp32 Adam）：不分片约 14GB 权重 + 14GB 梯度 + 84GB 优化器状态 ≈ 112GB；ZeRO-3 在 8 卡上每卡约 14GB，单卡 24GB 可跑。代价是通信量：ZeRO-3 每步约 3×参数量，是纯 DDP 的 1.5 倍。",
-      "formula": "M_{\\text{ZeRO-1}} \\approx 4\\Psi + \\frac{12\\Psi}{N}, \\qquad M_{\\text{ZeRO-3}} \\approx \\frac{16\\Psi}{N} + M_{\\text{act}}",
-      "aiConnection": "面试高频：「7B 全量微调需要多少显存」「DeepSpeed 和 FSDP 怎么选」。决策路径：单卡装得下就 DDP；单卡装不下但 8 卡够 → FSDP FULL_SHARD；只有一两张卡 → QLoRA 而不是硬扛 ZeRO-3；跨多机要吞吐 → DeepSpeed ZeRO-2 或 Megatron 三维并行。两个必知坑：FSDP 的 state_dict 默认分片，保存/加载要显式指定；no_sync 可跳过中间 micro-step 的同步，省一半通信。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "fsdp_train.py",
-        "code": "# 运行: torchrun --nproc_per_node=8 fsdp_train.py\nimport functools\nimport os\nimport torch\nimport torch.distributed as dist\nimport torch.nn as nn\nfrom torch.distributed.fsdp import FullyShardedDataParallel as FSDP\nfrom torch.distributed.fsdp.wrap import transformer_auto_wrap_policy\nfrom torch.distributed.fsdp import MixedPrecision, ShardingStrategy\n\nclass Block(nn.Module):\n    def __init__(self, d):\n        super().__init__()\n        self.net = nn.Sequential(nn.Linear(d, 4 * d), nn.GELU(), nn.Linear(4 * d, d), nn.LayerNorm(d))\n\n    def forward(self, x):\n        return x + self.net(x)\n\nclass TinyLM(nn.Module):\n    def __init__(self, d=256, n_layers=8, vocab=1000):\n        super().__init__()\n        self.emb = nn.Embedding(vocab, d)\n        self.blocks = nn.ModuleList([Block(d) for _ in range(n_layers)])\n        self.head = nn.Linear(d, vocab)\n\n    def forward(self, ids):\n        x = self.emb(ids)\n        for b in self.blocks:\n            x = b(x)\n        return self.head(x)\n\ndef main():\n    dist.init_process_group(backend='nccl')\n    rank = int(os.environ['LOCAL_RANK'])\n    torch.cuda.set_device(rank)\n    model = TinyLM().to(rank)\n    policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={Block})\n    model = FSDP(model, auto_wrap_policy=policy,\n                 sharding_strategy=ShardingStrategy.FULL_SHARD,   # ZeRO-3 等价\n                 mixed_precision=MixedPrecision(param_dtype=torch.bfloat16,\n                                                reduce_dtype=torch.bfloat16),\n                 device_id=rank)\n    opt = torch.optim.AdamW(model.parameters(), lr=1e-4)\n    ids = torch.randint(0, 1000, (4, 128), device=rank)\n    loss = nn.functional.cross_entropy(model(ids).view(-1, 1000), ids.view(-1))\n    loss.backward()          # 反向中 ReduceScatter 梯度，参数用完即释放\n    opt.step()\n    opt.zero_grad(set_to_none=True)\n    if rank == 0:\n        print('loss', round(loss.item(), 4))\n    dist.destroy_process_group()\n\nif __name__ == '__main__':\n    main()"
-      },
-      "mistakes": [
-        "不分场景直接上 ZeRO-3，通信量比 ZeRO-2 高 50%，更慢",
-        "FSDP 下用默认 state_dict 保存权重，得到分片文件，推理时加载失败",
-        "忘记 auto_wrap_policy，模型打成一个 FlatParameter",
-        "开 CPU offload 没评估 PCIe 带宽，训练速度掉到 1/3"
-      ],
-      "interviewPoints": [
-        "「ZeRO 的 Stage-1/2/3 分别切了什么？每张卡的显存各是多少？通信量怎么变化？」",
-        "「7B 模型全量微调要多少显存？用 8 张 A100 怎么配 ZeRO/FSDP 才能跑起来？」",
-        "「FSDP 和 DeepSpeed ZeRO-3 有什么区别？生产上你选哪个，为什么？」",
-        "「梯度累积时 FSDP 怎么省通信？no_sync 的作用是什么？」"
-      ],
-      "resources": [
-        {
-          "title": "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models",
-          "url": "https://arxiv.org/abs/1910.02054"
-        },
-        {
-          "title": "PyTorch FSDP 官方文档与分片策略说明",
-          "url": "https://pytorch.org/docs/stable/fsdp.html"
-        },
-        {
-          "title": "DeepSpeed ZeRO 教程与配置项",
-          "url": "https://www.deepspeed.ai/tutorials/zero/"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "zero-fsdp-q1",
-          "type": "choice",
-          "prompt": "ZeRO Stage-2 相比 Stage-1 多切分的是？",
-          "options": [
-            "优化器状态",
-            "梯度",
-            "模型参数",
-            "激活值"
-          ],
-          "answerIndex": 1,
-          "explanation": "ZeRO-1 切优化器状态，ZeRO-2 在此外再切梯度，ZeRO-3 连参数也切。激活值由梯度检查点等激活重算技术处理，不属于 ZeRO 的分片对象。"
-        },
-        {
-          "id": "zero-fsdp-q2",
-          "type": "short",
-          "prompt": "ZeRO-3/FSDP 用显存换来了什么代价？工程上如何缓解？",
-          "answer": "参考回答：代价是通信量增加——每层前向和反向都要 AllGather 参数、反向结束再 ReduceScatter 梯度，每步通信量约为参数量的 3 倍，是纯 DDP 的 1.5 倍。缓解手段包括：把若干层打平成一个 FlatParameter 做批量通信、用 no_sync 在梯度累积的中间步跳过同步、只在跨机维度复制而机内分片（HSDP），以及在通信瓶颈明显时退回 ZeRO-2。",
-          "keywords": [
-            "通信量增加",
-            "AllGather",
-            "no_sync",
-            "HSDP"
-          ],
-          "explanation": "必须点出「通信量变成约 3 倍」这个量化结论，再给至少一种具体缓解手段。"
-        },
-        {
-          "id": "zero-fsdp-q3",
-          "type": "code",
-          "prompt": "实现 zero_stage_memory(n_params, n_gpu, stage)：按 16Ψ 总开销计算各 ZeRO stage 下每卡显存（GB，Ψ 以参数量计，混合精度 + fp32 Adam）。stage=0 表示不分片，1 切优化器，2 再切梯度，3 全切。",
-          "starterCode": "def zero_stage_memory(n_params, n_gpu, stage):\n    # 返回每卡显存 GB（1 参数 = 2B 权重/梯度 + 12B 优化器状态）\n    pass\n",
-          "solution": "def zero_stage_memory(n_params, n_gpu, stage):\n    p = n_params\n    if stage == 0:\n        return 16 * p / 1e9\n    if stage == 1:\n        return (4 * p + 12 * p / n_gpu) / 1e9\n    if stage == 2:\n        return (2 * p + 14 * p / n_gpu) / 1e9\n    return 16 * p / n_gpu / 1e9\n\nprint(round(zero_stage_memory(7e9, 8, 0), 1), 'GB per GPU (stage 0)')\nprint(round(zero_stage_memory(7e9, 8, 3), 1), 'GB per GPU (stage 3)')\n",
-          "checks": [
-            "12 * p / n_gpu",
-            "16 * p / n_gpu"
-          ],
-          "explanation": "权重 2B + 梯度 2B + 优化器状态 12B 共 16B/参数；stage 越大被 N 除的项越多，stage-3 时全部除以 N。"
-        }
-      ]
-    },
-    {
-      "slug": "mixed-precision-memory",
-      "title": "混合精度与显存账本",
-      "order": 7,
-      "module": "分布式训练",
-      "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "bf16 与 fp32 同指数范围，不需 loss scaling，但仍要维护 fp32 主权重与 Adam 状态，显存账本 = 权重 + 梯度 + 优化器。",
-      "intuition": "显存就像行李箱，装不下就出不了门。7B 模型光权重 fp16 就要 14GB，听起来还好，但 Adam 会给每个参数额外配两个 fp32 的「动量」和「方差」，再加一份 fp32 主权重——每个参数 12 字节，7B 就是 84GB。还没算梯度、激活值和通信缓冲，合计接近 112GB，一张 80G 卡直接爆。所以「能不能训」的第一道算术题永远是：权重、梯度、优化器状态各占多少，激活值随 batch 和序列长度线性涨多少，然后才轮到并行策略出场。",
-      "formal": "混合精度训练保存两份参数：低精度（bf16/fp16）副本用于前向反向，fp32 主权重用于更新，避免小更新被舍入吃掉。fp16 只有 5 位指数，动态范围约 6e-5~65504，梯度下溢需要动态 loss scaling（无 inf 时逐步翻倍，遇 inf 减半并跳过该步）；bf16 有 8 位指数、与 fp32 同范围，因此默认用 bf16 且无需 scaler。显存账本（\\Psi 为参数量、）：bf16 权重 2\\Psi、fp32 主权重 4\\Psi、梯度 2\\Psi、Adam m/v 共 8\\Psi，合计 16\\Psi，7B 即 112GB。激活随序列长度近似平方增长，gradient checkpointing 可大幅降低它，代价是重算使单步慢约 30%。",
-      "formula": "M_{\\text{total}} \\approx \\underbrace{2\\Psi}_{\\text{bf16 权重}} + \\underbrace{4\\Psi}_{\\text{fp32 主权重}} + \\underbrace{2\\Psi}_{\\text{梯度}} + \\underbrace{8\\Psi}_{\\text{Adam } m,v} + M_{\\text{act}} + M_{\\text{comm}}",
-      "aiConnection": "这是面试和工作的通用起手式：「给你 8 张 A100 80G 训 13B 模型，显存怎么算、用哪种并行策略」。你要能在白板上写出 13B 的账：bf16 权重 26GB、fp32 主权重 52GB、梯度 26GB、Adam 104GB，合计约 208GB；8 卡平均 26GB/卡，加激活后单卡顶到 60GB，于是要么用 FSDP/ZeRO 切优化器状态，要么减小 micro batch。它也能解释现象：序列从 2K 提到 8K 就 OOM，checkpointing 能救但掉三成吞吐。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "memory_ledger.py",
-        "code": "def memory_ledger(n_params, n_layers, d_model, seq_len, micro_batch, n_gpu=1,\n                  precision_bytes=2, zero_stage=0, checkpointing=False):\n    P = n_params\n    weights = precision_bytes * P\n    master = 4 * P                       # fp32 主权重\n    grads = precision_bytes * P\n    adam = 8 * P                         # m 与 v 各 4 字节\n    opt_shard = adam / n_gpu if zero_stage >= 1 else adam\n    grad_shard = grads / n_gpu if zero_stage >= 2 else grads\n    param_shard = weights / n_gpu if zero_stage >= 3 else weights\n    # 激活：每层约 B*L*d*(10 + 24/TP) 字节，checkpointing 后按 sqrt(L) 折减\n    act = micro_batch * seq_len * d_model * 34 * n_layers\n    if checkpointing:\n        act = act / (n_layers ** 0.5)\n    total = param_shard + master / n_gpu + grad_shard + opt_shard + act\n    return {k: round(v / 1e9, 2) for k, v in {\n        '权重': param_shard, '主权重': master / n_gpu, '梯度': grad_shard,\n        '优化器状态': opt_shard, '激活': act, '合计GB': total}.items()}\n\nif __name__ == '__main__':\n    for stage in (0, 2, 3):\n        m = memory_ledger(7e9, 32, 4096, 2048, 1, n_gpu=8, zero_stage=stage, checkpointing=True)\n        print(f'ZeRO-{stage} 每卡:', m)\n    print('单卡 fp16 权重(7B):', round(2 * 7e9 / 1e9, 1), 'GB')\n    print('单卡 Adam 状态(7B):', round(8 * 7e9 / 1e9, 1), 'GB')"
-      },
-      "mistakes": [
-        "只算权重不算优化器状态，估出「7B 只要 14GB 就能全量微调」的结论",
-        "用 fp16 却忘记配 loss scaler，梯度下溢导致 loss 不降",
-        "序列长度翻倍时没同步减小 micro batch，激活近似平方增长直接 OOM",
-        "把 gradient checkpointing 当免费午餐，忽略 30% 吞吐"
-      ],
-      "interviewPoints": [
-        "「7B 模型 fp16 权重多大？Adam 优化器状态多大？全量微调总共要多少显存？」",
-        "「bf16 和 fp16 的区别是什么？为什么 bf16 不需要 loss scaling？」",
-        "「激活值占多少显存？和序列长度是什么关系？gradient checkpointing 怎么起作用？」",
-        "「8 张 A100 80G 训 13B，显存怎么分配、用哪种并行策略？把账算一遍。」"
-      ],
-      "resources": [
-        {
-          "title": "Mixed Precision Training (Micikevicius et al., 2017)",
-          "url": "https://arxiv.org/abs/1710.03740"
-        },
-        {
-          "title": "HuggingFace：Model training anatomy（显存构成详解）",
-          "url": "https://huggingface.co/docs/transformers/model_memory_anatomy"
-        },
-        {
-          "title": "PyTorch AMP 官方文档",
-          "url": "https://pytorch.org/docs/stable/amp.html"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "mixed-precision-memory-q1",
-          "type": "choice",
-          "prompt": "7B 模型使用 bf16 混合精度 + fp32 Adam 全量微调，优化器状态（主权重 + m + v）约占多少显存？",
-          "options": [
-            "14GB",
-            "28GB",
-            "84GB",
-            "112GB"
-          ],
-          "answerIndex": 2,
-          "explanation": "每个参数的优化器开销是 fp32 主权重 4B + m 4B + v 4B = 12B，7e9 × 12 = 84GB。14GB 只是 bf16 权重，28GB 是权重加梯度。"
-        },
-        {
-          "id": "mixed-precision-memory-q2",
-          "type": "short",
-          "prompt": "为什么 bf16 训练通常不需要 loss scaling，而 fp16 需要？",
-          "answer": "参考回答：fp16 只有 5 位指数，动态范围约 6e-5 到 65504，反向传播中的小梯度容易下溢为 0，因此要把 loss 放大若干倍再反传、更新前再缩回来（动态 loss scaling 遇 inf 就减半）。bf16 有 8 位指数，与 fp32 的动态范围一致，只是尾数精度较低，不会下溢，因此在 A100 及以上硬件上直接用 bf16 即可，省掉了 scaler 的调参与不稳定。",
-          "keywords": [
-            "指数位",
-            "动态范围",
-            "下溢",
-            "scaler"
-          ],
-          "explanation": "关键是「fp16 指数位少导致梯度下溢」与「bf16 指数位与 fp32 相同」这两点。"
-        },
-        {
-          "id": "mixed-precision-memory-q3",
-          "type": "code",
-          "prompt": "实现 optimizer_memory_gb(n_params)：返回混合精度 + fp32 Adam 全量微调时，权重（bf16）、梯度（bf16）、fp32 主权重、Adam m/v 各自的 GB（以 1e9 为 GB）。",
-          "starterCode": "def optimizer_memory_gb(n_params):\n    # 返回 dict: weights, grads, master, adam_mv\n    pass\n",
-          "solution": "def optimizer_memory_gb(n_params):\n    return {\n        'weights': 2 * n_params / 1e9,\n        'grads': 2 * n_params / 1e9,\n        'master': 4 * n_params / 1e9,\n        'adam_mv': 8 * n_params / 1e9,\n    }\n\nprint(optimizer_memory_gb(7e9))\n",
-          "checks": [
-            "2 * n_params",
-            "4 * n_params",
-            "8 * n_params"
-          ],
-          "explanation": "bf16 每参数 2 字节（权重、梯度），fp32 主权重 4 字节，Adam 的 m 与 v 各 4 字节共 8 字节。"
-        }
-      ]
-    },
-    {
-      "slug": "collective-communication",
-      "title": "集合通信：AllReduce 与 NCCL",
-      "order": 8,
-      "module": "分布式训练",
-      "difficulty": "进阶",
-      "estimatedMinutes": 45,
-      "summary": "AllReduce 是分布式训练的默认原语，Ring 算法每卡只搬约 2S；NCCL 挑算法与拓扑，NVLink、IB、PCIe 带宽差 5~10 倍。",
-      "intuition": "8 个人要算出大家的平均分，最笨的办法是每个人都把 8 份分数收齐（每人搬 8 份）。Ring AllReduce 聪明得多：大家围成一圈，每人把手里的一份传给右边、同时收左边来的那份并累加，转 2 圈之后每个人手里都是完整的平均值——每人只搬了约 2 份数据。通信量因此与卡数几乎无关，这是分布式训练能扩展到几千卡的基础。真正拖慢训练的往往不是算法，而是硬件：机内 NVLink 600GB/s，跨机 InfiniBand 400Gb/s（约 50GB/s），走 PCIe 或以太网再降一个数量级。",
-      "formal": "常用原语：Broadcast（一对多）、AllReduce（规约后人人有完整结果）、ReduceScatter（规约后每人只留 1/N 分片）、AllGather（收集各卡分片）、All-to-All（每卡给每卡发不同数据，MoE 专家路由靠它）。Ring AllReduce 分 ReduceScatter + AllGather 两阶段，每卡传输量约 2S，带宽最优、延迟随 N 线性增长；小消息时 NCCL 改用 Tree 算法降延迟。ZeRO-3/FSDP 的每层 AllGather 就是典型小消息高频通信，对延迟敏感，FlatParameter 的打包粒度直接决定性能。NCCL 按拓扑优先 NVLink、跨机走 IB 的 RDMA，NCCL_DEBUG=INFO 是排查利器。",
-      "formula": "V_{\\text{ring}} = \\frac{2(N-1)}{N} S \\;\\xrightarrow{N \\gg 1}\\; 2S, \\qquad T \\approx \\frac{2S}{BW} + 2(N-1)\\cdot \\text{latency}",
-      "aiConnection": "训练卡住不动时，第一件事就是看是不是通信问题：NCCL_DEBUG=INFO 打印拓扑、nvidia-smi topo -m 看 NVLink 连接、nccl-tests 跑 all_reduce_perf 测实际带宽。面试常问「AllReduce 的通信量是多少」「为什么 TP 必须在机内」「MoE 为什么需要 All-to-All」。实际调优手段包括：梯度分桶大小、通信与计算重叠、把跨机 DP 放在机内 TP 之外、以及在大规模训练时用 NCCL 的拓扑感知配置避开拥塞的 IB 链路。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "bench_allreduce.py",
-        "code": "# 运行: torchrun --nproc_per_node=8 bench_allreduce.py\nimport os\nimport time\nimport torch\nimport torch.distributed as dist\n\ndef bench(size_mb, iters=20):\n    n = size_mb * 1024 * 1024 // 4          # fp32 元素数\n    tensor = torch.ones(n, device='cuda')\n    for _ in range(3):                       # 预热\n        dist.all_reduce(tensor)\n    torch.cuda.synchronize()\n    t0 = time.perf_counter()\n    for _ in range(iters):\n        dist.all_reduce(tensor)\n    torch.cuda.synchronize()\n    dt = (time.perf_counter() - t0) / iters\n    algbw = size_mb / 1024 / dt              # GB/s\n    busbw = algbw * 2 * (dist.get_world_size() - 1) / dist.get_world_size()\n    return dt * 1e3, algbw, busbw\n\ndef main():\n    dist.init_process_group(backend='nccl')\n    rank = int(os.environ['LOCAL_RANK'])\n    torch.cuda.set_device(rank)\n    if rank == 0:\n        print(f'world_size={dist.get_world_size()}')\n        print(f'{\"size(MB)\":>10} {\"time(ms)\":>10} {\"algbw(GB/s)\":>12} {\"busbw(GB/s)\":>12}')\n    for mb in (1, 16, 128, 512):\n        ms, algbw, busbw = bench(mb)\n        if rank == 0:\n            print(f'{mb:>10} {ms:>10.3f} {algbw:>12.2f} {busbw:>12.2f}')\n    dist.destroy_process_group()\n\nif __name__ == '__main__':\n    main()"
-      },
-      "mistakes": [
-        "把 AllReduce 的通信量算成 N×S，误判通信会成为瓶颈而不敢扩卡",
-        "跨机做张量并行，AllReduce 走 IB 而非 NVLink，单步被通信主导",
-        "测带宽只看 algbw 不看 busbw，低估 Ring 的实际效率",
-        "直接改 NCCL_ALGO 等环境变量，却不先看 NCCL_DEBUG 的拓扑"
-      ],
-      "interviewPoints": [
-        "「Ring AllReduce 每个 GPU 的通信量是多少？为什么与卡数无关？」",
-        "「ReduceScatter + AllGather 和直接 AllReduce 有什么关系？FSDP 为什么用前者？」",
-        "「MoE 训练为什么必须用 All-to-All？它的通信瓶颈在哪？」",
-        "「训练时 8 张卡里有一张卡慢，整体会怎样？你怎么定位是哪张卡的问题？」"
-      ],
-      "resources": [
-        {
-          "title": "Bringing HPC Techniques to Deep Learning（Baidu Ring AllReduce）",
-          "url": "https://andrew.gibiansky.com/blog/machine-learning/baidu-allreduce/"
-        },
-        {
-          "title": "NVIDIA NCCL 官方文档与调优指南",
-          "url": "https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/index.html"
-        },
-        {
-          "title": "NVIDIA nccl-tests 基准测试仓库",
-          "url": "https://github.com/NVIDIA/nccl-tests"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "collective-communication-q1",
-          "type": "choice",
-          "prompt": "N 张卡做 Ring AllReduce，单卡传输的数据量约为多少（S 为待规约数据量）？",
-          "options": [
-            "N×S",
-            "S",
-            "2(N-1)S/N ≈ 2S",
-            "S/N"
-          ],
-          "answerIndex": 2,
-          "explanation": "Ring AllReduce 由 ReduceScatter 与 AllGather 两阶段组成，每阶段各搬 (N-1)S/N，合计约 2S，与卡数基本无关，这正是它可扩展的原因。"
-        },
-        {
-          "id": "collective-communication-q2",
-          "type": "short",
-          "prompt": "ReduceScatter 和 AllReduce 有什么区别？各自适合什么场景？",
-          "answer": "参考回答：AllReduce 规约后每张卡都拿到完整结果，适合数据并行里同步完整梯度。ReduceScatter 规约后每张卡只保留结果的 1/N 分片，适合「只要自己那一份」的场景，例如 ZeRO-2/FSDP 把梯度分片归约到各卡。AllReduce 可视为 ReduceScatter 加 AllGather，通信量相同但中间多一步；FSDP 在反向中直接用 ReduceScatter 就是为了省掉多余的 AllGather。",
-          "keywords": [
-            "分片",
-            "1/N",
-            "ReduceScatter+AllGather",
-            "梯度分片"
-          ],
-          "explanation": "要点是「结果是否人人有完整副本」，以及 AllReduce = ReduceScatter + AllGather 这一等价关系。"
-        },
-        {
-          "id": "collective-communication-q3",
-          "type": "code",
-          "prompt": "实现 ring_allreduce_busbw(size_bytes, time_seconds, world_size)：返回总线带宽（GB/s），公式为 algbw × 2(N-1)/N。",
-          "starterCode": "def ring_allreduce_busbw(size_bytes, time_seconds, world_size):\n    pass\n",
-          "solution": "def ring_allreduce_busbw(size_bytes, time_seconds, world_size):\n    algbw = size_bytes / time_seconds / 1e9\n    return algbw * 2 * (world_size - 1) / world_size\n\nprint(round(ring_allreduce_busbw(128 * 1024 * 1024, 0.004, 8), 2), 'GB/s')\n",
-          "checks": [
-            "2 * (world_size - 1)",
-            "size_bytes / time_seconds"
-          ],
-          "explanation": "先用数据量除以时间得到算法带宽，再乘 Ring 算法的修正因子 2(N-1)/N 得到总线带宽。"
-        }
-      ]
-    },
-    {
-      "slug": "sft-instruction",
-      "title": "指令微调 SFT",
-      "order": 9,
-      "module": "微调与对齐",
-      "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "SFT 用「指令-回答」数据把预训练模型变成会听指令的助手，关键在数据质量、loss 只算回答、以及 1e-5 量级的小学习率。",
-      "intuition": "预训练完的模型像个读遍全书的书呆子：你问它问题，它可能接着往下编，而不是回答你。SFT 就是教它「有人问你话时要作答」这件事——用几万条「指令 → 理想回答」的示范，把它从续写机器调成助手。有意思的是数据量并不需要很多：LIMA 只用 1000 条精挑细选的样本就显著改善了指令跟随能力，说明 SFT 更多是在「唤起」预训练里已有的能力，而不是灌新知识。所以质量远比数量重要，一条垃圾数据会教坏一个行为模式。",
-      "formal": "SFT 沿用自回归交叉熵损失，但把 prompt 区间的 label 置为 -100 使其不参与梯度，损失对有效 token 数归一化。数据通常构造成对话模板（如 Llama 3 的 header 格式），多轮对话把历史轮次拼进上下文，只在 assistant 回复上算 loss。超参经验值：学习率 1e-5~2e-5（比预训练小一个数量级，防止灾难性遗忘）、2~3 个 epoch（再多容易过拟合与复读）、cosine 调度 + 3% warmup、global batch 32~128、序列长度按数据分位数截断。评估要看指令跟随率与人工偏好，而不是只看 loss。",
-      "formula": "\\mathcal{L}_{\\text{SFT}} = -\\frac{1}{\\sum_t m_t}\\sum_{t=1}^{T} m_t \\log p_\\theta(y_t \\mid x, y_{<t}), \\quad m_t = 0 \\text{ 当 } t \\in \\text{prompt}",
-      "aiConnection": "这是算法岗入职后最可能第一个独立负责的任务：「给你 5 万条业务对话，微调一个客服模型」。你要会做数据侧的判断——去重、剔除模板化回答、控制回答长度分布、按任务类型分层采样；也要会做训练侧的取舍——7B 全量 SFT 用 8×A100 约几小时，LoRA 用单卡 24G 也能跑但上限略低；还要会排查典型故障：模型开始复读用户问题（loss 没屏蔽 prompt）、回答变得极短（数据里短回答占比过高）、通用能力明显退化（学习率过大或 epoch 过多）。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "sft_train.py",
-        "code": "from datasets import Dataset\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\nfrom trl import SFTConfig, SFTTrainer\n\nMODEL = 'Qwen/Qwen2.5-0.5B-Instruct'\n\ntokenizer = AutoTokenizer.from_pretrained(MODEL)\nmodel = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype='bfloat16', device_map='auto')\n\nraw = [\n    {'messages': [{'role': 'user', 'content': '用一句话解释什么是 KV Cache。'},\n                  {'role': 'assistant', 'content': 'KV Cache 缓存历史 token 的 Key/Value 避免重复计算，显存 ≈ 2×层数×序列×维度×字节；PagedAttention 把碎片压到 4%'}]},\n    {'messages': [{'role': 'user', 'content': 'LoRA 相比全量微调省在哪里？'},\n                  {'role': 'assistant', 'content': 'LoRA 只训练低秩增量矩阵 B 和 A，可训练参数约占 0.1%~1%，优化器状态与梯度显存同步下降。'}]},\n] * 64\nds = Dataset.from_list(raw)\n\ndef to_text(example):\n    return {'text': tokenizer.apply_chat_template(example['messages'], tokenize=False)}\n\nds = ds.map(to_text)\n\ncfg = SFTConfig(\n    output_dir='./sft_out',\n    num_train_epochs=2,\n    per_device_train_batch_size=2,\n    gradient_accumulation_steps=8,\n    learning_rate=1e-5,\n    lr_scheduler_type='cosine',\n    warmup_ratio=0.03,\n    bf16=True,\n    max_length=512,\n    packing=True,\n    logging_steps=5,\n    save_strategy='epoch',\n    report_to='none',\n)\n\ntrainer = SFTTrainer(model=model, args=cfg, train_dataset=ds, processing_class=tokenizer)\ntrainer.train()\ntrainer.save_model('./sft_out/final')\nprint('trainable params:', sum(p.numel() for p in model.parameters() if p.requires_grad))"
-      },
-      "mistakes": [
-        "prompt 部分没有屏蔽 loss，模型学会复述问题而不是回答",
-        "学习率沿用预训练的 3e-4，几步之后通用能力崩塌、模型开始胡言乱语",
-        "数据里短回答占比过高，微调后模型一律只答一句话，信息量骤降",
-        "训练超过 5 个 epoch，模型开始逐字复读训练集里的句子"
-      ],
-      "interviewPoints": [
-        "「SFT 的学习率为什么比预训练小一个数量级？调大会发生什么？」",
-        "「SFT 数据是越多越好吗？LIMA 的结论对工程实践意味着什么？」",
-        "「多轮对话 SFT 时 loss 应该算在哪几轮上？历史轮次的 loss 要不要算？」",
-        "「SFT 后模型只会答一句话，你怎么从数据侧和训练侧分别定位原因？」"
-      ],
-      "resources": [
-        {
-          "title": "LIMA: Less Is More for Alignment",
-          "url": "https://arxiv.org/abs/2305.11206"
-        },
-        {
-          "title": "TRL SFTTrainer 官方文档",
-          "url": "https://huggingface.co/docs/trl/sft_trainer"
-        },
-        {
-          "title": "Training language models to follow instructions with human feedback (InstructGPT)",
-          "url": "https://arxiv.org/abs/2203.02155"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "sft-instruction-q1",
-          "type": "choice",
-          "prompt": "SFT 阶段最典型的学习率设置是？",
-          "options": [
-            "3e-4",
-            "1e-5 到 2e-5",
-            "1e-2",
-            "0.1"
-          ],
-          "answerIndex": 1,
-          "explanation": "SFT 数据量远小于预训练，学习率需比预训练（约 3e-4）小一个数量级，取 1e-5~2e-5，避免灾难性遗忘与过拟合；1e-2 及以上会导致训练发散。"
-        },
-        {
-          "id": "sft-instruction-q2",
-          "type": "short",
-          "prompt": "SFT 数据质量和数量哪个更重要？怎么在实践中体现？",
-          "answer": "参考回答：质量更重要。LIMA 用 1000 条高质量样本就取得明显效果，说明 SFT 主要是在唤起预训练已具备的能力，而非注入新知识。实践上要先做去重与模板化回答剔除、控制回答长度与风格分布、按任务类型分层采样，宁可几千条精标也不要几万条带噪声的数据；同时用 2~3 个 epoch 与较小学习率，配合人工偏好评估而非只看 loss。",
-          "keywords": [
-            "LIMA",
-            "唤起能力",
-            "去重",
-            "分层采样"
-          ],
-          "explanation": "必须给出「质量优先」的明确判断，并能引用 LIMA 或指出 SFT 是唤起而非注入知识。"
-        },
-        {
-          "id": "sft-instruction-q3",
-          "type": "code",
-          "prompt": "实现 mask_prompt_labels(input_ids, prompt_len)：把序列前 prompt_len 个位置的 label 置为 -100，其余位置 label 等于对应 token id，返回 labels 列表。",
-          "starterCode": "def mask_prompt_labels(input_ids, prompt_len):\n    pass\n",
-          "solution": "def mask_prompt_labels(input_ids, prompt_len):\n    labels = list(input_ids)\n    for i in range(min(prompt_len, len(labels))):\n        labels[i] = -100\n    return labels\n\nprint(mask_prompt_labels([1, 2, 3, 4, 5], 2))\n",
-          "checks": [
-            "-100",
-            "range(",
-            "list(input_ids)"
-          ],
-          "explanation": "复制输入作为标签，再把 prompt 区间的前 prompt_len 个位置改成 -100，交叉熵的 ignore_index 会跳过它们。"
-        }
-      ]
-    },
-    {
-      "slug": "lora-qlora",
-      "title": "LoRA、QLoRA 与 PEFT",
-      "order": 10,
-      "module": "微调与对齐",
-      "difficulty": "进阶",
-      "estimatedMinutes": 55,
-      "summary": "LoRA 冻结原权重、只训练低秩增量 W' = W + BA，可训练参数占 0.1%~1%；QLoRA 把基座量化到 4bit，7B 微调能进单张 24G 卡。",
-      "intuition": "全量微调像给整栋楼重新装修：效果最好，但要把所有家具搬出来（每参数 12 字节的优化器状态），7B 就要 84GB。LoRA 的做法是「不拆墙，只贴装饰板」：原权重一动不动，只在旁边挂两块小矩阵 A 和 B，它们的乘积就是这次微调的改动量。因为改动量本身是低秩的，两块小板加起来可能只有几百万参数，占全模型 0.1%~1%，优化器状态也就跟着缩到几百 MB。QLoRA 更进一步：连底座都用 4bit 存，7B 只占约 3.5GB，于是单张 24G 卡就能微调 7B——这是个人开发者和小团队最常用的路线。",
-      "formal": "LoRA 把权重更新约束为低秩分解 \\Delta W = BA，其中 A \\in \\mathbb{R}^{r\\times k}、B \\in \\mathbb{R}^{d\\times r}，前向为 h = Wx + (\\alpha/r)BAx；A 高斯初始化、B 初始化为零，保证训练开始时 \\Delta W = 0，不破坏预训练行为。可训练参数量为 r(k+d) 每层，7B 的 q/k/v/o 在 r=16 时约 17M。\\alpha/r 是缩放系数，常设 \\alpha = 2r。QLoRA 在此之上：基座用 NF4 4bit 量化、双重量化再省约 0.37 bit/参数、paged optimizer 换出状态。代价是前向需反量化，训练比 bf16 LoRA 慢 30%~50%。",
-      "formula": "W' = W + \\frac{\\alpha}{r}BA, \\qquad |\\theta_{\\text{LoRA}}| = r \\sum_{\\text{target}} (d_{\\text{in}} + d_{\\text{out}})",
-      "aiConnection": "这是日常最常被要求落地的技术：「单卡 24G 微调一个 7B 模型」的标准答案就是 QLoRA。面试常问「LoRA 的秩怎么选」「为什么 B 初始化为 0」「QLoRA 比 LoRA 慢多少、为什么」。工作里要知道目标模块的选择（只调 q/v 省钱，调 q/k/v/o + gate/up/down 效果更好但参数翻几倍）、要不要给 embedding 和 lm_head 也加适配器（换语言或换词表时需要）、以及多个 LoRA 适配器如何动态加载与合并（一个底座服务多条业务线，省显存）。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "lora_qlora.py",
-        "code": "import torch\nfrom transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig\nfrom peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, PeftModel\n\nMODEL = 'Qwen/Qwen2.5-0.5B'\n\ndef build_qlora(rank=16, alpha=32):\n    bnb = BitsAndBytesConfig(\n        load_in_4bit=True,\n        bnb_4bit_quant_type='nf4',            # NF4 分位数量化\n        bnb_4bit_use_double_quant=True,       # 双重量化，再省约 0.37 bit/参数\n        bnb_4bit_compute_dtype=torch.bfloat16,\n    )\n    model = AutoModelForCausalLM.from_pretrained(MODEL, quantization_config=bnb, device_map='auto')\n    model = prepare_model_for_kbit_training(model)   # 冻结基座 + 开梯度检查点\n    cfg = LoraConfig(\n        r=rank, lora_alpha=alpha, lora_dropout=0.05,\n        target_modules=['q_proj', 'k_proj', 'v_proj', 'o_proj'],\n        bias='none', task_type='CAUSAL_LM',\n    )\n    return get_peft_model(model, cfg), model\n\ndef report(model):\n    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)\n    total = sum(p.numel() for p in model.parameters())\n    print(f'可训练参数 {trainable/1e6:.2f}M / 总参数 {total/1e6:.1f}M = {trainable/total*100:.3f}%')\n\nif __name__ == '__main__':\n    peft_model, base = build_qlora()\n    report(peft_model)\n    ids = AutoTokenizer.from_pretrained(MODEL)('LoRA 的原理是', return_tensors='pt').to(base.device)\n    out = peft_model(**ids)\n    print('logits:', tuple(out.logits.shape))\n    print('权重显存约:', round(base.get_memory_footprint() / 1e9, 2), 'GB (4bit)')\n    merged = peft_model.merge_and_unload()   # 推理时合并 BA 回 W，零额外延迟\n    print('合并后类型:', type(merged).__name__)"
-      },
-      "mistakes": [
-        "把 B 也随机初始化，训练初始就破坏预训练权重，loss 出现尖刺",
-        "rank 一味调大（如 256），参数量逼近全量微调，失去省显存的初衷",
-        "只调 q_proj/v_proj 却期待风格与知识大幅改变，误判 LoRA 无效",
-        "QLoRA 训练完不 merge 就上线推理，每步多付反量化开销"
-      ],
-      "interviewPoints": [
-        "「LoRA 为什么把 B 初始化为 0？A 用什么初始化？如果不这么做会怎样？」",
-        "「rank 和 alpha 分别控制什么？alpha/r 这个缩放系数的作用是什么？」",
-        "「QLoRA 的 NF4 与双重量化分别省了多少显存？代价是什么？」",
-        "「单张 24G 卡微调 7B 模型，你怎么配 QLoRA？显存账算一遍。」"
-      ],
-      "resources": [
-        {
-          "title": "LoRA: Low-Rank Adaptation of Large Language Models",
-          "url": "https://arxiv.org/abs/2106.09685"
-        },
-        {
-          "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
-          "url": "https://arxiv.org/abs/2305.14314"
-        },
-        {
-          "title": "HuggingFace PEFT 官方文档：LoRA 与量化配置",
-          "url": "https://huggingface.co/docs/peft/developer_guides/lora"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "lora-qlora-q1",
-          "type": "choice",
-          "prompt": "LoRA 中把 B 矩阵初始化为零的目的是？",
-          "options": [
-            "加快收敛速度",
-            "使训练开始时增量 BA 为零，不破坏预训练权重",
-            "减少显存占用",
-            "让 A 的梯度更大"
-          ],
-          "answerIndex": 1,
-          "explanation": "B=0 时 \\Delta W=BA=0，模型初始行为与预训练模型完全一致，训练从「零改动」平稳起步；若 B 随机初始化，初始就注入了噪声扰动，容易造成 loss 尖刺。"
-        },
-        {
-          "id": "lora-qlora-q2",
-          "type": "short",
-          "prompt": "QLoRA 相比普通 LoRA 省了哪些显存？代价是什么？",
-          "answer": "参考回答：QLoRA 把冻结的基座权重以 4bit NF4 存储，7B 模型权重从约 14GB 降到约 3.5GB；再对量化常数做双重量化，每参数再省约 0.37 bit；配合 paged optimizer 把优化器状态在显存尖峰时换出到 CPU。代价是前向计算需要反量化，训练速度比 bf16 LoRA 慢约 30%~50%，且量化误差会轻微影响最终效果；推理时可通过 merge_and_unload 把增量合并回权重以消除额外延迟。",
-          "keywords": [
-            "NF4",
-            "4bit",
-            "双重量化",
-            "反量化开销"
-          ],
-          "explanation": "要同时说出省显存的具体来源（4bit 权重、双重量化、paged optimizer）和速度代价。"
-        },
-        {
-          "id": "lora-qlora-q3",
-          "type": "code",
-          "prompt": "实现 lora_param_count(d_model, r, n_target_layers)：假设每个目标层是一个 d×d 的投影矩阵，LoRA 参数量为 r(d_in+d_out)，返回总可训练参数量。",
-          "starterCode": "def lora_param_count(d_model, r, n_target_layers):\n    pass\n",
-          "solution": "def lora_param_count(d_model, r, n_target_layers):\n    per_layer = r * (d_model + d_model)\n    return per_layer * n_target_layers\n\ntotal = 7e9\np = lora_param_count(4096, 16, 32 * 4)\nprint(f'{p/1e6:.2f}M, 占比 {p/total*100:.3f}%')\n",
-          "checks": [
-            "r * (d_model + d_model)",
-            "n_target_layers"
-          ],
-          "explanation": "每层 LoRA 由 A(r×d) 与 B(d×r) 组成共 r(d_in+d_out) 个参数，再乘以目标层数；7B 模型 q/k/v/o 共 128 层时约占 0.24%。"
-        }
-      ]
-    },
-    {
-      "slug": "rlhf-ppo",
-      "title": "RLHF 与 PPO",
-      "order": 11,
-      "module": "微调与对齐",
-      "difficulty": "高阶",
-      "estimatedMinutes": 60,
-      "summary": "RLHF 先用人类偏好训一个奖励模型，再用 PPO 优化策略，并用 KL 惩罚拴住策略不许跑离参考模型太远。",
-      "intuition": "SFT 教模型「照着示范做」，但示范只能告诉它什么是对的，没法告诉它「这个回答比那个更好一点」。RLHF 换个思路：先让人对成对的回答排序，训一个「打分老师」（奖励模型），再让模型不断生成、由打分老师给分、按分数改进自己。风险很明显——模型会学会钻空子讨好打分老师，输出一堆看起来热情实则空洞的话（reward hacking）。所以还要拴一根绳子：每一步都惩罚它偏离原始 SFT 模型太远，这根绳子就是 KL 惩罚。",
-      "formal": "三阶段：SFT → 奖励模型（RM）→ PPO。RM 用 Bradley-Terry 建模偏好概率 P(y_w \\succ y_l) = \\sigma(r(y_w) - r(y_l))，损失为 -\\log \\sigma(r_w - r_l)，通常把 SFT 模型的 lm_head 换成标量头，在成对数据上训 1 个 epoch。PPO 阶段同时驻留四个模型：策略、参考模型、奖励模型与价值网络，因此 7B 全量 PPO 的显存约为 SFT 的 4 倍，实践中常让策略与价值网络共享底座或用 LoRA 训策略。PPO 用裁剪限制单步更新幅度，奖励为 r_t = -\\beta \\log(\\pi_\\theta/\\pi_{\\text{ref}})，即「奖励 - β·累计 KL」。",
-      "formula": "\\mathcal{L}_{\\text{PPO}} = \\mathbb{E}\\left[\\min\\left(\\rho_t A_t,\\; \\text{clip}(\\rho_t, 1-\\epsilon, 1+\\epsilon) A_t\\right)\\right] - \\beta\\, \\mathbb{E}\\left[\\log\\frac{\\pi_\\theta(y_t\\mid x)}{\\pi_{\\text{ref}}(y_t\\mid x)}\\right], \\quad \\rho_t = \\frac{\\pi_\\theta(y_t\\mid x)}{\\pi_{\\theta_{\\text{old}}}(y_t\\mid x)}",
-      "aiConnection": "面试里 RLHF 是分水岭问题：「PPO 里为什么要有 KL 惩罚」「奖励模型怎么训」「PPO 和 DPO 你怎么选」。工作中的现实判断是：RLHF/PPO 调参成本极高（四个模型、rollout 占大头、对超参敏感），只有对奖励信号有明确建模需求（安全、多目标）时才全量上；小团队更常用 DPO 起步。要能说清 rollout 是瓶颈——生成一条 512 token 的样本比一次前向贵得多，因此 PPO 的 batch 通常很小、训练极慢。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "ppo_minimal.py",
-        "code": "import torch\nimport torch.nn.functional as F\n\ndef ppo_loss(logprobs, old_logprobs, rewards, values, ref_logprobs,\n             clip_eps=0.2, kl_coef=0.02, gamma=1.0, lam=0.95):\n    # 全部张量形状 (T,)，单条轨迹的最小实现\n    ratios = torch.exp(logprobs - old_logprobs)             # rho_t\n    advantages = rewards - values.detach()                  # 用价值函数作基线\n    unclipped = ratios * advantages\n    clipped = torch.clamp(ratios, 1 - clip_eps, 1 + clip_eps) * advantages\n    policy_loss = -torch.min(unclipped, clipped).mean()\n    kl = (logprobs - ref_logprobs).mean()                   # 与参考模型的 KL\n    value_loss = F.mse_loss(values, rewards)\n    return policy_loss + kl_coef * kl + 0.5 * value_loss, policy_loss.item(), kl.item()\n\nif __name__ == '__main__':\n    torch.manual_seed(0)\n    T = 8\n    old = torch.log_softmax(torch.randn(T, 50), dim=-1).gather(1, torch.randint(0, 50, (T, 1))).squeeze(1)\n    new = old + 0.1 * torch.randn(T)\n    ref = old - 0.05 * torch.randn(T)\n    rewards = torch.rand(T)\n    values = torch.rand(T)\n    loss, pl, kl = ppo_loss(new, old, rewards, values, ref)\n    print(f'loss={loss:.4f} policy={pl:.4f} kl={kl:.4f}')\n    print('KL 越大惩罚越重:', kl > 0.02)"
-      },
-      "mistakes": [
-        "奖励模型训太多 epoch 而过拟合，PPO 被带偏、钻空子",
-        "KL 系数设得过小（如 0.001），输出风格崩坏、堆砌讨好性套话",
-        "PPO 前没做数值稳定处理，概率比 ratio 爆炸导致训练发散",
-        "rollout 样本长度分布与线上不一致，离线评估好但上线效果差"
-      ],
-      "interviewPoints": [
-        "「PPO 里为什么一定要有 KL 惩罚？去掉会发生什么？系数怎么定？」",
-        "「奖励模型怎么训？数据量要多少？训几个 epoch 合适？」",
-        "「PPO 阶段要同时驻留几个模型？7B 模型显存怎么估？」",
-        "「PPO 的 rollout 为什么是性能瓶颈？怎么减少 rollout 开销？」"
-      ],
-      "resources": [
-        {
-          "title": "Training language models to follow instructions with human feedback (InstructGPT)",
-          "url": "https://arxiv.org/abs/2203.02155"
-        },
-        {
-          "title": "Proximal Policy Optimization Algorithms (Schulman et al.)",
-          "url": "https://arxiv.org/abs/1707.06347"
-        },
-        {
-          "title": "TRL PPOTrainer 官方文档与示例",
-          "url": "https://huggingface.co/docs/trl/ppo_trainer"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "rlhf-ppo-q1",
-          "type": "choice",
-          "prompt": "PPO 目标函数中的 clip 操作起什么作用？",
-          "options": [
-            "限制策略单步更新幅度，避免一次更新把策略带偏",
-            "裁剪输入序列长度",
-            "裁剪奖励值到 0~1",
-            "删除低概率 token"
+            "信息增益/基尼不纯度",
+            "均方误差",
+            "准确率",
+            "余弦相似度"
           ],
           "answerIndex": 0,
-          "explanation": "clip(ρ, 1-ε, 1+ε) 让概率比超出区间的部分不再产生梯度，从而把每次更新的幅度限制在信赖域附近，保证训练稳定；它不裁剪序列、奖励或词表。"
+          "explanation": "分类树用信息增益或基尼不纯度衡量划分好坏；回归才用均方误差。"
         },
         {
-          "id": "rlhf-ppo-q2",
+          "id": "decision-tree-q2",
           "type": "short",
-          "prompt": "什么是 reward hacking？RLHF 中如何缓解？",
-          "answer": "参考回答：reward hacking 指策略学会迎合奖励模型的缺陷而非真正满足人类偏好，例如输出冗长、堆砌讨好的套话、格式上取巧以拿高分。缓解手段包括：KL 惩罚约束策略不偏离参考模型、奖励模型训练时控制 epoch 防过拟合、用多个奖励模型或加入长度惩罚、以及定期用人工评估校正奖励模型的偏差。",
+          "prompt": "为什么深度过大的决策树容易过拟合？如何缓解？",
+          "answer": "参考回答：因为树过深会对训练数据的噪声和细节过度拟合，泛化变差。可限制 max_depth、min_samples_leaf 等超参，或做剪枝（预剪枝/后剪枝），并用验证集调节复杂度。",
           "keywords": [
-            "迎合奖励模型",
-            "KL 惩罚",
             "过拟合",
-            "人工评估"
+            "深度",
+            "剪枝"
           ],
-          "explanation": "要点是「策略钻奖励模型的空子」这一机制，并给出至少两种可操作的缓解手段。"
+          "explanation": "过深树拟合噪声导致过拟合，用限制深度/剪枝缓解。"
         },
         {
-          "id": "rlhf-ppo-q3",
+          "id": "decision-tree-q3",
           "type": "code",
-          "prompt": "实现 ppo_clip_loss(logprobs, old_logprobs, advantages, clip_eps=0.2)：计算 PPO 的裁剪替代损失（返回标量 tensor，取负号用于最小化）。",
-          "starterCode": "import torch\n\ndef ppo_clip_loss(logprobs, old_logprobs, advantages, clip_eps=0.2):\n    pass\n",
-          "solution": "import torch\n\ndef ppo_clip_loss(logprobs, old_logprobs, advantages, clip_eps=0.2):\n    ratios = torch.exp(logprobs - old_logprobs)\n    unclipped = ratios * advantages\n    clipped = torch.clamp(ratios, 1 - clip_eps, 1 + clip_eps) * advantages\n    return -torch.min(unclipped, clipped).mean()\n",
+          "prompt": "用 sklearn 的 DecisionTreeClassifier(max_depth=3) 拟合 X、y 并打印准确率。",
+          "starterCode": "from sklearn.tree import DecisionTreeClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2], [4, 3]]\ny = [0, 0, 1, 1, 1]\n",
+          "solution": "from sklearn.tree import DecisionTreeClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2], [4, 3]]\ny = [0, 0, 1, 1, 1]\n\nclf = DecisionTreeClassifier(max_depth=3)\nclf.fit(X, y)\nprint(clf.score(X, y))",
           "checks": [
-            "torch.exp(logprobs - old_logprobs)",
-            "torch.clamp",
-            "-torch.min"
+            "DecisionTreeClassifier",
+            "fit",
+            "score"
           ],
-          "explanation": "先算概率比 ρ，再分别算未裁剪与裁剪项，取两者的逐元素最小值后加负号最小化。"
+          "explanation": "创建 max_depth=3 的决策树，fit 训练后用 score 返回准确率。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "dpo-preference",
-      "title": "DPO 与偏好优化",
-      "order": 12,
-      "module": "微调与对齐",
-      "difficulty": "高阶",
-      "estimatedMinutes": 55,
-      "summary": "DPO 用闭式变换把「奖励模型 + PPO」压成一步监督学习：直接在偏好对上最大化 chosen 相对 rejected 的似然比。",
-      "intuition": "RLHF 像先请一位评委、再让选手反复表演听评委打分，流程长、成本高、还容易被评委带偏。DPO 发现了一件漂亮的事：既然奖励模型只通过「chosen 比 rejected 好多少」来影响训练，那能不能干脆跳过评委，直接用偏好数据去调模型？答案是能——数学上可以证明，最优策略对应的奖励可以用模型自己输出概率的比值表示。于是 DPO 的损失只用到四个数字：chosen 和 rejected 在当前模型与参考模型下的对数概率。训练流程因此和 SFT 几乎一样，不需要采样、不需要奖励模型、不需要价值网络。",
-      "formal": "DPO 从 KL 约束的奖励最大化出发，其最优解满足 r(x,y) = \\beta \\log(\\pi_\\theta(y|x)/\\pi_{\\text{ref}}(y|x)) + \\beta \\log Z(x)，代回 Bradley-Terry 偏好模型后配分项 Z(x) 恰好抵消，得到只依赖策略与参考模型的对数似然损失。\\beta 控制偏离参考模型的强度，常见取 0.1。梯度权重 \\sigma(r_l - r_w) 会自动放大「模型判断与人类偏好相反」的样本，因此训练稳定。实践要点：数据质量比数量重要（常用 1 万~10 万对）、学习率比 SFT 再小（5e-7~5e-6）、通常 1 个 epoch；参考模型可用 LoRA 的 disable_adapter() 动态获得。",
-      "formula": "\\mathcal{L}_{\\text{DPO}} = -\\mathbb{E}_{(x, y_w, y_l)}\\left[\\log \\sigma\\left(\\beta \\log\\frac{\\pi_\\theta(y_w|x)}{\\pi_{\\text{ref}}(y_w|x)} - \\beta \\log\\frac{\\pi_\\theta(y_l|x)}{\\pi_{\\text{ref}}(y_l|x)}\\right)\\right]",
-      "aiConnection": "面试常问「DPO 和 RLHF 的本质区别是什么」「DPO 为什么不需要奖励模型」「β 的作用」。工程上 DPO 是性价比最高的对齐方案：单卡 QLoRA + DPO 就能做一轮偏好优化，时长与 SFT 相当。要警惕两类问题：一是 DPO 会同时降低 chosen 与 rejected 的绝对概率（只拉开相对差距），导致输出变得生硬或退化；二是离线偏好数据与模型当前分布不匹配，效果不如在线方法，这也是迭代式 DPO 流行起来的原因。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "dpo_train.py",
-        "code": "import torch\nimport torch.nn.functional as F\nfrom datasets import Dataset\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\nfrom trl import DPOTrainer, DPOConfig\n\nMODEL = 'Qwen/Qwen2.5-0.5B-Instruct'\n\ndef dpo_loss(policy_chosen, policy_rejected, ref_chosen, ref_rejected, beta=0.1):\n    # 输入均为序列的对数概率（已按 token 数求平均）\n    logits = beta * ((policy_chosen - policy_rejected) - (ref_chosen - ref_rejected))\n    return -F.logsigmoid(logits).mean(), logits.detach()\n\ntokenizer = AutoTokenizer.from_pretrained(MODEL)\nmodel = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=torch.bfloat16)\nref_model = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=torch.bfloat16)\n\nraw = [\n    {'prompt': '解释一下什么是 KV Cache。',\n     'chosen': 'KV Cache 缓存历史 token 的 Key 和 Value，解码时无需重复计算，用显存换吞吐。',\n     'rejected': '不知道，你问别人吧。'},\n    {'prompt': 'LoRA 为什么省显存？',\n     'chosen': '因为只训练低秩增量矩阵 A 和 B，可训练参数约占 0.1%~1%，优化器状态随之大幅下降。',\n     'rejected': '因为它很小。'},\n] * 32\nds = Dataset.from_list(raw)\n\ncfg = DPOConfig(output_dir='./dpo_out', beta=0.1, num_train_epochs=1,\n                per_device_train_batch_size=1, gradient_accumulation_steps=4,\n                learning_rate=5e-7, bf16=True, max_length=512,\n                logging_steps=2, report_to='none')\ntrainer = DPOTrainer(model=model, ref_model=ref_model, args=cfg,\n                     train_dataset=ds, processing_class=tokenizer)\ntrainer.train()\n\nwith torch.no_grad():\n    pc = torch.tensor(-12.0); pr = torch.tensor(-20.0)\n    rc = torch.tensor(-11.0); rr = torch.tensor(-19.0)\n    loss, margin = dpo_loss(pc, pr, rc, rr)\nprint('dpo loss:', round(loss.item(), 4), 'implicit reward margin:', round(margin.item(), 4))"
-      },
-      "mistakes": [
-        "β 设得过小（如 0.01），模型过度偏离参考模型，输出退化或重复",
-        "DPO 学习率照抄 SFT 的 1e-5，几步后崩坏，应取 5e-7~5e-6",
-        "偏好数据里 chosen 与 rejected 差异过小，训练信号噪声大",
-        "用 SFT 数据当偏好对，chosen/rejected 语义不对齐，学出怪偏好"
-      ],
-      "interviewPoints": [
-        "「DPO 和 RLHF 的本质区别是什么？为什么 DPO 不需要奖励模型？」",
-        "「DPO 损失里的 β 控制什么？调大调小分别会怎样？」",
-        "「DPO 训练时 chosen 的绝对概率可能同时下降，这算问题吗？怎么监控？」",
-        "「在线 DPO（迭代采样）比离线 DPO 好在哪？代价是什么？」"
-      ],
-      "resources": [
-        {
-          "title": "Direct Preference Optimization: Your Language Model is Secretly a Reward Model",
-          "url": "https://arxiv.org/abs/2305.18290"
-        },
-        {
-          "title": "TRL DPOTrainer 官方文档",
-          "url": "https://huggingface.co/docs/trl/dpo_trainer"
-        },
-        {
-          "title": "Is DPO Superior to PPO for LLM Alignment?（DPO 与 PPO 的系统对比）",
-          "url": "https://arxiv.org/abs/2404.10719"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "dpo-preference-q1",
-          "type": "choice",
-          "prompt": "DPO 相比 RLHF/PPO 最主要的好处是？",
-          "options": [
-            "效果一定更好",
-            "不需要奖励模型与在线采样，训练流程与 SFT 同量级、成本低且稳定",
-            "不需要偏好数据",
-            "不需要参考模型"
-          ],
-          "answerIndex": 1,
-          "explanation": "DPO 通过闭式变换消掉了显式奖励模型与 PPO 的 rollout/价值网络，训练退化为对偏好对的监督学习，因此便宜稳定；它仍需要偏好数据与参考模型，效果也并非必然优于调好的 PPO。"
-        },
-        {
-          "id": "dpo-preference-q2",
-          "type": "short",
-          "prompt": "DPO 损失中的 β 起什么作用？取值过大或过小分别有什么后果？",
-          "answer": "参考回答：β 控制策略允许偏离参考模型的程度，相当于隐式奖励的尺度。β 过小（如 0.01）时模型可以大幅偏离参考模型，容易出现输出退化、重复、通用能力下降；β 过大（如 1.0）时约束过强，偏好信号被压制、训练几乎学不动。实践中常取 0.1，并结合 chosen/rejected 的对数概率差与隐式奖励间隔曲线来判断是否合适。",
-          "keywords": [
-            "偏离程度",
-            "隐式奖励尺度",
-            "0.1",
-            "退化"
-          ],
-          "explanation": "必须说明 β 是「与参考模型偏离程度的约束强度」这一双向权衡，并给出 0.1 这个常用值。"
-        },
-        {
-          "id": "dpo-preference-q3",
-          "type": "code",
-          "prompt": "实现 dpo_loss(policy_chosen, policy_rejected, ref_chosen, ref_rejected, beta=0.1)：输入为四个对数概率，返回 -log sigmoid(β·[(logπ_w - logπ_l) - (logπref_w - logπref_l)]) 的标量。",
-          "starterCode": "import torch\nimport torch.nn.functional as F\n\ndef dpo_loss(policy_chosen, policy_rejected, ref_chosen, ref_rejected, beta=0.1):\n    pass\n",
-          "solution": "import torch\nimport torch.nn.functional as F\n\ndef dpo_loss(policy_chosen, policy_rejected, ref_chosen, ref_rejected, beta=0.1):\n    logits = beta * ((policy_chosen - policy_rejected) - (ref_chosen - ref_rejected))\n    return -F.logsigmoid(logits).mean()\n",
-          "checks": [
-            "beta * (",
-            "F.logsigmoid",
-            "-"
-          ],
-          "explanation": "先算策略与参考模型的对数比之差，乘 β 后取 logsigmoid 并加负号；用 logsigmoid 而非 log(sigmoid()) 是为了数值稳定。"
-        }
-      ]
-    },
-    {
-      "slug": "kv-cache-paged-attention",
-      "title": "KV Cache 与 PagedAttention",
-      "order": 13,
-      "module": "推理与部署",
-      "difficulty": "高阶",
-      "estimatedMinutes": 55,
-      "summary": "KV Cache 缓存历史 token 的 Key/Value 避免重复计算，显存 ≈ 2×层数×序列×维度×字节；PagedAttention 把碎片压到 4%",
-      "intuition": "自回归生成是一步一步往外吐字的，每吐一个新字都要回头看一眼前面所有字。如果不缓存，第 1000 步就得把前 999 个 token 重新算一遍——纯属重复劳动。KV Cache 就是把每层算过的 Key 和 Value 存进显存，新 token 只算自己那一份再和缓存拼接。代价是显存：序列越长、并发越高，缓存越大。而传统实现还有一个更隐蔽的浪费——每段对话都要预留「最大长度」的连续显存，实际只用了三分之一，剩下全空着。PagedAttention 借用了操作系统的虚拟内存分页思路：把缓存切成固定大小的小块，用一张表记录逻辑位置到物理块的映射，用多少分配多少，碎片率降到 4% 以下。",
-      "formal": "KV Cache 显存 ≈ 2 × n_layers × seq_len × d_model × bytes × batch_size（GQA/MQA 时按 n_kv_heads × head_dim 计）。以 Llama-2-7B 为例：32 层、hidden 4096、fp16，单条 4096 token 约 2.1GB，batch 16 即 34GB，超过权重本身（14GB），因此长上下文下 KV Cache 才是显存主项。PagedAttention 把 KV 切成 block（默认 16 token），块无需连续，通过 block table 做逻辑到物理映射，因此支持前缀共享与近乎零内部碎片。代价是多一层间接寻址与定制 kernel。",
-      "formula": "M_{\\text{KV}} = 2 \\times L_{\\text{layer}} \\times S_{\\text{len}} \\times d_{\\text{model}} \\times b_{\\text{bytes}} \\times B, \\qquad \\text{block} = \\frac{S_{\\text{len}}}{16}\\text{ 个物理块（每块存 16 token 的 K 与 V）}",
-      "aiConnection": "面试几乎必问：「KV Cache 占多少显存，怎么算」「为什么 PagedAttention 能提升吞吐」「GQA 为什么能省 KV Cache」。这些数字直接决定部署方案：A100 80G 跑 7B，权重 14GB，剩 60GB 给 KV Cache，每条 2.1GB 即最多并发 28 条，max_num_seqs 就是这么定的。线上「并发上不去」「长 prompt 排队」时，第一反应是算 KV Cache 预算，再考虑换 GQA 模型或上量化。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "kv_cache.py",
-        "code": "import torch\n\nclass KVCache:\n    # 每层缓存 (B, n_kv_heads, S, head_dim) 的 K 与 V\n    def __init__(self, n_layers, batch, n_kv_heads, head_dim, max_len, dtype=torch.float16, device='cpu'):\n        self.k = [torch.zeros(batch, n_kv_heads, max_len, head_dim, dtype=dtype, device=device) for _ in range(n_layers)]\n        self.v = [torch.zeros(batch, n_kv_heads, max_len, head_dim, dtype=dtype, device=device) for _ in range(n_layers)]\n        self.seq_len = 0\n\n    def append(self, layer, k_new, v_new):\n        s = k_new.size(2)\n        self.k[layer][:, :, self.seq_len:self.seq_len + s] = k_new\n        self.v[layer][:, :, self.seq_len:self.seq_len + s] = v_new\n\n    def advance(self, n):\n        self.seq_len += n\n\n    def nbytes(self):\n        return sum(t.numel() * t.element_size() for t in self.k + self.v)\n\nclass BlockManager:\n    # PagedAttention 的极简分页器：按 16 token 一块分配，支持前缀共享\n    def __init__(self, n_blocks, block_size=16):\n        self.block_size = block_size\n        self.free = list(range(n_blocks))\n        self.tables = {}\n\n    def allocate(self, req_id, n_tokens):\n        need = (n_tokens + self.block_size - 1) // self.block_size\n        assert need <= len(self.free), 'out of KV blocks'\n        self.tables[req_id] = [self.free.pop() for _ in range(need)]\n        return self.tables[req_id]\n\n    def free_req(self, req_id):\n        self.free.extend(self.tables.pop(req_id))\n\ndef kv_cache_bytes(n_layers, seq_len, d_model, batch=1, dtype_bytes=2, n_kv_heads=None, head_dim=None):\n    kv_dim = d_model if n_kv_heads is None else n_kv_heads * head_dim\n    return 2 * n_layers * seq_len * kv_dim * dtype_bytes * batch\n\nif __name__ == '__main__':\n    for b in (1, 16, 64):\n        gb = kv_cache_bytes(32, 4096, 4096, batch=b) / 1e9\n        print(f'Llama-2-7B fp16, batch={b:>2}, 4096 token -> KV Cache {gb:.1f} GB')\n    cache = KVCache(n_layers=2, batch=1, n_kv_heads=32, head_dim=128, max_len=64)\n    cache.append(0, torch.randn(1, 32, 4, 128), torch.randn(1, 32, 4, 128))\n    cache.advance(4)\n    print('示例缓存大小 (MB):', round(cache.nbytes() / 1e6, 3), '已填充 token:', cache.seq_len)\n    bm = BlockManager(n_blocks=100)\n    print('请求 A 的物理块:', bm.allocate('A', 100), '剩余块:', len(bm.free))\n    print('碎片率: 0%（按需分块，无预留）')"
-      },
-      "mistakes": [
-        "只算模型权重的显存预算，高并发时 KV Cache 吃光显存导致请求被拒",
-        "以为 PagedAttention 减少 KV 总量，它优化的是碎片与共享",
-        "长上下文场景沿用 MHA 模型，不做 GQA 或量化，KV 成为吞吐瓶颈",
-        "max_model_len 设得远超需求，每请求按最长序列预留块，浪费显存"
-      ],
-      "interviewPoints": [
-        "「KV Cache 的显存怎么算？Llama-2-7B 在 4096 长度、batch 16 时占多少？」",
-        "「为什么推理时 KV Cache 可能比模型权重还占显存？这怎么影响你的部署方案？」",
-        "「PagedAttention 解决了什么问题？它和操作系统的虚拟内存有什么相似之处？」",
-        "「GQA 和 MQA 是怎么省 KV Cache 的？对模型效果有什么影响？」"
-      ],
-      "resources": [
-        {
-          "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention (vLLM)",
-          "url": "https://arxiv.org/abs/2309.06180"
-        },
-        {
-          "title": "GQA: Training Generalized Multi-Query Transformer Models",
-          "url": "https://arxiv.org/abs/2305.13245"
-        },
-        {
-          "title": "HuggingFace KV Cache 官方说明",
-          "url": "https://huggingface.co/docs/transformers/main/en/kv_cache"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "kv-cache-paged-attention-q1",
-          "type": "choice",
-          "prompt": "PagedAttention 主要解决的问题是？",
-          "options": [
-            "减少注意力的计算量",
-            "消除 KV Cache 的显存碎片并支持前缀共享，提高显存利用率与吞吐",
-            "把 KV Cache 压缩到 4bit",
-            "替代 FlashAttention"
-          ],
-          "answerIndex": 1,
-          "explanation": "PagedAttention 用分块 + 块表管理 KV Cache，按需分配、无需连续显存，从而把碎片率从 60%~80% 降到 4% 以下并支持多请求共享前缀；它不减少注意力计算量，也不等于量化。"
-        },
-        {
-          "id": "kv-cache-paged-attention-q2",
-          "type": "short",
-          "prompt": "Llama-2-7B（32 层、hidden 4096、fp16）在序列长度 4096、batch 8 时，KV Cache 约多大？写出计算过程。",
-          "answer": "参考回答：按 M = 2 × 层数 × 序列长度 × 隐藏维度 × 字节数 × batch 计算：2 × 32 × 4096 × 4096 × 2 × 8 = 1.72e10 字节，约 17.2GB。可见单条 4096 token 就要约 2.1GB，是模型权重 14GB 的 15%，高并发时长上下文场景下 KV Cache 往往比权重更吃显存，因此需要 GQA、KV 量化或更激进的调度策略。",
-          "keywords": [
-            "2×层数×序列×维度×字节",
-            "2.1GB 每条",
-            "并发",
-            "显存主项"
-          ],
-          "explanation": "关键是能写出公式并算出单条约 2.1GB、总量约 17GB 的量级，并点出它可能超过权重的工程含义。"
-        },
-        {
-          "id": "kv-cache-paged-attention-q3",
-          "type": "code",
-          "prompt": "实现 kv_cache_bytes(n_layers, seq_len, d_model, batch, dtype_bytes=2)：返回 KV Cache 的字节数，公式为 2 × n_layers × seq_len × d_model × dtype_bytes × batch。",
-          "starterCode": "def kv_cache_bytes(n_layers, seq_len, d_model, batch, dtype_bytes=2):\n    pass\n",
-          "solution": "def kv_cache_bytes(n_layers, seq_len, d_model, batch, dtype_bytes=2):\n    return 2 * n_layers * seq_len * d_model * dtype_bytes * batch\n\nprint(round(kv_cache_bytes(32, 4096, 4096, 1) / 1e9, 2), 'GB per sequence')\nprint(round(kv_cache_bytes(32, 4096, 4096, 16) / 1e9, 2), 'GB for batch 16')\n",
-          "checks": [
-            "2 * n_layers",
-            "dtype_bytes",
-            "batch"
-          ],
-          "explanation": "系数 2 来自 K 与 V 两份缓存，其余按层数、序列长度、隐藏维度、精度字节数与并发数线性相乘。"
-        }
-      ]
-    },
-    {
-      "slug": "vllm-serving",
-      "title": "vLLM 与连续批处理",
-      "order": 14,
-      "module": "推理与部署",
+      "slug": "random-forest",
+      "title": "Random Forest 随机森林",
+      "order": 4,
+      "module": "机器学习算法",
       "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "连续批处理让每个解码步都能动态加入新请求、送走完成的请求，配合 PagedAttention 把 GPU 利用率从不足 40% 拉到 90% 以上。",
-      "intuition": "静态批处理像凑满一桌才开席：8 个请求一起进来，其中一个只要 10 个字就答完了，可它占的座位要等最长那位（比如 2000 字）说完才能空出来——中间那段时间 GPU 有 1/8 的算力在空转，而且后来排队的请求只能干等。连续批处理改成一桌流水席：每说完一轮（每个 decode step），答完的客人立刻离席，排队的立刻补位。GPU 的座位永远坐满，吞吐自然成倍上升。这也是为什么同一张卡上，vLLM 的吞吐能比朴素 HuggingFace generate 高出一个数量级。",
-      "formal": "LLM 推理分两阶段：prefill（处理整段 prompt，算力密集、可并行）与 decode（逐 token 生成，访存密集、受显存带宽限制）。静态批处理要求同批请求同时开始、同时结束，padding 与等待带来大量空转；连续批处理在每个 decode step 重新组装批次，新请求下一步即可插入、完成的请求立即释放其 KV 块。配合 PagedAttention 的块级显存管理，vLLM 相对 HF Transformers 报告 2~4 倍吞吐提升（共享前缀场景可达 24 倍）。关键参数：gpu_memory_utilization、max_num_seqs、max_num_batched_tokens、tensor_parallel_size。",
-      "formula": "\\text{Throughput} \\approx \\frac{B_{\\text{eff}} \\times S_{\\text{out}}}{T_{\\text{prefill}} + S_{\\text{out}} \\times T_{\\text{decode}}}, \\qquad \\text{KV blocks} = \\left\\lceil \\frac{S_{\\text{len}}}{16} \\right\\rceil \\text{ per sequence}",
-      "aiConnection": "这是「模型训完怎么上线」的最后一公里：把权重转成 vLLM 格式、按显存算 max_num_seqs、用 tensor_parallel_size 做单机多卡、再用 OpenAI 接口接入业务。面试常问「为什么 vLLM 比 HF generate 快」「prefill 和 decode 的区别」。排查线上问题要分清：TTFT 高多半是排队或 prefill 太长（考虑 chunked prefill、前缀缓存）；TPOT 高则是带宽受限（考虑量化或换 GQA 模型）。",
+      "estimatedMinutes": 24,
+      "summary": "随机森林通过训练多棵彼此略有差异的决策树并集成投票，显著提升泛化能力与鲁棒性。",
+      "intuition": "一棵树容易\"一根筋\"，对噪声敏感。随机森林训练很多棵树，每棵只看数据的一部分、特征的一部分，结果各不相同；预测时把所有树的答案汇总投票。少数几棵树的错误会被多数正确树淹没，整体比单棵树更稳、更准。",
+      "formal": "随机森林是 bagging（自助聚合）的一种：每次从数据中有放回采样得到子集，并对每个划分节点随机选取特征子集，训练多棵独立决策树。分类用多数投票，回归用平均。因为引入了\"样本抽样 + 特征子集随机\"两种随机性，降低了单棵树的方差，从而减少过拟合、提高稳定性。它也可输出特征重要性。",
+      "formula": "\\hat{y}_{RF} = \\begin{cases} \\text{mode}\\{\\hat{y}_t\\}, & \\text{分类} \\\\ \\frac{1}{T}\\sum_t \\hat{y}_t, & \\text{回归} \\end{cases}, \\quad \\text{每棵树用有放回采样 + 特征子集}",
+      "aiConnection": "随机森林是表格数据的常用强基线，兼顾准确率与可解释（特征重要性）。与深度学习相比，它训练快、超参少、对量纲不敏感，适合结构化特征；它也是理解\"集成如何提升性能\"的典型例子，与 LLM 中的 ensemble 思路相通。",
       "codeExample": {
         "lang": "python",
-        "filename": "vllm_serve.py",
-        "code": "# 第一步，起服务（终端执行）：\n#   pip install vllm\n#   vllm serve Qwen/Qwen2.5-7B-Instruct --tensor-parallel-size 1 \\\n#     --gpu-memory-utilization 0.90 --max-model-len 8192 \\\n#     --max-num-seqs 64 --enable-prefix-caching --port 8000\n# 第二步，用 OpenAI 兼容客户端压测：\nimport time\nfrom openai import OpenAI\n\nclient = OpenAI(base_url='http://localhost:8000/v1', api_key='EMPTY')\n\nprompts = [\n    '用三句话解释 PagedAttention 解决了什么问题。',\n    'LoRA 的可训练参数量怎么估算？',\n    '为什么 decode 阶段是访存密集的？',\n]\n\nt0 = time.perf_counter()\nresp = client.chat.completions.create(\n    model='Qwen/Qwen2.5-7B-Instruct',\n    messages=[{'role': 'user', 'content': prompts[0]}],\n    max_tokens=128, temperature=0.7,\n)\nprint('TTFT+生成总耗时: %.2fs' % (time.perf_counter() - t0))\nprint(resp.choices[0].message.content[:120])\nprint('usage:', resp.usage)\n\n# 并发压测：观察连续批处理下的吞吐（tokens/s）\nt0 = time.perf_counter()\nout_tokens = 0\nfor p in prompts:\n    r = client.chat.completions.create(\n        model='Qwen/Qwen2.5-7B-Instruct',\n        messages=[{'role': 'user', 'content': p}],\n        max_tokens=128,\n    )\n    out_tokens += r.usage.completion_tokens\nelapsed = time.perf_counter() - t0\nprint('吞吐: %.1f tokens/s (串行 3 请求)' % (out_tokens / elapsed))"
+        "filename": "random_forest.py",
+        "code": "from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\n\n# 造数据\nX, y = make_classification(n_samples=500, n_features=5, n_informative=3, random_state=0)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 构建随机森林\nrf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=0)\nrf.fit(X_train, y_train)\n\nprint('准确率 =', round(rf.score(X_test, y_test), 3))\n\n# 特征重要性\nprint('特征重要性:')\nprint([round(v, 3) for v in rf.feature_importances_])\n\n# 单棵树与森林对比（可选）\nfrom sklearn.tree import DecisionTreeClassifier\nsingle = DecisionTreeClassifier(max_depth=5, random_state=0).fit(X_train, y_train)\nprint('单树准确率 =', round(single.score(X_test, y_test), 3))"
       },
       "mistakes": [
-        "gpu_memory_utilization 设 0.98，挤掉缓冲，随机崩",
-        "用 max_num_seqs=1 做单请求测试就宣称吞吐达标，忽略连续批处理",
-        "tensor_parallel_size 超过单机卡数又不配 Ray，起不来",
-        "只看平均延迟不看 P99 与 TTFT，长 prompt 拖慢短请求"
+        "把样本抽样和特征子集随机性漏掉，退化为多棵完全一样的树",
+        "n_estimators 定得过大导致训练慢而收益有限",
+        "只调树深度却不看特征重要性等整体效果",
+        "忽视可复现性，不设 random_state"
       ],
       "interviewPoints": [
-        "「连续批处理和静态批处理的区别是什么？为什么能提升吞吐？」",
-        "「prefill 和 decode 的计算特性有什么不同？分别受什么限制？」",
-        "「vLLM 的 max_num_seqs 和 gpu_memory_utilization 你会怎么设？依据是什么？」",
-        "「线上 TTFT 从 200ms 涨到 2s，你怎么排查和优化？」"
+        "「随机森林的两种随机性是什么？」要答到行方向 bootstrap 有放回采样、列方向每个节点随机抽特征子集，缺一个就退化成相同的树",
+        "「为什么 bagging 能降低方差？」要答到对近似独立的树取平均时方差按 1/T 下降、偏差基本不变，所以关键在让基模型彼此不同",
+        "「OOB 估计有什么用？」要答到每棵树约有 36.8% 的样本没被抽中，可直接当验证集估计泛化误差，省下一次数据划分",
+        "「随机森林和 GBDT 的本质区别？」要答到 RF 并行、靠 bagging 降方差；GBDT 串行拟合残差降偏差，通常更准但更易过拟合"
       ],
-      "resources": [
-        {
-          "title": "vLLM 官方文档：连续批处理与引擎参数",
-          "url": "https://docs.vllm.ai/en/latest/"
-        },
-        {
-          "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention",
-          "url": "https://arxiv.org/abs/2309.06180"
-        },
-        {
-          "title": "vLLM OpenAI 兼容服务器文档",
-          "url": "https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "vllm-serving-q1",
+          "id": "random-forest-q1",
           "type": "choice",
-          "prompt": "连续批处理（continuous batching）提升吞吐的核心机制是？",
+          "prompt": "随机森林用于分类时，最终预测通常如何得出？",
           "options": [
-            "把模型量化到 INT4",
-            "在每个解码步动态重组批次，完成的请求立即释放、新请求立即插入，避免等待与 padding",
-            "增大 max_model_len",
-            "使用更快的 CUDA kernel"
+            "多数投票",
+            "概率平均",
+            "加权最小二乘",
+            "单一最优树的结果"
           ],
-          "answerIndex": 1,
-          "explanation": "连续批处理是调度层面的优化：以 decode step 为粒度重新组批，消除静态批处理里「等最长序列」的空转与 padding；量化、kernel 优化属于另一条正交的优化路径。"
+          "answerIndex": 0,
+          "explanation": "随机森林分类用所有树的类别做多数投票；回归才用平均值。"
         },
         {
-          "id": "vllm-serving-q2",
+          "id": "random-forest-q2",
           "type": "short",
-          "prompt": "prefill 和 decode 两个阶段的特性有何不同？分别如何优化？",
-          "answer": "参考回答：prefill 一次处理整段 prompt，矩阵乘维度大、算力密集，受 FLOPs 限制，决定首 token 延迟 TTFT；decode 每步只算一个 token，矩阵乘退化为向量乘矩阵，受显存带宽与 KV Cache 读取限制，决定 TPOT。优化上，prefill 可用 chunked prefill、前缀缓存、张量并行；decode 可用量化、增大 batch 提高算术强度、使用 GQA 模型减少 KV 读取。",
+          "prompt": "随机森林相比单棵决策树为什么更不易过拟合？",
+          "answer": "参考回答：因为它在训练时引入样本有放回抽样与特征子集随机化两种随机性，让多棵树彼此差异、各自只见数据一角，平均/投票后抵消掉单棵树的方差与个别过拟合，从而提升泛化、降低过拟合。",
           "keywords": [
-            "算力密集",
-            "访存密集",
-            "TTFT",
-            "chunked prefill"
+            "随机",
+            "抽样",
+            "方差"
           ],
-          "explanation": "要点是「prefill 算力受限、decode 带宽受限」这一对比，以及各自对应的优化手段。"
+          "explanation": "双重随机性让树彼此不同，集成后降低方差与过拟合。"
         },
         {
-          "id": "vllm-serving-q3",
+          "id": "random-forest-q3",
           "type": "code",
-          "prompt": "实现 kv_budget(n_gpu_mem_gb, weight_gb, util=0.9, reserve_gb=1.5)：估算可用于 KV Cache 的显存 GB，并据此算出能容纳多少条 4096 token 的并发序列（每条按 2.1GB 计）。",
-          "starterCode": "def kv_budget(n_gpu_mem_gb, weight_gb, util=0.9, reserve_gb=1.5, per_seq_gb=2.1):\n    # 返回 (可用KV显存GB, 并发序列数)\n    pass\n",
-          "solution": "def kv_budget(n_gpu_mem_gb, weight_gb, util=0.9, reserve_gb=1.5, per_seq_gb=2.1):\n    usable = n_gpu_mem_gb * util - weight_gb - reserve_gb\n    return round(usable, 2), max(0, int(usable // per_seq_gb))\n\nmem, seqs = kv_budget(80, 14)\nprint(f'A100 80G 跑 7B: KV 预算 {mem} GB, 可并发 {seqs} 条 4096 token 请求')\nprint(kv_budget(24, 14))\n",
+          "prompt": "用 sklearn 的 RandomForestClassifier(n_estimators=10) 拟合 X、y 并打印准确率。",
+          "starterCode": "from sklearn.ensemble import RandomForestClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n",
+          "solution": "from sklearn.ensemble import RandomForestClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n\nrf = RandomForestClassifier(n_estimators=10)\nrf.fit(X, y)\nprint(rf.score(X, y))",
           "checks": [
-            "n_gpu_mem_gb * util",
-            "weight_gb",
-            "// per_seq_gb"
+            "RandomForestClassifier",
+            "n_estimators",
+            "fit"
           ],
-          "explanation": "可用 KV 显存 = 总显存 × 利用率 − 权重 − 预留（激活与 CUDA 上下文），再除以单条序列的 KV 占用得到并发上限。"
+          "explanation": "用 n_estimators=10 创建森林，fit 训练后用 score 求准确率。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "quantization",
-      "title": "量化：INT8、GPTQ 与 AWQ",
-      "order": 15,
-      "module": "推理与部署",
-      "difficulty": "高阶",
-      "estimatedMinutes": 50,
-      "summary": "量化把权重从 fp16 压到 INT8/INT4，7B 从 14GB 降到 3.5GB；GPTQ 逐层最小化重构误差，AWQ 保护 1% 的关键通道。",
-      "intuition": "量化就像把高清照片压成 JPEG：文件小了一大截，肉眼看几乎一样，但放大到细节处会有损失。模型里的权重大多挤在很窄的数值范围里，用 16 位浮点存是浪费。把 4096 个权重分成一组，记下这组的最大值和最小值，然后把每个权重映射到 0~255（INT8）或 0~15（INT4）的整数上——存的是整数，用的时候再乘回缩放系数。难点在于：少数几个「关键通道」的权重特别大，一刀切地量化会把它们压坏，AWQ 的思路就是先把这 1% 找出来保护住，其余随便压。",
-      "formal": "对称量化 w_q = \\text{round}(w/s)，反量化 \\hat{w} = s \\cdot w_q，缩放系数 s = \\max|w|/(2^{b-1}-1)；INT8 每参数 1 字节、INT4 每参数 0.5 字节，另需存缩放系数（分组 64~128 时约 0.1~0.25 bit/参数）。粒度越细误差越小、开销越大。GPTQ 用逐层二阶信息按列量化并补偿剩余权重，最小化 \\|WX - \\hat{W}X\\|^2，4bit 下困惑度损失通常 < 0.3；AWQ 依据激活幅值缩放，保护约 1% 的显著通道，对指令模型更友好。注意 weight-only 量化主要省显存与带宽，加速取决于是否有 INT4 kernel，否则反量化开销会吃掉收益。",
-      "formula": "\\hat{W} = s \\cdot \\text{round}\\!\\left(\\frac{W}{s}\\right), \\quad s = \\frac{\\max|W|}{2^{b-1}-1}, \\qquad \\mathcal{L}_{\\text{GPTQ}} = \\|WX - \\hat{W}X\\|_2^2",
-      "aiConnection": "面试常问「INT8 和 INT4 量化分别省多少显存、精度损失多少」「GPTQ 和 AWQ 的区别」「量化后为什么有时反而更慢」。工作中量化是最常用的降本手段：一张 24G 卡跑 7B，fp16 权重 14GB 只剩 10GB 给 KV Cache（约 4 条并发），换成 4bit 权重 3.5GB 后能腾出 20GB（约 9 条并发），并发直接翻倍。上线前必须做的验证是：同一套评测集对比量化前后的准确率，重点关注长尾与代码类任务，而不是只看困惑度。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "quantize_int8.py",
-        "code": "import torch\nfrom transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig\n\nMODEL = 'Qwen/Qwen2.5-0.5B'\n\ndef quantize_int8_symmetric(w, group_size=64):\n    # 分组对称量化：返回量化整数与缩放系数\n    w = w.float().view(-1, group_size)\n    s = w.abs().amax(dim=1, keepdim=True) / 127.0\n    q = torch.round(w / s).clamp(-127, 127).to(torch.int8)\n    return q, s\n\ndef dequantize(q, s):\n    return (q.float() * s).view(-1)\n\ndef load_4bit(model_id):\n    bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type='nf4',\n                             bnb_4bit_compute_dtype=torch.bfloat16)\n    return AutoModelForCausalLM.from_pretrained(model_id, quantization_config=bnb, device_map='auto')\n\nif __name__ == '__main__':\n    torch.manual_seed(0)\n    w = torch.randn(4096) * 0.02\n    q, s = quantize_int8_symmetric(w)\n    w_hat = dequantize(q, s)\n    err = (w - w_hat).abs().max().item()\n    print(f'INT8 分组量化: 原始 {w.numel()*4} 字节 -> {q.numel()} 字节, 最大绝对误差 {err:.2e}')\n\n    m = load_4bit(MODEL)\n    tok = AutoTokenizer.from_pretrained(MODEL)\n    ids = tok('量化为什么能省显存？', return_tensors='pt').to(m.device)\n    out = m.generate(**ids, max_new_tokens=16, do_sample=False)\n    print('4bit 生成:', tok.decode(out[0], skip_special_tokens=True)[:80])\n    print(f'4bit 权重显存: {m.get_memory_footprint()/1e9:.2f} GB (fp16 约 {m.config.num_parameters*2/1e9:.2f} GB)')"
-      },
-      "mistakes": [
-        "量化后只测困惑度就上线，忽略长尾知识与代码任务上的明显掉点",
-        "用了 INT4 权重但没有对应 kernel，反量化开销导致实际推理更慢",
-        "分组大小设得过大（如 1024），缩放系数覆盖范围太宽，误差上升",
-        "以为量化能减少 KV Cache，权重与 KV Cache 是两笔独立开销"
-      ],
-      "interviewPoints": [
-        "「INT8 和 INT4 量化分别把 7B 模型的权重压到多大？精度损失大概多少？」",
-        "「GPTQ 和 AWQ 的核心区别是什么？什么场景下你会选 AWQ？」",
-        "「量化后为什么可能反而更慢？需要什么条件才能真正加速？」",
-        "「量化会优先损害哪些能力？上线前你会怎么验证？」"
-      ],
-      "resources": [
-        {
-          "title": "GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers",
-          "url": "https://arxiv.org/abs/2210.17323"
-        },
-        {
-          "title": "AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration",
-          "url": "https://arxiv.org/abs/2306.00978"
-        },
-        {
-          "title": "HuggingFace 量化总览：bitsandbytes、GPTQ、AWQ",
-          "url": "https://huggingface.co/docs/transformers/main/en/quantization/overview"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "quantization-q1",
-          "type": "choice",
-          "prompt": "AWQ 与 GPTQ 的核心差异是？",
-          "options": [
-            "AWQ 需要重新训练模型",
-            "AWQ 依据激活幅值识别并保护约 1% 的关键通道，GPTQ 用逐层二阶信息最小化重构误差",
-            "GPTQ 只能做 INT8",
-            "两者完全相同"
-          ],
-          "answerIndex": 1,
-          "explanation": "AWQ 是激活感知的：激活值大的通道对应更重要的权重，通过缩放保护这些通道；GPTQ 则是逐层用 Hessian 近似做误差补偿的量化。两者都是训练后量化（PTQ），不需要重训。"
-        },
-        {
-          "id": "quantization-q2",
-          "type": "short",
-          "prompt": "4bit 量化把 7B 模型权重压到多少？为什么实际推理不一定更快？",
-          "answer": "参考回答：4bit 每参数 0.5 字节，7B 权重约 3.5GB（fp16 为 14GB），再加上分组缩放系数约 0.1~0.25 bit/参数。但 weight-only 量化只是把权重存得更小，计算时仍需反量化回 bf16，若没有对应的 INT4 kernel（如 Marlin、ExLlama），反量化开销会抵消带宽收益，甚至比 fp16 更慢。只有当显存带宽成为瓶颈且有高效 kernel 时，量化才同时带来省显存与加速。",
-          "keywords": [
-            "3.5GB",
-            "反量化",
-            "INT4 kernel",
-            "带宽瓶颈"
-          ],
-          "explanation": "必须给出 3.5GB 这个数字，并说明「省显存 ≠ 自动加速，取决于 kernel 支持」。"
-        },
-        {
-          "id": "quantization-q3",
-          "type": "code",
-          "prompt": "实现 quantize_per_group(w, bits=8, group_size=64)：对一维权重做分组对称量化，返回 (量化整数张量, 缩放系数张量)，缩放系数 s = max|w|/(2^(bits-1)-1)。",
-          "starterCode": "import torch\n\ndef quantize_per_group(w, bits=8, group_size=64):\n    pass\n",
-          "solution": "import torch\n\ndef quantize_per_group(w, bits=8, group_size=64):\n    qmax = 2 ** (bits - 1) - 1\n    wg = w.float().view(-1, group_size)\n    s = wg.abs().amax(dim=1, keepdim=True) / qmax\n    q = torch.round(wg / s).clamp(-qmax, qmax).to(torch.int8)\n    return q, s\n\nw = torch.randn(256) * 0.02\nq, s = quantize_per_group(w)\nprint(q.shape, s.shape, (q.float() * s).view(-1).shape)\n",
-          "checks": [
-            "2 ** (bits - 1) - 1",
-            "amax",
-            "torch.round"
-          ],
-          "explanation": "先按 group_size 分组，逐组求绝对最大值得到缩放系数，再除以 s 并四舍五入到整数区间 [-qmax, qmax]。"
-        }
-      ]
-    },
-    {
-      "slug": "eval-alignment",
-      "title": "模型评测与对齐评估",
-      "order": 16,
-      "module": "推理与部署",
+      "slug": "svm",
+      "title": "SVM",
+      "order": 5,
+      "module": "机器学习算法",
       "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "困惑度低不等于好用：能力评测看 MMLU/GSM8K 等客观集，对齐评测看奖励模型准确率、胜率与人工/LLM 裁判，还要防数据污染与位置偏置。",
-      "intuition": "考试分数高不代表会干活。模型也一样：训练 loss 从 1.2 降到 0.9，用户却可能觉得它更啰嗦、更爱说套话。原因是对齐的目标（有用、诚实、无害）没法用一个数字直接衡量。所以评测要分层：客观能力用有标准答案的题库（数学、代码、知识），主观体验用成对比较（A 和 B 哪个回答更好）统计胜率。而做胜率评估时又有新坑——用 GPT-4 当裁判，它可能偏爱排在前面的答案、偏爱更长的答案，甚至偏爱自己风格的答案。评测本身就是一门需要设计的工程。",
-      "formal": "能力评测分三类：知识类（MMLU 57 学科选择题、C-Eval 中文）、推理数学类（GSM8K、MATH，看 exact match）、代码类（HumanEval/MBPP，看 pass@1，需沙箱执行）。困惑度只在同分词器、同数据分布下可比，跨模型比较没有意义。对齐评测：奖励模型的偏好准确率（留出集上判断 chosen > rejected 的比例，好的 RM 约 70%~75%）、成对胜率（用 Elo 或 Bradley-Terry 聚合）、MT-Bench 与 AlpacaEval。常见偏差与对策：位置偏置（交换 A/B 顺序取平均）、长度偏置（控制长度或加惩罚）、自我偏好（用多个裁判模型）、数据污染（n-gram 重叠检测、时间切分）。",
-      "formula": "\\text{win rate} = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbb{1}[\\text{judge}(a_i, b_i) = a], \\qquad \\text{acc}_{\\text{RM}} = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbb{1}[r(y_w^{(i)}) > r(y_l^{(i)})]",
-      "aiConnection": "面试里这是最容易被追问的软肋：「你怎么证明你的微调真的有用？」回答必须落到具体评测：先在留出集上跑能力评测确认没有退化（MMLU 掉 2 个点以内），再用 200~500 条业务相关的成对样本做盲评胜率，同时报告奖励模型准确率与人工抽检一致性。工作中要建立的直觉是——任何一次 SFT/DPO/量化上线，都要有「改动前 vs 改动后」的对照评测与置信区间，而不是凭感觉说「好像变好了」。",
+      "estimatedMinutes": 23,
+      "summary": "支持向量机（SVM）寻找能最大化类别间隔的分离超平面，擅长高维与小样本分类，可配合核方法处理非线性。",
+      "intuition": "想象两类点中间有一道分界线。可能存在很多条都能分开两类点的线，但 SVM 偏要选那条离两类点都最远的\"最中间\"的线，因为这样对噪声的容忍最大、泛化最好。决定这条线的，就是贴着边界的少数几个\"支持向量\"。",
+      "formal": "线性可分时，SVM 寻找满足 $y_i(\\mathbf{w}^T\\mathbf{x}_i + b) \\geq 1$ 且最大化间隔 $\\frac{2}{\\|\\mathbf{w}\\|}$ 的超平面，等价于最小化 $\\frac{1}{2}\\|\\mathbf{w}\\|^2$。对不可分情形引入软间隔与惩罚参数 $C$。通过核技巧（如 RBF 核 $K(\\mathbf{x},\\mathbf{y})=e^{-\\gamma\\|\\mathbf{x}-\\mathbf{y}\\|^2}$）把数据映射到高维实现非线性分类，而无需显式计算映射。",
+      "formula": "\\min_{\\mathbf{w}, b} \\frac{1}{2}\\|\\mathbf{w}\\|^2 \\quad \\text{s.t. } y_i(\\mathbf{w}^T\\mathbf{x}_i+b)\\geq 1, \\quad K(\\mathbf{x},\\mathbf{y}) = e^{-\\gamma\\|\\mathbf{x}-\\mathbf{y}\\|^2}",
+      "aiConnection": "SVM 的\"最大化间隔\"思想与核技巧，是机器学习中把数据升到更高维再线性划分的经典思路，也被借鉴进一些嵌入/相似度模型。理解支持向量与损失（hinge loss），能帮助你理解鲁棒分类与边界设计。",
       "codeExample": {
         "lang": "python",
-        "filename": "eval_harness.py",
-        "code": "import random\nfrom collections import defaultdict\n\ndef exact_match_acc(preds, golds):\n    assert len(preds) == len(golds)\n    hit = sum(p.strip().lower() == g.strip().lower() for p, g in zip(preds, golds))\n    return hit / len(golds)\n\ndef win_rate(model_a, model_b, judge, swap=True):\n    # judge(prompt, x, y) -> 'x' / 'y' / 'tie'；交换顺序消除位置偏置\n    score = defaultdict(int)\n    for prompt in model_a:\n        a, b = model_a[prompt], model_b[prompt]\n        v1 = judge(prompt, a, b)\n        v2 = judge(prompt, b, a) if swap else 'tie'\n        votes = []\n        if v1 == 'x':\n            votes.append('A')\n        elif v1 == 'y':\n            votes.append('B')\n        if v2 == 'x':\n            votes.append('B')     # 交换后判 x 说明原本 B 更好\n        elif v2 == 'y':\n            votes.append('A')\n        if votes.count('A') > votes.count('B'):\n            score['A'] += 1\n        elif votes.count('B') > votes.count('A'):\n            score['B'] += 1\n        else:\n            score['tie'] += 1\n    n = len(model_a)\n    return {k: round(v / n, 3) for k, v in score.items()}\n\ndef wilson_ci(k, n, z=1.96):\n    p = k / n\n    denom = 1 + z ** 2 / n\n    centre = p + z ** 2 / (2 * n)\n    margin = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    return round((centre - margin) / denom, 3), round((centre + margin) / denom, 3)\n\nif __name__ == '__main__':\n    preds = ['42', 'Paris', '7']\n    golds = ['42', 'paris', '8']\n    print('EM 准确率:', round(exact_match_acc(preds, golds), 3))\n\n    random.seed(0)\n    ma = {f'q{i}': f'answer A{i}' for i in range(200)}\n    mb = {f'q{i}': f'answer B{i} shorter' for i in range(200)}\n    judge = lambda p, x, y: 'x' if len(x) > len(y) else 'y'   # 模拟长度偏置裁判\n    print('胜率(含长度偏置):', win_rate(ma, mb, judge))\n    print('胜率 95% 置信区间 (k=120, n=200):', wilson_ci(120, 200))"
+        "filename": "svm.py",
+        "code": "from sklearn.svm import SVC\nfrom sklearn.datasets import make_blobs\nfrom sklearn.model_selection import train_test_split\n\n# 生成两类稍微重叠的数据\nX, y = make_blobs(n_samples=200, centers=2, cluster_std=1.5, random_state=0)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 用 RBF 核处理非线性\nsvm = SVC(kernel='rbf', C=1.0, gamma='scale')\nsvm.fit(X_train, y_train)\n\nprint('准确率 =', round(svm.score(X_test, y_test), 3))\n\n# 支持向量的数量\nprint('支持向量数 =', len(svm.support_vectors_))\n\n# 线性核的决策函数\nlinear = SVC(kernel='linear').fit(X_train, y_train)\nprint('线性核准确率 =', round(linear.score(X_test, y_test), 3))"
       },
       "mistakes": [
-        "只报告训练 loss 与困惑度就宣称微调有效，没有与基线做对照评测",
-        "LLM 裁判只问一次不交换 A/B 顺序，位置偏置让结果不可复现",
-        "评测集与训练数据有重叠却不做污染检测，分数虚高无法反映真实能力",
-        "样本量只有二三十条就下结论，胜率差异落在置信区间内却当成提升"
+        "不对特征做标准化，导致间隔与核函数受量纲影响",
+        "误以为线性核可处理任意非线性数据",
+        "把 C 与 gamma 大小对过拟合/欠拟合的影响搞反",
+        "把支持向量误认为是全部训练样本"
       ],
       "interviewPoints": [
-        "「你怎么证明一次微调真的有效？说清楚评测集、指标和对照设计。」",
-        "「用 GPT-4 当裁判有什么偏置？你会怎么设计来消除它们？」",
-        "「困惑度下降了但用户觉得变差了，可能是什么原因？」",
-        "「怎么检测评测集污染？发现污染后怎么处理？」"
+        "「SVM 为什么最大化间隔，而不是随便找条线分开？」要答到间隔越大对扰动的容忍度越高，结构风险最小化给出的泛化上界更紧",
+        "「支持向量是什么？预测只依赖它们吗？」要答到只有落在间隔边界上或违反间隔的样本 α>0，决策函数只是它们的核函数加权和",
+        "「核技巧为什么不需要显式升维？」要答到对偶形式只用到样本间内积，核函数直接给出高维内积，避免构造无穷维映射的代价",
+        "「C 和 gamma 调大调小分别会怎样？」要答到 C 越大越不容忍错分、易过拟合；gamma 越大核越窄、边界越碎、同样易过拟合"
       ],
-      "resources": [
-        {
-          "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena",
-          "url": "https://arxiv.org/abs/2306.05685"
-        },
-        {
-          "title": "Measuring Massive Multitask Language Understanding (MMLU)",
-          "url": "https://arxiv.org/abs/2009.03300"
-        },
-        {
-          "title": "HuggingFace Open LLM Leaderboard 评测方法说明",
-          "url": "https://huggingface.co/docs/leaderboards/open_llm_leaderboard/about"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "eval-alignment-q1",
+          "id": "svm-q1",
           "type": "choice",
-          "prompt": "用 LLM 作为裁判做 A/B 胜率评测时，交换 A、B 顺序各评一次的主要目的是？",
+          "prompt": "SVM 选择分离超平面的原则是？",
           "options": [
-            "提高评测速度",
-            "消除裁判的位置偏置，使结果更可靠",
-            "减少 token 消耗",
-            "让两个模型分数都变高"
+            "最大化类别间隔",
+            "最小化训练误差",
+            "最小化特征数",
+            "最大化训练样本数"
           ],
-          "answerIndex": 1,
-          "explanation": "LLM 裁判普遍存在位置偏置（倾向选先出现的答案），交换顺序并聚合两次结果可以抵消该偏置；这会增加调用成本而不是减少。"
+          "answerIndex": 0,
+          "explanation": "SVM 目标是找到能最大化两类之间间隔的超平面，以获得更好的泛化。"
         },
         {
-          "id": "eval-alignment-q2",
+          "id": "svm-q2",
           "type": "short",
-          "prompt": "为什么困惑度下降不能证明模型变好了？",
-          "answer": "参考回答：困惑度衡量的是模型在特定数据分布上预测下一个 token 的平均不确定性，只对同分词器、同分布的数据可比，跨模型或跨数据没有意义。它无法反映指令跟随、格式合规、有用性与安全性等对齐目标，SFT 后困惑度常常上升但人类偏好明显改善。因此必须用客观能力集（MMLU、GSM8K）、成对胜率与人工评估共同判断，并做改动前后的对照。",
+          "prompt": "SVM 中核技巧的作用是什么？",
+          "answer": "参考回答：核技巧通过一个核函数隐式地把样本映射到高维特征空间，让原本线性不可分的数据在高维变得线性可分，同时避免了显式计算高维映射，从而高效实现非线性分类。",
           "keywords": [
-            "同分布可比",
-            "不反映对齐目标",
-            "SFT 后常上升",
-            "对照评测"
+            "高维",
+            "核",
+            "线性"
           ],
-          "explanation": "要点是「困惑度只测下一 token 预测、与对齐目标脱节」，并能指出 SFT 后 PPL 上升是常见现象。"
+          "explanation": "核技巧隐式升维使数据线性可分，无需显式映射，支持非线性分类。"
         },
         {
-          "id": "eval-alignment-q3",
+          "id": "svm-q3",
           "type": "code",
-          "prompt": "实现 exact_match_acc(preds, golds)：忽略大小写与首尾空白，返回准确率（浮点数）。",
-          "starterCode": "def exact_match_acc(preds, golds):\n    pass\n",
-          "solution": "def exact_match_acc(preds, golds):\n    assert len(preds) == len(golds)\n    hit = sum(p.strip().lower() == g.strip().lower() for p, g in zip(preds, golds))\n    return hit / len(golds)\n\nprint(exact_match_acc(['42', ' Paris '], ['42', 'paris']))\n",
+          "prompt": "用 sklearn 的 SVC(kernel='linear') 拟合 X、y 并打印准确率。",
+          "starterCode": "from sklearn.svm import SVC\n\nX = [[0, 0], [1, 1], [2, 0], [3, 1]]\ny = [0, 0, 1, 1]\n",
+          "solution": "from sklearn.svm import SVC\n\nX = [[0, 0], [1, 1], [2, 0], [3, 1]]\ny = [0, 0, 1, 1]\n\nsvm = SVC(kernel='linear')\nsvm.fit(X, y)\nprint(svm.score(X, y))",
           "checks": [
-            "strip().lower()",
-            "zip(preds, golds)",
-            "/ len(golds)"
+            "SVC",
+            "kernel='linear'",
+            "fit"
           ],
-          "explanation": "逐条做 strip 与 lower 归一化后比较，统计命中数并除以样本总数；断言长度一致可避免静默的错误配对。"
+          "explanation": "创建线性核 SVC，fit 训练后用 .score() 返回准确率。"
         }
-      ]
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "clustering",
+      "title": "Clustering 聚类",
+      "order": 6,
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "聚类是无监督学习，在没有标签的情况下把相似样本自动归成若干组，最常用的是 K-Means。",
+      "intuition": "给你一堆没有标签的点，让你凭直觉把它们分成几堆，让\"每堆内部尽量近、堆与堆尽量远\"。K-Means 就这样：先随便放几个中心点，把每个点分给最近的中心，再移动中心到堆的平均位置，重复直到稳定。",
+      "formal": "K-Means 目标是最小化簇内平方和：$\\sum_{k=1}^{K}\\sum_{\\mathbf{x}\\in C_k}\\|\\mathbf{x}-\\boldsymbol{\\mu}_k\\|^2$。算法交替进行：分配步把每个样本分到最近的中心，更新步把 $\\boldsymbol{\\mu}_k$ 设为簇内均值，迭代至收敛。需预先指定 $K$（可用肘部法/轮廓系数选择），对初始中心和特征尺度敏感。",
+      "formula": "J = \\sum_{k=1}^{K}\\sum_{\\mathbf{x}\\in C_k}\\|\\mathbf{x}-\\boldsymbol{\\mu}_k\\|^2, \\quad \\boldsymbol{\\mu}_k = \\frac{1}{|C_k|}\\sum_{\\mathbf{x}\\in C_k}\\mathbf{x}",
+      "aiConnection": "聚类常用于无标签场景：用户分群、文档主题发现、异常检测、向量检索的粗聚类。在 RAG 中，对大量 embedding 做聚类能帮助组织语料或加速检索，是理解无监督表示学习的一把钥匙。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "clustering.py",
+        "code": "from sklearn.cluster import KMeans\nfrom sklearn.datasets import make_blobs\nimport matplotlib.pyplot as plt\n\n# 造三个簇的数据\nX, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.8, random_state=0)\n\n# K-Means 聚成 3 类\nkmeans = KMeans(n_clusters=3, n_init=10, random_state=0)\nlabels = kmeans.fit_predict(X)\n\n# 查看各簇中心\nprint('簇中心:')\nprint(kmeans.cluster_centers_)\nprint('簇标签样例:', labels[:10])\n\n# 肘部法思路：观察不同 K 的 inertia\ninertias = []\nfor k in range(1, 6):\n    inertias.append(KMeans(n_clusters=k, n_init=10, random_state=0).fit(X).inertia_)\nprint('不同 K 的 inertia =', [round(v, 1) for v in inertias])\n\n# 可视化\nplt.scatter(X[:, 0], X[:, 1], c=labels, cmap='viridis')\nplt.show()"
+      },
+      "mistakes": [
+        "不标准化特征就让距离主导，导致聚类偏向量纲大的维度",
+        "把 K-Means 的聚类中心当成真实类别标签使用",
+        "不评估 K 的取值，直接拍脑袋定簇数",
+        "把聚类当作有监督分类，混淆无监督与有监督"
+      ],
+      "interviewPoints": [
+        "「K-Means 的目标函数是什么？为什么一定收敛？」要答到最小化簇内平方和，分配步与更新步都单调降低 J，故收敛到局部最优",
+        "「K-Means 有哪些明显缺点？」要答到需要预先指定 K、对初始中心敏感、隐含假设簇是球形且方差相近，并对量纲和异常值敏感",
+        "「怎么选 K？肘部法和轮廓系数有何区别？」要答到肘部法看 inertia 拐点、较主观；轮廓系数衡量簇内紧与簇间离、更客观",
+        "「K-Means 和 KNN 的区别是什么？」要答到前者是无监督聚类、后者是有监督分类，名字相似但输入、目标与训练方式完全不同"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "clustering-q1",
+          "type": "choice",
+          "prompt": "K-Means 聚类属于哪类学习？",
+          "options": [
+            "无监督学习",
+            "监督学习",
+            "半监督学习",
+            "强化学习"
+          ],
+          "answerIndex": 0,
+          "explanation": "聚类在无标签数据上进行，是无监督学习。"
+        },
+        {
+          "id": "clustering-q2",
+          "type": "short",
+          "prompt": "K-Means 算法中的\"更新步\"做了什么？",
+          "answer": "参考回答：在把每个样本分配到最近的中心后，把每个簇的中心点重新设置为该簇所有样本的均值，使中心逐步向簇内质心靠拢，反复迭代直到基本不变或达到迭代上限。",
+          "keywords": [
+            "均值",
+            "中心",
+            "迭代"
+          ],
+          "explanation": "更新步把簇中心改为该簇样本的均值，迭代优化簇内距离。"
+        },
+        {
+          "id": "clustering-q3",
+          "type": "code",
+          "prompt": "用 sklearn 的 KMeans(n_clusters=2) 对 X 聚类并打印簇标签。",
+          "starterCode": "from sklearn.cluster import KMeans\n\nX = [[1, 1], [1.2, 1.1], [8, 8], [8.2, 7.9]]\n",
+          "solution": "from sklearn.cluster import KMeans\n\nX = [[1, 1], [1.2, 1.1], [8, 8], [8.2, 7.9]]\n\nkmeans = KMeans(n_clusters=2, n_init=10)\nlabels = kmeans.fit_predict(X)\nprint(labels)",
+          "checks": [
+            "KMeans",
+            "fit_predict",
+            "n_clusters=2"
+          ],
+          "explanation": "用 KMeans(n_clusters=2, n_init=10) 建模型，fit_predict(X) 返回簇标签。"
+        }
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "pca",
+      "title": "PCA 主成分分析",
+      "order": 7,
+      "module": "机器学习算法",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "主成分分析（PCA）通过线性降维把高维数据投影到方差最大的几个方向上，用于压缩与去噪。",
+      "intuition": "想象一张非常扁的云朵，真正重要的信息只沿着少数几个方向扩散。PCA 就找到这些\"信息最多的方向\"（主成分），把数据投影上去，用尽量少的维度保留尽量多的变化。它既压缩体积，又尽量不丢信息。",
+      "formal": "PCA 对数据中心化后的协方差矩阵做特征分解，取特征值最大的 $d$ 个特征向量作为主成分投影方向。降维后数据为 $\\mathbf{Z} = \\mathbf{X}\\mathbf{W}$，其中 $\\mathbf{W}$ 的列是前 $d$ 个主成分。可保留的方差比例约为 $\\frac{\\sum_{i=1}^{d}\\lambda_i}{\\sum_{i=1}^{n}\\lambda_i}$，据此选择主成分个数。选择主成分数可通过解释方差比（explained variance ratio）判断。",
+      "formula": "\\text{协方差矩阵 } \\mathbf{C} = \\frac{1}{n}\\mathbf{X}^T\\mathbf{X}, \\quad \\mathbf{Z} = \\mathbf{X}\\mathbf{W}, \\quad \\text{保留方差比} = \\frac{\\sum_{i=1}^{d}\\lambda_i}{\\sum_{i=1}^{n}\\lambda_i}",
+      "aiConnection": "PCA 常用于高维特征降维、去相关与可视化（把高维 embedding 降到 2D 展示），也是大模型分析词向量空间、数据预处理的常见步骤。理解它帮你判断\"到底多少维够用\"。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "pca.py",
+        "code": "from sklearn.decomposition import PCA\nfrom sklearn.datasets import load_iris\nfrom sklearn.preprocessing import StandardScaler\nimport numpy as np\n\n# 加载 4 维数据\nX, _ = load_iris(return_X_y=True)\n\n# 标准化\nX_scaled = StandardScaler().fit_transform(X)\n\n# 降到 2 维\npca = PCA(n_components=2)\nX_pca = pca.fit_transform(X_scaled)\n\nprint('原始维度:', X.shape[1])\nprint('降维后维度:', X_pca.shape[1])\nprint('explained variance ratio:')\nprint(np.round(pca.explained_variance_ratio_, 3))\nprint('累计解释方差:', round(pca.explained_variance_ratio_.sum(), 3))\n\n# 看保留几维能达到 95% 方差\npca2 = PCA(n_components=0.95)\npca2.fit(X_scaled)\nprint('达到95%方差所需维数:', pca2.n_components_)"
+      },
+      "mistakes": [
+        "PCA 前不做标准化，让量纲大的特征主导主成分",
+        "把 PCA 降到 2 维就当成最好的可视化，忽视保留方差比例",
+        "误以为 PCA 是无监督且线性，无法处理高度非线性结构",
+        "混淆降维后的主成分轴与原始特征的可解释性"
+      ],
+      "interviewPoints": [
+        "「PCA 为什么等价于协方差矩阵的特征分解？」要答到最大化投影方差等价于最大化 wᵀΣw，在 ‖w‖=1 约束下解正是 Σ 的最大特征向量",
+        "「PCA 之前为什么必须标准化？」要答到它完全基于方差，量纲大的特征会主导主成分方向，标准化后各特征才被公平对待",
+        "「PCA 和 SVD 是什么关系？」要答到对中心化矩阵直接做 SVD 就能得到主成分方向与奇异值，数值上比显式特征分解更稳定",
+        "「PCA 的局限是什么？」要答到它是无监督线性方法，可能丢掉最关键的判别方向；非线性结构需 kernel PCA 或 UMAP"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "pca-q1",
+          "type": "choice",
+          "prompt": "PCA 降维时保留的主成分方向是？",
+          "options": [
+            "数据方差最大的方向",
+            "数据均值最大的方向",
+            "类别标签的方向",
+            "随机方向"
+          ],
+          "answerIndex": 0,
+          "explanation": "PCA 取协方差矩阵特征值最大的特征向量作为主成分，即方差最大的方向。"
+        },
+        {
+          "id": "pca-q2",
+          "type": "short",
+          "prompt": "为什么 PCA 前通常要先对特征做标准化？",
+          "answer": "参考回答：因为 PCA 基于方差，若某个变量量纲（范围）很大，它会主导方差从而主导主成分方向。标准化让各特征均值为 0、方差为 1，避免量纲差异干扰，使主成分真正反映数据的内部结构。",
+          "keywords": [
+            "标准化",
+            "方差",
+            "量纲"
+          ],
+          "explanation": "标准化消除量纲影响，避免大范围特征主导 PCA 的方差。"
+        },
+        {
+          "id": "pca-q3",
+          "type": "code",
+          "prompt": "用 sklearn 的 PCA(n_components=2) 对 X 降维并打印降维后的形状。",
+          "starterCode": "from sklearn.decomposition import PCA\n\nX = [[1, 2, 3], [2, 3, 4], [3, 4, 5]]\n",
+          "solution": "from sklearn.decomposition import PCA\n\nX = [[1, 2, 3], [2, 3, 4], [3, 4, 5]]\n\npca = PCA(n_components=2)\nX_pca = pca.fit_transform(X)\nprint(X_pca.shape)",
+          "checks": [
+            "PCA",
+            "fit_transform",
+            "shape"
+          ],
+          "explanation": "用 PCA(n_components=2) 建模型，fit_transform(X) 得降维结果，.shape 查看维度。"
+        }
+      ],
+      "track": "main"
     }
   ]
 }

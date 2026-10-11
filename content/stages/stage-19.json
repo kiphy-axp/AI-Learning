@@ -1,0 +1,507 @@
+{
+  "stage": 19,
+  "stageSlug": "agent",
+  "stageTitle": "AI Agent",
+  "stageEmoji": "🕊️",
+  "stageDesc": "Tool Calling、Agent Loop、Memory 与多智能体：让模型自己干活",
+  "act": 6,
+  "actName": "第六幕 · 深度学习与大模型",
+  "category": "进阶",
+  "lessons": [
+    {
+      "slug": "tool-calling",
+      "title": "Tool Calling 工具调用",
+      "order": 1,
+      "module": "Agent 基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 27,
+      "summary": "工具调用让模型在生成文本的同时输出对某个函数的调用请求，从而赋予它执行外部动作的能力。",
+      "intuition": "模型本身只能吐文字，不能亲身去查询天气或操作数据库。工具调用就像给了模型一张'工具清单'：模型读完你的话，判断需要用什么工具，然后输出一个结构化请求（'我要调用 get_weather，参数是北京'）。程序在后台真正执行这个函数，把结果再回给模型，模型据此继续往下说。",
+      "formal": "工具调用把函数描述（函数名、功能说明、参数 JSON Schema）随请求一起发到模型。模型在合适的时机输出 tool_call（包含函数名与参数对象）。宿主应用据此调用真实函数并把结果作为 tool 角色的消息回传，模型再基于结果生成最终回答。如此循环，模型就具备了调用外部能力的能力。",
+      "formula": "",
+      "aiConnection": "工具调用是 Agent 迈向'能做事'的关键：模型不再只回答问题，而是能按需调用检索、查询、计算等真实工具，这正是 RAG 与 Agent 执行层的实现基础。清晰、准确的工具描述，直接决定了模型能否正确选择并传参。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "tool_call.py",
+        "code": "from openai import OpenAI\nimport json\n\nclient = OpenAI(api_key=\"key\")\n\n# 定义一个工具并给出其 JSON Schema 描述\ntools = [\n    {\n        \"type\": \"function\",\n        \"function\": {\n            \"name\": \"get_weather\",\n            \"description\": \"查询某个城市的天气\",\n            \"parameters\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"city\": {\"type\": \"string\", \"description\": \"城市名\"}\n                },\n                \"required\": [\"city\"],\n            },\n        },\n    }\n]\n\nresp = client.chat.completions.create(\n    model=\"gpt-4o-mini\",\n    messages=[{\"role\": \"user\", \"content\": \"北京今天天气怎么样？\"}],\n    tools=tools,\n    tool_choice=\"auto\",\n)\n\n# 模型可能请求调用工具\nif resp.choices[0].message.tool_calls:\n    call = resp.choices[0].message.tool_calls[0]\n    print(\"调用函数:\", call.function.name)\n    print(\"参数:\", call.function.arguments)\n    # 宿主在此执行真实函数并回传结果"
+      },
+      "mistakes": [
+        "工具描述写得模糊，导致模型选错工具或传错参数",
+        "忽略了 tool_choice 与 tools 参数，模型不知道可用工具",
+        "不处理模型未调用工具的默认情况，逻辑直接崩溃",
+        "把工具返回结果格式不规范，模型无法理解"
+      ],
+      "interviewPoints": [
+        "「工具调用是怎么实现的？」要答到把函数名、说明与参数 JSON Schema 随请求发给模型，模型输出 tool_call，宿主执行后以 tool 角色回传再生成",
+        "「模型为什么选错工具？」要答到描述模糊、多个工具职责重叠、参数 schema 不清晰，以及工具数量过多导致选择困难",
+        "「工具描述怎么写才准？」要答到名字动词化、说明写清何时用与何时不用、参数给出类型与枚举、附少量示例，避免自然语言歧义",
+        "「tool_choice 有哪些用法？」要答到 auto 让模型自选、none 禁用工具、也可强制指定某个函数，常用于路由或先探测模型是否真需要工具"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "tool-calling-q1",
+          "type": "choice",
+          "prompt": "工具调用（tool calling）让模型具备了哪类新能力？",
+          "options": [
+            "生成更长的文本",
+            "在执行外部函数后依托真实结果继续生成",
+            "提高模型参数",
+            "自动微调模型"
+          ],
+          "answerIndex": 1,
+          "explanation": "工具调用允许模型输出对某个外部函数的调用请求，宿主执行函数并回传结果，模型据此继续生成，从而能执行真实外部动作。"
+        },
+        {
+          "id": "tool-calling-q2",
+          "type": "short",
+          "prompt": "一个完整的工具调用流程大致是怎样的？",
+          "answer": "参考回答：先把工具的函数名、说明和参数 schema 传给模型；模型判断需要时输出 tool_call（含函数名与参数）；宿主执行真实函数，并把返回结果作为 tool 角色消息回传给模型；模型再基于该结果生成最终回答。",
+          "keywords": [
+            "schema",
+            "tool_call",
+            "回传"
+          ],
+          "explanation": "流程为：传工具描述、模型输出 tool_call、宿主执行并回传结果、模型据此生成回答。"
+        },
+        {
+          "id": "tool-calling-q3",
+          "type": "code",
+          "prompt": "补全一个 get_weather 工具的 JSON Schema 描述对象（含 name、description、parameters，city 为必填字符串）。",
+          "starterCode": "tools = [\n    {\n        \"type\": \"function\",\n        \"function\": {\n            \"name\": \"get_weather\",\n            \"description\": \"查询天气\",\n            \"parameters\": {\n                \"type\": \"object\",\n                \"properties\": {},\n                \"required\": []\n            }\n        }\n    }\n]\n",
+          "solution": "tools = [\n    {\n        \"type\": \"function\",\n        \"function\": {\n            \"name\": \"get_weather\",\n            \"description\": \"查询某城市天气\",\n            \"parameters\": {\n                \"type\": \"object\",\n                \"properties\": {\"city\": {\"type\": \"string\"}},\n                \"required\": [\"city\"]\n            }\n        }\n    }\n]\n",
+          "checks": [
+            "\\\"city\\\"",
+            "\\\"required\\\""
+          ],
+          "explanation": "在 properties 声明 city 字符串参数，required 里列上 city。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "function-calling",
+      "title": "Function Calling 函数调用",
+      "order": 2,
+      "module": "Agent 基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 27,
+      "summary": "函数调用是工具调用的核心实现，把模型的选择封装成可被宿主可靠执行的结构化函数调用请求。",
+      "intuition": "函数调用是工具调用背后的'执行契约'。模型不直接写代码跑，而是输出一个明确的'我要调用某函数、带上这些参数'的结构化请求，由宿主程序负责真正执行并严格回传结果。这样就把模型的'想'和宿主的'做'分离开，既安全又可控。",
+      "formal": "在 OpenAI 等 API 中，tools 参数里定义 function 类型工具，模型在需调用时返回 message.tool_calls，其中含 function.name 与 function.arguments（JSON 字符串）。典型循环为：发消息+tools → 模型返回 tool_calls → 宿主执行并追加 tool 消息 → 再次请求模型 → 得到最终文本。可通过 tool_choice 强制或禁用，也可并行返回多个 tool_call。",
+      "formula": "",
+      "aiConnection": "函数调用是 Agent 执行步骤的标准化载体：RAG 的检索、Agent 的查询、代码执行、API 调用都能封装成函数让模型触发。实现健壮的函数调用循环（正确处理 multi-tool、解析 arguments、错误回传）是构建可靠 Agent 的核心工程。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "function_call_loop.py",
+        "code": "from openai import OpenAI\nimport json\n\nclient = OpenAI(api_key=\"key\")\ntools = [\n    {\"type\": \"function\", \"function\": {\n        \"name\": \"add\",\n        \"description\": \"两数相加\",\n        \"parameters\": {\"type\": \"object\",\n            \"properties\": {\"a\": {\"type\": \"number\"}, \"b\": {\"type\": \"number\"}},\n            \"required\": [\"a\", \"b\"]},\n    }}\n]\n\nmessages = [{\"role\": \"user\", \"content\": \"2 + 3 等于几？\"}]\nresp = client.chat.completions.create(model=\"gpt-4o-mini\", messages=messages, tools=tools)\n\n# 解析模型返回的工具调用并执行真实函数\nif resp.choices[0].message.tool_calls:\n    for call in resp.choices[0].message.tool_calls:\n        args = json.loads(call.function.arguments)\n        result = args[\"a\"] + args[\"b\"]   # 执行真实逻辑\n        messages.append(call.message)\n        messages.append({\"role\": \"tool\", \"tool_call_id\": call.id,\n                         \"content\": str(result)})\n    # 再次调用让模型基于工具结果生成最终答案\n    final = client.chat.completions.create(model=\"gpt-4o-mini\", messages=messages)\n    print(final.choices[0].message.content)"
+      },
+      "mistakes": [
+        "未能正确处理 tool_calls，把调用结果当作普通文本反而报错",
+        "不把 tool 角色消息回传，模型不知道工具执行结果",
+        "多工具并行时未匹配 tool_call_id，导致结果错乱"
+      ],
+      "interviewPoints": [
+        "「多轮函数调用循环怎么走？」要答到带 tools 发请求、收 tool_calls、执行后按 id 回传 tool 消息、再次请求，直到不再出现 tool_calls",
+        "「并行 tool_calls 要注意什么？」要答到一次可能返回多个调用、必须按 id 一一对应回传，顺序错乱会让模型把结果张冠李戴",
+        "「arguments 解析失败怎么办？」要答到模型可能输出非法 JSON 或漏必填参数，要校验并回传结构化错误让它自我修正，而不是直接抛异常",
+        "「函数调用比让模型直接输出文本好在哪？」要答到结构化输出由模型侧保证格式、无需正则猜解析、可校验可并行，是 Agent 可靠执行的前提"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "function-calling-q1",
+          "type": "choice",
+          "prompt": "函数调用循环中，模型得到工具执行结果后靠什么知道结果？",
+          "options": [
+            "重新训练",
+            "把工具结果作为 tool 角色消息回传",
+            "读取模型内部缓存",
+            "修改模型参数"
+          ],
+          "answerIndex": 1,
+          "explanation": "宿主执行函数后，须把结果作为 role=tool 的消息、携带对应 tool_call_id 回传给模型，模型才能基于真实结果继续生成。"
+        },
+        {
+          "id": "function-calling-q2",
+          "type": "short",
+          "prompt": "为什么要把工具执行结果回传给模型？",
+          "answer": "参考回答：因为模型本身不执行真实函数，结果只存在于宿主程序里。只有把结果以 tool 角色消息回传给模型，它才能看到真实输出并据此计算或补充最终回答，从而形成'请求-执行-回传-生成'的闭环。",
+          "keywords": [
+            "工具",
+            "回传",
+            "tool"
+          ],
+          "explanation": "回传工具结果让模型看到实际执行输出，才能进行后续推理与最终作答。"
+        },
+        {
+          "id": "function-calling-q3",
+          "type": "code",
+          "prompt": "实现一个 add 工具的调用结果处理：解析 arguments 得到 a、b 并返回它们的和。",
+          "starterCode": "import json\n\n\ndef execute_add(arguments):\n    pass\n",
+          "solution": "import json\n\n\ndef execute_add(arguments):\n    args = json.loads(arguments)\n    return args[\"a\"] + args[\"b\"]\n",
+          "checks": [
+            "json.loads",
+            "args"
+          ],
+          "explanation": "解析 arguments JSON 得到 a、b 并求和。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "agent-loop",
+      "title": "Agent Loop 智能体循环",
+      "order": 3,
+      "module": "Agent 基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 27,
+      "summary": "Agent 循环是'感知-思考-行动-观察'不断往复的闭环，让智能体能自主完成多步任务。",
+      "intuition": "一个 Agent 就像一个会自己安排步骤的人：先读懂任务（感知），想想该怎么做（思考），调用工具或做些动作（行动），看看结果怎么样（观察），然后决定下一步。这个循环不断重复，直到任务完成或达到最大步数。它不是一次问答，而是一连串有目的、可自我纠偏的步骤。",
+      "formal": "Agent 循环通常包含：目标（goal）、上下文（context）、推理（reasoning，决定下一步）、行动（action，如调用工具）、观察（observation，工具/环境反馈）。每一步把新观测追加进上下文，再次交给模型推理，直到满足终止条件（任务完成、达到 max_turns、工具报错等）。循环的核心是维护好上下文与状态，避免无限循环与超步。",
+      "formula": "\\text{state}_{t+1} = \\text{update}(\\text{state}_t, \\text{action}_t, \\text{observation}_t)",
+      "aiConnection": "大多数 Agent 框架（如 LangChain、AutoGen、OpenAI Agent）底层都是一个 agent loop：模型推理→调用工具→得到观测→继续推理。可靠地实现循环需要处理终止条件、错误恢复、上下文管理与最大步数，这些决定 Agent 的自主性与稳定性。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "agent_loop.py",
+        "code": "from openai import OpenAI\n\nclient = OpenAI(api_key=\"key\")\n\ntools = [{\"type\": \"function\", \"function\": {\n    \"name\": \"add\", \"description\": \"两数相加\",\n    \"parameters\": {\"type\": \"object\",\n        \"properties\": {\"a\": {\"type\": \"number\"}, \"b\": {\"type\": \"number\"}},\n        \"required\": [\"a\", \"b\"]},\n}}]\n\ndef agent_loop(user_goal, max_turns=5):\n    messages = [{\"role\": \"user\", \"content\": user_goal}]\n    for turn in range(max_turns):\n        resp = client.chat.completions.create(\n            model=\"gpt-4o-mini\", messages=messages, tools=tools)\n        msg = resp.choices[0].message\n        # 工具调用则执行并回传，否则认为任务完成\n        if msg.tool_calls:\n            for call in msg.tool_calls:\n                import json\n                a, b = json.loads(call.function.arguments)[\"a\"], \\\n                       json.loads(call.function.arguments)[\"b\"]\n                messages.append(call.message)\n                messages.append({\"role\": \"tool\", \"tool_call_id\": call.id,\n                                 \"content\": str(a + b)})\n        else:\n            return msg.content   # 无工具调用即完成任务\n    return \"达到最大步数\"\n\nprint(agent_loop(\"计算 (2 + 3) 的结果，不需要额外解释。\"))"
+      },
+      "mistakes": [
+        "没有设置最大步数，导致循环无限进行",
+        "不处理工具报错或无效结果，Agent 卡死或反复重试同一动作",
+        "忽视上下文累积，长任务下历史过长超限或丢失关键信息",
+        "把循环当一次问答，缺失观测回传机制"
+      ],
+      "interviewPoints": [
+        "「Agent Loop 由哪几步组成？」要答到感知-思考-行动-观察的闭环，每步把观测追加进上下文再推理，直到满足终止条件",
+        "「怎么防止死循环？」要答到 max_turns 上限、重复动作检测、超时与 token 预算，以及工具报错时的退避与降级策略",
+        "「循环里的上下文怎么管？」要答到历史随步数线性增长会超出窗口，需要摘要压缩、只保留关键观测、把长结果落盘只回传摘要",
+        "「Agent 和 workflow 的边界在哪？」要答到看步骤是否预先确定：流程固定时 workflow 更稳更省，路径开放才交给 Agent 自主规划"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "agent-loop-q1",
+          "type": "choice",
+          "prompt": "Agent 循环的正确顺序是？",
+          "options": [
+            "观察-行动-思考-感知",
+            "感知-思考-行动-观察",
+            "行动-观察-思考-感知",
+            "思考-观察-行动-感知"
+          ],
+          "answerIndex": 1,
+          "explanation": "典型 Agent 循环是：感知任务、思考决策、执行行动、观察反馈，再据此进入下一步，不断往复直至结束。"
+        },
+        {
+          "id": "agent-loop-q2",
+          "type": "short",
+          "prompt": "为什么 Agent 循环需要设置最大步数限制？",
+          "answer": "参考回答：因为模型有可能反复调用工具而不收敛、陷入无效循环，浪费 token 与时间。设置 max_turns 上限能强制终止，避免死循环与成本失控，同时可在超限时返回部分结果或提示失败。",
+          "keywords": [
+            "最大步数",
+            "终止",
+            "死循环"
+          ],
+          "explanation": "最大步数防止无限循环与成本失控，提供强制终止条件。"
+        },
+        {
+          "id": "agent-loop-q3",
+          "type": "code",
+          "prompt": "实现一个 run_agent(goal, max_turns)：循环中若模型无 tool_calls 则返回 content，否则继续；超过 max_turns 返回提示。",
+          "starterCode": "def run_agent(goal, max_turns=5):\n    messages = [{\"role\": \"user\", \"content\": goal}]\n    for turn in range(max_turns):\n        # 假设调用 get_response(messages) 返回消息对象\n        msg = get_response(messages)\n        if not msg.tool_calls:\n            return msg.content\n    return \"达到最大步数\"\n",
+          "solution": "def run_agent(goal, max_turns=5):\n    messages = [{\"role\": \"user\", \"content\": goal}]\n    for turn in range(max_turns):\n        msg = get_response(messages)\n        if not msg.tool_calls:\n            return msg.content\n        # 执行工具并把观测回传，继续循环\n        # messages.append(...)\n    return \"达到最大步数\"\n",
+          "checks": [
+            "for turn in range(max_turns)",
+            "msg.content"
+          ],
+          "explanation": "对 turn 循环，无工具调用即返回 content；否则继续循环直至上限。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "memory",
+      "title": "Memory 记忆",
+      "order": 4,
+      "module": "Agent 进阶",
+      "difficulty": "进阶",
+      "estimatedMinutes": 25,
+      "summary": "记忆让 Agent 能在多轮与长任务中保留、组织并调用历史信息，是自主性的重要前提。",
+      "intuition": "没有记忆的 Agent 每次对话都像失忆症患者，得重新交代一切。记忆分为两类：短期记忆如同对话里的'即时上下文'，记住这几天聊了什么；长期记忆则像写进笔记本的重要事实，跨会话甚至跨项目都能长久记住，并在需要时被检索出来。正是这两层记忆让 Agent 显得'了解你'。",
+      "formal": "短期记忆主要由上下文窗口承载，受 token 上限约束，超限需截断或摘要；长期记忆通常持久化到外部存储，可分为记忆库（如向量数据库）用于语义检索、以及结构化存储（如数据库/文件）用于精确事实。记忆机制包括写入（决定什么值得记）、组织（embedding/index）、检索（何时取哪些）、更新与遗忘（修正过时或错误记忆）。",
+      "formula": "\\text{retrieved} = \\text{top-k}\\;\\text{}(\\text{query}; \\text{memory\\_store})",
+      "aiConnection": "记忆是 Agent 从一次性助手走向长期伙伴的关键。RAG 本质上就是为对话注入'检索到的长期记忆'。多轮 Agent 要记住用户的偏好、历史选择与任务上下文，往往需要把短期对话与长期记忆库结合起来，并通过摘要压缩短期信息、检索关键长期事实。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "memory.py",
+        "code": "import numpy as np\n\nclass SimpleMemory:\n    def __init__(self):\n        self.items = []   # (向量, 文本)\n\n    def add(self, text, vec):\n        self.items.append((vec, text))\n\n    def search(self, q_vec, top_k=2):\n        def cosine(a, b):\n            return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n        scored = sorted(self.items, key=lambda x: cosine(q_vec, x[0]), reverse=True)\n        return [t for _, t in scored[:top_k]]\n\n    def recent_context(self, n=3):\n        # 返回最近 n 条作为短期记忆\n        return [t for _, t in self.items[-n:]]\n\n# 示意：加入记忆并检索\nmem = SimpleMemory()\nmem.add(\"用户喜欢用 Python\", np.array([0.9, 0.2]))\nmem.add(\"用户偏好简洁回答\", np.array([0.3, 0.9]))\nprint(\"最近记忆:\", mem.recent_context(2))\nprint(\"相关检索:\", mem.search(np.array([0.8, 0.3]), top_k=1))"
+      },
+      "mistakes": [
+        "把全部历史无脑塞进上下文，超限或成本失控",
+        "长期记忆不做质量过滤，存入大量无关或错误信息",
+        "不处理记忆更新与遗忘，过时记忆持续误导 Agent"
+      ],
+      "interviewPoints": [
+        "「短期记忆和长期记忆怎么分工？」要答到短期靠上下文窗口承载、受 token 限制，长期持久化到向量库或数据库、跨会话检索回填",
+        "「什么信息值得写入长期记忆？」要答到稳定偏好与事实、任务结论，而不是全部对话；写入前要抽取与去重，否则噪声会污染后续检索",
+        "「记忆冲突或过期怎么办？」要答到需要更新与遗忘机制、时间戳与来源标记，冲突时以新事实为准，并定期清理失效记忆",
+        "「为什么不全塞进上下文？」要答到成本与窗口上限、长上下文里有效注意力会衰减，检索式记忆更省 token 也更可控"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "memory-q1",
+          "type": "choice",
+          "prompt": "短期记忆与长期记忆的主要区别是？",
+          "options": [
+            "无区别，二者相同",
+            "短期记忆依赖上下文窗口，长期记忆持续到外部存储可跨会话",
+            "长期记忆不占用任何存储",
+            "短期记忆比长期记忆更持久"
+          ],
+          "answerIndex": 1,
+          "explanation": "短期记忆由上下文窗口承载、受 token 限制；长期记忆持久化到外部存储，可跨会话且可被检索。"
+        },
+        {
+          "id": "memory-q2",
+          "type": "short",
+          "prompt": "当对话历史超出上下文窗口时，通常会怎么做？",
+          "answer": "参考回答：常见做法是把较早的对话做摘要压缩，只保留关键结论作为短期记忆；或用滑动窗口只保留最近若干轮；也可以把重要事实抽取出来写入长期记忆库，需要时再检索回填，从而在有限的上下文中维持关键信息。",
+          "keywords": [
+            "摘要",
+            "截断",
+            "长期记忆"
+          ],
+          "explanation": "超限时常用摘要压缩、滑动窗口截断、或把重要事实写入长期记忆库并检索回填来管理。"
+        },
+        {
+          "id": "memory-q3",
+          "type": "code",
+          "prompt": "实现一个 add 方法把 (vec, text) 加入 items，和一个 recent_context(n) 返回最近 n 条文本。",
+          "starterCode": "class SimpleMemory:\n    def __init__(self):\n        self.items = []\n\n    def add(self, vec, text):\n        pass\n\n    def recent_context(self, n):\n        pass\n",
+          "solution": "class SimpleMemory:\n    def __init__(self):\n        self.items = []\n\n    def add(self, vec, text):\n        self.items.append((vec, text))\n\n    def recent_context(self, n):\n        return [t for _, t in self.items[-n:]]\n",
+          "checks": [
+            "append",
+            "[-n:]"
+          ],
+          "explanation": "add 用 append 存 (vec,text)，recent_context 取最后 n 条文本。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "workflow",
+      "title": "Workflow 工作流",
+      "order": 5,
+      "module": "Agent 进阶",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "工作流把复杂任务拆成确定的步骤序列，用编排控制流程、分支与并行，让结果稳定可复现。",
+      "intuition": "完全自由发挥的 Agent 有时会'跑偏'。工作流则像给任务画了一张明确的流程图：第一步做什么、判断后走哪个分支、哪些步骤能并行、最后如何汇总。预设好这些步骤，Agent 就沿着轨道稳定执行，既能保证质量又不会乱来，适合工序明确的场景。",
+      "formal": "工作流编排把任务建模为有向图，节点是操作（LLM 调用、工具、检索、判断），边表示依赖与流向。可包含串行、并行（并行执行多个节点）、分支（基于条件的路由）、循环与聚合汇总。相比完全由模型自由规划（autonomous），确定性的工作流可预测、可测试、结果一致，也便于审计与错误定位；代价是灵活性较低。",
+      "formula": "x_{n+1} = step_n(x_n)",
+      "aiConnection": "在 LLM 应用里，工作流常用来固定'工序'：先检索文档、再总结、再判定是否补检索、最后生成。RAG 管线、Agent 编排框架（如 LangGraph、n8n）都支持把模型调用与工具组合成工作流。当任务规则明确、需要稳定输出时，用工作流比完全自主更可靠。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "workflow.py",
+        "code": "class Workflow:\n    def __init__(self):\n        self.steps = []   # 依次执行的步骤\n\n    def add(self, name, fn):\n        self.steps.append((name, fn))\n        return self\n\n    def run(self, x):\n        state = x\n        for name, fn in self.steps:\n            state = fn(state)\n            print(f\"执行步骤 [{name}]\", state)\n        return state\n\n# 定义几个简单步骤\ndef step1(x):\n    return x + 1\n\ndef step2(x):\n    return x * 2\n\ndef step3(x):\n    return f\"结果: {x}\"\n\nwf = Workflow()\nwf.add(\"加1\", step1).add(\"翻倍\", step2).add(\"格式化\", step3)\nprint(wf.run(3))   # 输出 结果: 8"
+      },
+      "mistakes": [
+        "把一切都做成固定工作流，导致灵活场景僵硬、无法应变",
+        "缺少错误处理或分支，遇到异常直接中断整个流程",
+        "忽视步骤间的状态传递，导致流程结果错乱",
+        "不加并行与聚合，长的串行链效率低下"
+      ],
+      "interviewPoints": [
+        "「什么时候用 workflow 而不是自主 Agent？」要答到流程明确、要求结果稳定可复现可审计时用 workflow；步骤开放需临场决策才用 Agent",
+        "「工作流怎么建模？」要答到把任务建成有向图，节点是 LLM 调用、工具、检索与判断，边表示依赖，支持串行、并行、分支与聚合",
+        "「工作流里怎么做错误处理？」要答到每步超时与重试、失败分支与降级、幂等设计，以及状态持久化带来的断点续跑",
+        "「加并行节点会带来什么新问题？」要答到状态合并与竞态、下游节点的等待与依赖、成本峰值，需要聚合节点与并发上限来兜住"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "workflow-q1",
+          "type": "choice",
+          "prompt": "确定性的工作流相比完全自主 Agent 的主要优势是？",
+          "options": [
+            "更灵活、能随机应变",
+            "结果稳定、可预测、可审计",
+            "不需要任何模型调用",
+            "一定更聪明"
+          ],
+          "answerIndex": 1,
+          "explanation": "固定工作流把任务分解成确定步骤，结果稳定可复现、便于测试审计；代价是灵活性较低。"
+        },
+        {
+          "id": "workflow-q2",
+          "type": "short",
+          "prompt": "什么时候适合用工作流而不是让 Agent 完全自主？",
+          "answer": "参考回答：当任务流程明确、步骤固定、对结果一致性要求高，或需要可追溯、可审计、便于定位错误时，适合用预定义的确定性工作流。若任务开放、步骤不固定、需要临场决策，则更适合让 Agent 自主规划。",
+          "keywords": [
+            "流程明确",
+            "稳定",
+            "可审计"
+          ],
+          "explanation": "流程明确、需要稳定一致输出与可追溯的场景适合工作流；开放任务更宜自主 Agent。"
+        },
+        {
+          "id": "workflow-q3",
+          "type": "code",
+          "prompt": "实现 Workflow 类的 add 方法，把 (name, fn) 加入 self.steps。",
+          "starterCode": "class Workflow:\n    def __init__(self):\n        self.steps = []\n\n    def add(self, name, fn):\n        pass\n",
+          "solution": "class Workflow:\n    def __init__(self):\n        self.steps = []\n\n    def add(self, name, fn):\n        self.steps.append((name, fn))\n        return self\n",
+          "checks": [
+            "append",
+            "return self"
+          ],
+          "explanation": "把 (name, fn) 加入 steps，并返回 self 以支持链式调用。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "multi-agent",
+      "title": "Multi-Agent 多智能体",
+      "order": 6,
+      "module": "Agent 进阶",
+      "difficulty": "进阶",
+      "estimatedMinutes": 24,
+      "summary": "多智能体系统让多个各有专长的 Agent 分工协作或相互质疑，共同完成更复杂的任务。",
+      "intuition": "一个全能 Agent 常常顾此失彼。多智能体就像一支有分工的团队：有人负责写代码，有人负责评审，有人负责搜索资料，还有人负责把关质量。他们通过消息协作，有的串行接力，有的并行分工，有的则互相争辩、交叉检验，从而把大任务拆开、各展所长，整体比单个 Agent 更强也更稳。",
+      "formal": "多智能体系统包含若干角色（role）不同的 Agent，各配自己的 prompt、工具与模型。常见拓扑：层级式（主管协调若干子 Agent）、流水线式（串行传递任务）、以及多 Agent 评审/辩论（互相检查、修正）。智能体之间通过消息传递共享任务与结果，需要一个协调者与终止条件，并控制消息量与上下文，防止冗余与失控。",
+      "formula": "",
+      "aiConnection": "大型任务往往由一个主管 Agent 协调多个专业子 Agent（如研究员、写手、代码审查员）并行或串行完成。评审与辩论能提升输出质量但会显著增加 token 成本与复杂度。多智能体框架（如 AutoGen、MetaGPT）把这种协作变成可编排的系统，是复杂 Agent 应用的高阶形态。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "multi_agent.py",
+        "code": "class Agent:\n    def __init__(self, name, role):\n        self.name = name\n        self.role = role\n\n    def run(self, task):\n        # 模拟各 Agent 的处理\n        return f\"[{self.name}·{self.role}] 处理了: {task}\"\n\n# 简单的主管-工作者流水线\nboss = Agent(\"主管\", \"协调\")\nresearcher = Agent(\"研究员\", \"搜索与分析\")\nwriter = Agent(\"写手\", \"撰写\")\nreviewer = Agent(\"审查员\", \"质量把关\")\n\ntask = \"写一篇关于 Agent 的简短介绍\"\n# 串行接力：研究员 -> 写手 -> 审查员\nnotes = researcher.run(task)\ndraft = writer.run(notes)\nreview = reviewer.run(draft)\nprint(notes)\nprint(draft)\nprint(review)\nprint(boss.run(\"汇总最终结果\"))"
+      },
+      "mistakes": [
+        "没有定义清晰的角色与协作协议，Agent 之间职责混乱",
+        "消息传递无上限，涌现大量冗余上下文与 token 消耗",
+        "缺少协调者与终止条件，系统无休止协作不收敛",
+        "忽略错误传播，一个子 Agent 失败便拖垮整个流程"
+      ],
+      "interviewPoints": [
+        "「多智能体一定比单 Agent 好吗？」要答到分工能拆复杂任务并互相检查，但 token 成本与延迟成倍上升，任务简单时反而更差",
+        "「常见协作拓扑有哪些？」要答到层级式主管协调、流水线接力、评审或辩论式互检，以及并行分工后聚合，各自适合不同任务形态",
+        "「多智能体怎么防止失控？」要答到明确角色与协作协议、消息与轮次上限、协调者的终止条件、失败隔离以避免错误传播",
+        "「辩论式评审真能提升质量吗？」要答到它能暴露单模型盲点，但需要客观裁判或测试做验收，否则容易互相附和或陷入无休止争论"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "multi-agent-q1",
+          "type": "choice",
+          "prompt": "多智能体系统的核心价值是？",
+          "options": [
+            "让单个模型参数更大",
+            "多个角色分工协作，把复杂任务拆解并行/分派处理",
+            "替代所有工具调用",
+            "减少模型调用次数"
+          ],
+          "answerIndex": 1,
+          "explanation": "多智能体把复杂任务交给多个各司其职的 Agent 分工协作（并行或串行），各展所长、相互检查，从而处理单个 Agent 难以完成的复杂任务。"
+        },
+        {
+          "id": "multi-agent-q2",
+          "type": "short",
+          "prompt": "多智能体协作主要有哪些常见拓扑？",
+          "answer": "参考回答：常见拓扑包括：层级式（一个主管协调若干子 Agent）、流水线/接力式（任务在多个 Agent 间串行传递）、以及多 Agent 评审或辩论（相互检查、修正，增强质量）。可用并行分工与聚合汇总，但都需协调与终止条件。",
+          "keywords": [
+            "层级",
+            "流水线",
+            "评审"
+          ],
+          "explanation": "常见拓扑有层级协调、流水线接力、多 Agent 评审/辩论等，可并行或串行协作。"
+        },
+        {
+          "id": "multi-agent-q3",
+          "type": "code",
+          "prompt": "定义 Agent 类，含 __init__(name, role) 与一个返回处理描述字符串的 run(task) 方法。",
+          "starterCode": "class Agent:\n    def __init__(self, name, role):\n        pass\n\n    def run(self, task):\n        pass\n",
+          "solution": "class Agent:\n    def __init__(self, name, role):\n        self.name = name\n        self.role = role\n\n    def run(self, task):\n        return f\"[{self.name}·{self.role}] 处理了: {task}\"\n",
+          "checks": [
+            "self.name",
+            "self.role"
+          ],
+          "explanation": "保存 name 与 role，run 返回带角色的处理描述。"
+        }
+      ],
+      "track": "side"
+    },
+    {
+      "slug": "coding-agent",
+      "title": "Coding Agent 编程智能体",
+      "order": 7,
+      "module": "Agent 进阶",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "编程智能体以写代码为目标，能读文件、改代码、运行测试，并在反馈中迭代直至通过。",
+      "intuition": "编程智能体像一个能自己动手写代码、跑测试、看报错再改的程序员助手。它不只是生成一段代码交给你，而是能浏览你的项目结构、读懂现有文件、按需求修改代码，然后运行测试或命令看结果，根据报错或失败再调整，如此反复迭代直到功能正确或无法再改进。",
+      "formal": "编程 Agent 通常具备文件系统与命令执行两类工具：读/写/搜索文件、运行测试与代码。循环为：理解任务 → 定位并修改相关文件 → 运行验证（测试/lint/命令）→ 观察结果 → 继续修正，直到通过或达到上限。要求工具调用的文件路径、补丁与执行安全，且需防止无休止循环、误改无关文件，并尽量通过测试做客观验收。",
+      "formula": "\\text{verify}(\\text{iterate})",
+      "aiConnection": "从 GitHub Copilot 到 Cursor、Claude Code 与各类自动修复 Agent，编程 Agent 已成为开发者日常。它把大模型的代码生成能力与真实的项目上下文、工具（读文件、跑测试）结合，形成能真正交付代码的 Agent。可靠性取决于上下文理解、工具设计、终止条件与对测试的依赖。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "coding_agent.py",
+        "code": "IMPORTANT = \"\"\"\n一个极简的编程 Agent 示例：\n定义一个 run_tests(code) 模拟运行测试并返回是否有 bug。\n\"\"\"\n\ndef add(a, b):\n    return a + b   # 目标：返回两数之和\n\ndef run_tests(fn):\n    # 模拟测试：检查函数正确性\n    return fn(2, 3) == 5 and fn(-1, 1) == 0\n\n# 模拟'编写-测试-修正'循环\ncode = \"\"\"def add(a, b):\\n    return a + b\\n\"\"\"  # 候选实现\nfn = add\npassed = run_tests(fn)\nfor attempt in range(3):\n    if passed:\n        print(\"测试通过\")\n        break\n    print(f\"第 {attempt} 次尝试，发现 bug，修正代码...\")\n    # 此处可由模型修正代码，重新定义 fn\n    passed = run_tests(fn)\nelse:\n    print(\"达到尝试上限\")"
+      },
+      "mistakes": [
+        "只生成代码却不运行测试，无法确认正确性",
+        "无终止条件，反复修正同一错误直到大量消耗 token",
+        "误改无关文件或破坏已有功能，缺少回归检测",
+        "把代码执行环境权限开得过大，带来安全风险"
+      ],
+      "interviewPoints": [
+        "「编程 Agent 和代码补全的本质区别？」要答到前者有文件系统与命令工具，能读改真实项目、跑测试看报错再迭代，而不是一次生成",
+        "「怎么保证它改的代码是对的？」要答到以测试、lint 与构建做客观验收，先复现再修并跑回归防止破坏已有功能，不能只看模型自述",
+        "「它为什么会反复修同一个 bug？」要答到缺少新信息、报错未被正确理解、上下文丢失，需要限制重试次数并在失败时换策略或求助",
+        "「给它多大权限才安全？」要答到最小权限与沙箱、危险命令需人工确认、写操作可回滚，防止误删文件或执行破坏性命令"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "coding-agent-q1",
+          "type": "choice",
+          "prompt": "编程智能体相比单纯生成代码模型的关键区别是？",
+          "options": [
+            "能生成更多注释",
+            "能读改文件、运行测试并根据结果迭代修正",
+            "不需要上下文理解",
+            "只在离线运行"
+          ],
+          "answerIndex": 1,
+          "explanation": "编程 Agent 结合文件系统与命令工具，能读改真实项目、运行测试/lint，并根据反馈迭代修正，而不只是静默地吐代码。"
+        },
+        {
+          "id": "coding-agent-q2",
+          "type": "short",
+          "prompt": "为什么编程 Agent 需要运行测试来验收？",
+          "answer": "参考回答：因为仅凭模型生成的代码无法确认其正确性，必须以客观的测试用例（断言、lint、构建）验证功能是否达成需求。运行测试能暴露真实 bug，为下一轮修正提供明确反馈，并形成'修改-验证'的闭环，避免盲目猜改。",
+          "keywords": [
+            "验证",
+            "回归",
+            "测试"
+          ],
+          "explanation": "运行测试提供客观通过/失败反馈，让 Agent 在真实结果上迭代，可靠的验收闭环正是编码 Agent 的根基。"
+        },
+        {
+          "id": "coding-agent-q3",
+          "type": "code",
+          "prompt": "实现函数 fix_and_verify(fn, tests, attempts)：反复用 tests 验证 fn，通过则返回 True，失败可继续直至尝试上限。",
+          "starterCode": "def fix_and_verify(fn, tests, attempts=3):\n    pass\n",
+          "solution": "def fix_and_verify(fn, tests, attempts=3):\n    for _ in range(attempts):\n        if tests(fn):\n            return True\n        # 此处可交由模型修正 fn\n    return False\n",
+          "checks": [
+            "for _ in range(attempts)",
+            "tests(fn)"
+          ],
+          "explanation": "在 attempts 次内反复运行测试，通过即返回 True，全部失败则返回 False。"
+        }
+      ],
+      "track": "side"
+    }
+  ]
+}

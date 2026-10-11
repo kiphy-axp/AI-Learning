@@ -151,6 +151,56 @@ function renderBlocks(text: string): ReactNode[] {
       continue;
     }
 
+    // GFM 表格：| 表头 | ... | 换行 |---|---| 再跟若干行
+    if (line.trim().startsWith('|') && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1] ?? '')) {
+      flushList();
+      const splitRow = (row: string) =>
+        row
+          .trim()
+          .replace(/^\|/, '')
+          .replace(/\|$/, '')
+          .split('|')
+          .map((cell) => cell.trim());
+      const header = splitRow(line);
+      i += 2;
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        rows.push(splitRow(lines[i]));
+        i += 1;
+      }
+      nodes.push(
+        <div key={`table-${key++}`} className="my-4 overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr>
+                {header.map((cell, ci) => (
+                  <th
+                    key={ci}
+                    className="border border-white/10 bg-white/[0.04] px-3 py-2 text-left font-semibold text-slate-200"
+                    dangerouslySetInnerHTML={{ __html: inlineToHtml(cell) }}
+                  />
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, ri) => (
+                <tr key={ri} className="even:bg-white/[0.015]">
+                  {header.map((_, ci) => (
+                    <td
+                      key={ci}
+                      className="border border-white/10 px-3 py-2 align-top leading-relaxed text-slate-300"
+                      dangerouslySetInnerHTML={{ __html: inlineToHtml(row[ci] ?? '') }}
+                    />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
+
     // 标题
     const heading = /^(#{1,4})\s+(.*)$/.exec(line);
     if (heading) {

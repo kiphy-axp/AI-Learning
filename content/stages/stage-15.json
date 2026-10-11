@@ -1,483 +1,573 @@
 {
   "stage": 15,
-  "stageSlug": "gpu-cuda",
-  "stageTitle": "GPU 与 CUDA 性能优化",
-  "stageEmoji": "⚙️",
-  "stageDesc": "GPU 执行模型、显存层级与 Kernel 优化，让算法岗能定位瓶颈写快算子",
-  "category": "算法岗核心",
+  "stageSlug": "deep-learning",
+  "stageTitle": "深度学习",
+  "stageEmoji": "🧠",
+  "stageDesc": "神经网络、反向传播、PyTorch、CNN 与 RNN：深度学习的起点",
+  "act": 6,
+  "actName": "第六幕 · 深度学习与大模型",
+  "category": "进阶",
   "lessons": [
     {
-      "slug": "gpu-architecture",
-      "title": "GPU 架构与执行模型",
+      "slug": "neural-network",
+      "title": "Neural Network 神经网络",
       "order": 1,
-      "module": "GPU 基础",
-      "difficulty": "基础",
-      "estimatedMinutes": 30,
-      "summary": "GPU 用几千个简单核心做数据并行，以 SIMT 方式调度线程；SM、warp、occupancy 是读懂一切性能数据的前提。",
-      "intuition": "想象一个食堂。CPU 是三位全能大厨，一道佛跳墙也做得出来，遇到复杂菜谱游刃有余，但一次只能照看几口锅；GPU 则是两千名切菜工，每人只会切一种丁，可两千人同时下刀，一分钟就能切完一天的菜量。GPU 的设计哲学就是「用海量简单工人换吞吐」：它不擅长分支判断与复杂控制流，却极其擅长对一大片数据做同一个动作。写 CUDA 程序的第一课，就是把自己的 for 循环改写成「每个工人负责哪几份数据」的分配方案，而不是让一个工人从头做到尾。想通这一点，后面所有优化都只是在回答同一个问题：怎样让这两千名工人不闲着。",
-      "formal": "GPU 由若干 Streaming Multiprocessor（SM，流多处理器）组成：A100 有 108 个 SM，H100 SXM 有 132 个。每个 SM 内含 4 个处理块（sub-partition），每块有 32 个 FP32 运算单元和一个 warp scheduler，因此一个 SM 每周期最多发射 4 条 warp 指令。线程以 32 个为一组构成 warp，warp 是调度与执行的最小单位：同一 warp 的 32 个线程共享一条指令流，这就是 SIMT（Single Instruction, Multiple Threads）。线程块 block 被整体分配到某个 SM 上，一个 SM 最多驻留 2048 个线程（64 个 warp）、32 个 block。当某个 warp 因访存停顿几百个周期时，调度器零开销地切换到另一个就绪 warp，用线程级并行 TLP 隐藏延迟——这正是 occupancy（占用率）重要的原因。若同一 warp 内线程走了不同分支，硬件只能串行执行各条路径，称为 warp divergence（分支发散）。",
-      "formula": "\\text{occupancy} = \\frac{\\text{驻留 warp 数}}{64}, \\qquad \\text{warp} = 32\\ \\text{threads}, \\qquad \\text{每 SM 最多 } 2048\\ \\text{线程}",
-      "aiConnection": "训练大模型时，一个 step 由几百个 kernel 拼成，任何一个小 kernel 打不满 GPU 都会拖慢整体吞吐。算法岗经常要回答「为什么 batch size 从 8 加到 32，吞吐只涨了 1.5 倍」——答案往往就在 SM 占用率与活跃 warp 数里。反过来，知道 warp 是 32 线程，你就能明白为什么把 hidden size 从 4096 改成 4095 会让某些 kernel 明显变慢，也能理解 FlashAttention、分组查询注意力 GQA 为什么都按 32/64 的倍数设计 tile。面试被问「GPU 和 CPU 的区别」，答出 SIMT 与延迟隐藏，比答「核多」值钱得多。",
+      "module": "神经网络基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 22,
+      "summary": "神经网络由多层神经元组成，用权重和偏置对输入做线性组合，再用激活函数引入非线性。",
+      "intuition": "想象一张由许多小节点和连线组成的网络：每个节点像一个小开关，接收上游的数值，把它们加权求和，再决定要不要激活传给下一层。第一层接收输入，最后一层给出输出，中间的隐藏层负责层层抽取特征。正是激活函数的非线性让这种简单结构能拟合任意复杂的函数，从而逼近真实世界的规律。",
+      "formal": "一个神经元把输入向量 x 与权重 w 做内积并加上偏置 b，得到 z = w^T x + b，再经过激活函数得到 a = f(z)。多个神经元堆叠成层，层与层全连接就构成一个前馈网络。权重 w 和偏置 b 是待学习的参数，网络的能力就藏在这些参数里。隐藏层叠加得越多，网络能表达的函数族就越丰富。",
+      "formula": "a = f(Wx + b)",
+      "aiConnection": "大语言模型本质上是一个极其庞大的神经网络，参数规模可达千亿。理解神经网络的结构，是理解模型如何把文字变成内部特征、又如何生成新文本的起点。所有关于训练、微调和推理的知识都建立在这套结构之上。",
       "codeExample": {
-        "lang": "cuda",
-        "filename": "print_ids.cu",
-        "code": "// 编译: nvcc -arch=sm_80 print_ids.cu -o print_ids && ./print_ids\n#include <cstdio>\n#include <cuda_runtime.h>\n\n__global__ void print_ids() {\n    int lane   = threadIdx.x % 32;                          // warp 内 lane 号 0..31\n    int warp   = threadIdx.x / 32;                          // block 内第几个 warp\n    int global = blockIdx.x * blockDim.x + threadIdx.x;     // 全局线程号\n    if (lane == 0) {                                        // 每个 warp 只打印一行\n        printf(\"block %d, warp %d: 该 warp 的全局起始线程 = %d\\n\",\n               blockIdx.x, warp, global);\n    }\n}\n\nint main() {\n    cudaDeviceProp prop;\n    cudaGetDeviceProperties(&prop, 0);\n    printf(\"%s: %d 个 SM, 每 SM 最多 %d 线程, warpSize = %d\\n\",\n           prop.name, prop.multiProcessorCount,\n           prop.maxThreadsPerMultiProcessor, prop.warpSize);\n    // 2 个 block x 64 线程 = 4 个 warp, 但只有 2 个 lane-0 线程各打印一次\n    print_ids<<<2, 64>>>();\n    cudaDeviceSynchronize();\n    return 0;\n}"
+        "lang": "python",
+        "filename": "neural_network.py",
+        "code": "import numpy as np\n\n# 一个简单的两层全连接前馈网络（numpy 手动实现）\ndef sigmoid(x):\n    return 1 / (1 + np.exp(-x))\n\n# 输入：2 个样本，每个 3 维\nX = np.array([[0, 1, 0],\n              [1, 0, 1]])\n\n# 第一层权重与偏置：3 输入 -> 4 隐藏\nW1 = np.random.randn(4, 3)\nb1 = np.zeros(4)\n# 第二层：4 隐藏 -> 1 输出\nW2 = np.random.randn(1, 4)\nb2 = np.zeros(1)\n\nH = sigmoid(W1 @ X.T + b1[:, None])\nY = sigmoid(W2 @ H + b2[:, None])\nprint(Y.shape)  # (1, 2) 两个样本的输出"
       },
       "mistakes": [
-        "把 block 当成 32 线程，混淆 block 与 warp 两级调度结构",
-        "以为线程真在逐条同时执行，忽略 warp 内锁步与分支发散代价",
-        "只用核心数和显存估算性能，忽略 occupancy 与访存延迟隐藏",
-        "把 CPU 的少数大核思维搬到 GPU，写出每个线程做大量串行工作的 kernel"
+        "误以为增加层数一定能提升效果，而忽略数据量与过拟合问题",
+        "忘记非线性激活函数，导致多层的网络退化成单个线性变换",
+        "把权重初始化成全部相同的值，导致所有神经元学到相同特征"
       ],
       "interviewPoints": [
-        "warp 是多少线程？为什么 GPU 用 warp 而不是单线程作为调度单位",
-        "SM、block、warp、thread 四层关系，以及 block 为什么能被独立调度",
-        "occupancy 的定义与作用：用 TLP 隐藏 400-800 周期的访存延迟，且并非越高越好",
-        "warp divergence 的成因与代价，如何用无分支写法或重排数据避免"
+        "「为什么神经网络必须有非线性激活函数？」要答到多个线性变换复合仍是线性变换，没有 f 时再深的网络也只等价于一个仿射映射",
+        "「权重为什么不能初始化为全 0 或相同值？」要答到对称性会让所有神经元得到相同梯度、永远学成同一个特征，必须随机初始化",
+        "「隐藏层越多效果一定越好吗？」要答到深度提升表达力但参数量与优化难度上升，数据不足时直接过拟合，还需残差与归一化配合",
+        "「通用逼近定理说明了什么、又没说什么？」要答到单隐层即可逼近任意连续函数，但没给出需要多少宽度，也没保证 SGD 训得到"
       ],
-      "resources": [
-        {"title": "CUDA C++ Programming Guide", "url": "https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html"},
-        {"title": "NVIDIA A100 Tensor Core GPU 官方页面（108 SM / 80GB HBM2e）", "url": "https://www.nvidia.com/en-us/data-center/a100/"},
-        {"title": "NVIDIA H100 官方页面（132 SM / HBM3）", "url": "https://www.nvidia.com/en-us/data-center/h100/"}
-      ],
+      "resources": [],
       "quiz": [
-        {"id": "gpu-architecture-q1", "type": "choice", "prompt": "一个 warp 包含多少个线程？", "options": ["8", "16", "32", "64"], "answerIndex": 2, "explanation": "warp 固定为 32 个线程，是 GPU 调度与指令发射的最小单位；一个 SM 最多驻留 64 个 warp（2048 线程）。"},
-        {"id": "gpu-architecture-q2", "type": "short", "prompt": "为什么 GPU 需要较高的 occupancy（占用率）？", "answer": "参考回答：GPU 隐藏访存延迟的主要手段是线程级并行。HBM 的一次访问延迟约 400-800 周期，若 SM 上驻留的 warp 太少，调度器就没有别的 warp 可切换，运算单元只能空等。occupancy 高意味着有更多就绪 warp 可轮换，从而把访存延迟藏在其他 warp 的计算背后，把带宽和算力打满。", "keywords": ["延迟隐藏", "线程级并行", "warp 切换"], "explanation": "要点是「用更多 warp 掩盖访存延迟」，而不是「占用率越高越好」。"},
-        {"id": "gpu-architecture-q3", "type": "code", "prompt": "写一个 CUDA kernel，让每个线程算出自己的全局线程号与该线程所在 warp 的编号（warp 号 = threadIdx.x / 32），并让每个 warp 的 lane 0 打印一行。", "starterCode": "// 补全 kernel 与启动配置\n__global__ void show_warp() {\n    // TODO: 计算 global index 与 warp id\n}\n", "solution": "__global__ void show_warp() {\n    int lane   = threadIdx.x % 32;\n    int warp   = threadIdx.x / 32;\n    int global = blockIdx.x * blockDim.x + threadIdx.x;\n    if (lane == 0)\n        printf(\"block %d warp %d global %d\\n\", blockIdx.x, warp, global);\n}\n\nint main() {\n    show_warp<<<4, 128>>>();   // 4 个 block x 128 线程 = 16 个 warp\n    cudaDeviceSynchronize();\n    return 0;\n}\n", "checks": ["threadIdx.x % 32", "threadIdx.x / 32", "blockIdx.x * blockDim.x + threadIdx.x"], "explanation": "全局索引用 blockIdx.x * blockDim.x + threadIdx.x；warp 号与 lane 号分别用整除 32 和取模 32 得到。"}
-      ]
+        {
+          "id": "neural-network-q1",
+          "type": "choice",
+          "prompt": "神经网络中引入激活函数的主要目的是什么？",
+          "options": [
+            "加快计算速度",
+            "引入非线性，使网络能逼近复杂函数",
+            "减少参数数量",
+            "防止过拟合"
+          ],
+          "answerIndex": 1,
+          "explanation": "没有非线性激活函数，多层线性变换叠加后仍是一个线性函数，无法表达复杂模式。激活函数提供了拟合任意函数所需的非线性能力。"
+        },
+        {
+          "id": "neural-network-q2",
+          "type": "short",
+          "prompt": "简述一个神经元完成的计算步骤。",
+          "answer": "参考回答：神经元先对输入向量与权重做内积（加权求和）并加上偏置，得到线性组合 z = w^T x + b；再通过一个非线性激活函数 f 得到输出 a = f(z)。",
+          "keywords": [
+            "激活函数",
+            "权重",
+            "偏置"
+          ],
+          "explanation": "神经元 = 线性组合(z=w^T x+b) + 激活函数(f)。权重与偏置是学习到的参数。"
+        },
+        {
+          "id": "neural-network-q3",
+          "type": "code",
+          "prompt": "用 numpy 实现一个神经元：输入向量 x、权重 w、偏置 b，返回激活后的输出（激活函数用 sigmoid）。",
+          "starterCode": "import numpy as np\n\ndef neuron(x, w, b):\n    pass\n",
+          "solution": "import numpy as np\n\ndef neuron(x, w, b):\n    z = np.dot(w, x) + b\n    return 1 / (1 + np.exp(-z))\n",
+          "checks": [
+            "np.dot",
+            "exp"
+          ],
+          "explanation": "先算线性组合 np.dot(w, x) + b，再套 sigmoid 激活函数。"
+        }
+      ],
+      "track": "main"
     },
     {
-      "slug": "memory-hierarchy",
-      "title": "显存层级与带宽",
+      "slug": "forward-propagation",
+      "title": "Forward Propagation 前向传播",
       "order": 2,
-      "module": "GPU 基础",
-      "difficulty": "基础",
-      "estimatedMinutes": 30,
-      "summary": "从寄存器到 HBM 有六级存储，容量与带宽相差三个数量级；算子的性能上限由算术强度与带宽共同决定。",
-      "intuition": "把 GPU 的存储想成一座图书馆：寄存器是你手边的便签，1 个周期就能看（每 SM 有 64K 个 32-bit 寄存器）；共享内存与 L1 是书桌抽屉，约 30 个周期（A100 每 SM 最多 164KB）；L2 是同层楼的书架，约 200 个周期（A100 有 40MB，H100 有 50MB）；HBM 显存是地下书库，400-800 个周期（A100 带宽约 2039 GB/s，H100 约 3350 GB/s）。你不可能把整本书搬到桌上，所以必须设计「搬哪几页、搬一次用多少次」。绝大多数 kernel 慢，不是算得不够快，而是反复跑地下书库搬同一本书。",
-      "formal": "存储层级与量级：寄存器（每 SM 65536 个 32-bit，每线程上限 255 个）→ 共享内存/L1（A100 每 SM 共 192KB 可配置、最多 164KB 给 shared memory；H100 最多 228KB）→ L2（A100 40MB / H100 50MB）→ HBM（A100 80GB @ 2039 GB/s、H100 80GB @ 3350 GB/s）。延迟：寄存器 1 周期、shared memory 约 20-30 周期、L2 约 200 周期、HBM 约 400-800 周期。带宽与延迟是两件事：HBM 的峰值带宽要靠足够多的在途请求（大量并发 warp）才能打满，这解释了为什么 occupancy 低时带宽利用率上不去。判断算子受限类型用算术强度 I = FLOPs / Bytes 与机器脊点 I* = P_peak / BW 比较：A100 的 FP32 为 19.5 TFLOPS / 2039 GB/s ≈ 9.6 FLOP/B，FP16 Tensor Core 为 312 TFLOPS / 2039 GB/s ≈ 153 FLOP/B；H100 的 FP16 Tensor Core 约 990 TFLOPS / 3350 GB/s ≈ 295 FLOP/B。",
-      "formula": "I = \\frac{\\text{FLOPs}}{\\text{Bytes}}, \\qquad I^{*} = \\frac{P_{\\text{peak}}}{\\text{BW}}, \\qquad T \\ge \\max\\left(\\frac{\\text{FLOPs}}{P_{\\text{peak}}},\\ \\frac{\\text{Bytes}}{\\text{BW}}\\right)",
-      "aiConnection": "大模型的显存墙与带宽墙都在这一层。7B 模型用 Adam 训练，参数、梯度、优化器状态合计约 16 字节/参数 ≈ 112GB，单张 80GB 卡装不下，必须切分——这就是 ZeRO、FSDP、张量并行的由来。推理侧更纯粹：自回归解码每生成一个 token 都要把全部权重读一遍，是典型的 memory-bound。7B 模型 fp16 权重 14GB，A100 上的理论上限约 2039/14 ≈ 145 token/s，与算力几乎无关。当你发现某个算子耗时正比于数据量而与 FLOPs 无关时，就该去优化访存，而不是换算法。",
+      "module": "神经网络基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 23,
+      "summary": "前向传播是数据从输入层逐层流向输出层、最终得到预测结果的量化过程。",
+      "intuition": "把前向传播想成一大堆工厂流水线：原材料从最左边进入，经过一道道生产工序（每一层），每道工序把上一步的产物加工成更有用的中间品，最后在出口端得到成品——也就是网络的预测值。整个过程只朝一个方向流动，不回头，所以叫前向。",
+      "formal": "给定输入 x，第一层计算 a^[1] = f(W^[1] x + b^[1])，其中 f 为激活函数。第二层用第一层的输出作为输入，继续计算 a^[2] = f(W^[2] a^[1] + b^[2])。如此逐层传播，直到最后一层得到输出 ŷ = a^[L]。这个过程可以写成逐层迭代的 a^[l] = f(W^[l] a^[l-1] + b^[l])，其中 a^[0] = x。",
+      "formula": "a^{[l]} = f(W^{[l]}a^{[l-1]} + b^{[l]})",
+      "aiConnection": "当你向一个大语言模型输入一句提示词，提示词被编码后从第一层一路流向最后一层，最后输出下一个 token 的概率分布——这就是一次前向传播。推理阶段（inference）只做前向传播，不做反向传播，因此它的计算量决定了服务的成本与延迟。",
       "codeExample": {
-        "lang": "cuda",
-        "filename": "l2_vs_hbm.cu",
-        "code": "// 编译: nvcc -arch=sm_80 l2_vs_hbm.cu -o l2_vs_hbm && ./l2_vs_hbm\n// 同一段读代码, 小数组命中 L2, 大数组必须走 HBM, 带宽差数倍\n#include <cstdio>\n#include <cuda_runtime.h>\n\n__global__ void read_only(const float* __restrict__ a, float* __restrict__ sink, size_t n) {\n    float acc = 0.0f;\n    for (size_t i = blockIdx.x * (size_t)blockDim.x + threadIdx.x; i < n;\n         i += (size_t)gridDim.x * blockDim.x)\n        acc += a[i];                       // grid-stride 累加\n    if (acc == -1.0f) sink[0] = acc;       // 防止编译器把整个读循环优化掉\n}\n\nfloat bench(const float* a, float* sink, size_t n, int grid, int block, int iters) {\n    cudaEvent_t s, e;\n    cudaEventCreate(&s); cudaEventCreate(&e);\n    read_only<<<grid, block>>>(a, sink, n);\n    cudaDeviceSynchronize();\n    cudaEventRecord(s);\n    for (int r = 0; r < iters; ++r) read_only<<<grid, block>>>(a, sink, n);\n    cudaEventRecord(e);\n    cudaEventSynchronize(e);\n    float ms = 0.0f;\n    cudaEventElapsedTime(&ms, s, e);\n    return (float)((double)n * sizeof(float) * iters / (ms / 1e3) / 1e9);\n}\n\nint main() {\n    float* sink;\n    cudaMalloc(&sink, sizeof(float));\n    size_t small = (size_t)2 << 20;      // 2M float = 8MB, 装得进 L2\n    size_t big   = (size_t)256 << 20;    // 256M float = 1GB, 必须走 HBM\n    float *a_small, *a_big;\n    cudaMalloc(&a_small, small * sizeof(float));\n    cudaMalloc(&a_big, big * sizeof(float));\n    cudaMemset(a_small, 0, small * sizeof(float));\n    cudaMemset(a_big, 0, big * sizeof(float));\n    printf(\"8MB  (命中 L2) : %7.1f GB/s\\n\", bench(a_small, sink, small, 1024, 256, 200));\n    printf(\"1GB  (走 HBM)  : %7.1f GB/s\\n\", bench(a_big, sink, big, 4096, 256, 5));\n    printf(\"参考: A100 L2 40MB / HBM 2039 GB/s; H100 L2 50MB / HBM 3350 GB/s\\n\");\n    cudaFree(a_small); cudaFree(a_big); cudaFree(sink);\n    return 0;\n}"
+        "lang": "python",
+        "filename": "forward_prop.py",
+        "code": "import numpy as np\n\n# 逐层前向传播的简化实现\ndef sigmoid(x):\n    return 1 / (1 + np.exp(-x))\n\nclass SimpleLayer:\n    def __init__(self, w, b):\n        self.w = w\n        self.b = b\n\n    def forward(self, x):\n        # 单层前向传播：a = f(w x + b)\n        return sigmoid(self.w @ x + self.b)\n\n# 随机初始化两层\nW1, b1 = np.random.randn(4, 3), np.zeros(4)\nW2, b2 = np.random.randn(1, 4), np.zeros(1)\n\nx = np.random.randn(3)\nh = SimpleLayer(W1, b1).forward(x)   # 第一层输出\ny = SimpleLayer(W2, b2).forward(h)   # 第二层输出\nprint(y)"
       },
       "mistakes": [
-        "只关心显存容量，忽略带宽与延迟才是真正的性能瓶颈",
-        "以为 shared memory 开得越大越好，占用过多反而把 occupancy 压垮",
-        "在 kernel 里反复读同一份全局内存，不做寄存器或 shared memory 复用",
-        "用 fp32 搬运本可以用 fp16/bf16 传输的数据，白白浪费一半带宽"
+        "混淆输入维度与层数，导致矩阵相乘维度不匹配报错",
+        "忘记在每层输出后添加激活函数，得到的只是线性堆叠",
+        "把每一层的输出都当成最终输出，没有层层传递而已中途截断"
       ],
       "interviewPoints": [
-        "A100/H100 的 HBM 带宽、L2 容量、每 SM 共享内存上限分别是多少",
-        "算术强度与 Roofline 脊点的算法，如何据此判断 memory-bound 还是 compute-bound",
-        "为什么大模型推理的 decode 阶段是 memory-bound，而 prefill 更偏 compute-bound",
-        "寄存器、shared memory、L2、HBM 的延迟各是什么数量级"
+        "「前向传播中每一层的计算是什么？」要答到先做线性变换 z=W a+b、再过激活 a=f(z)，上一层输出即本层输入，维度必须对齐",
+        "「推理阶段为什么只做前向传播？」要答到推理没有标签、不需要梯度，只需算出预测，因此成本由前向 FLOPs 与显存带宽决定",
+        "「LLM 的一次推理里前向传播是怎样的？」要答到 prompt 逐层流过、末层输出下一 token 的概率分布",
+        "「自回归生成时为什么还要缓存 KV？」要答到逐 token 生成会重复计算全部历史，缓存 K/V 把每步复杂度从 O(n²) 降到 O(n)"
       ],
-      "resources": [
-        {"title": "CUDA C++ Best Practices Guide", "url": "https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html"},
-        {"title": "Roofline: An Insightful Visual Performance Model (CACM 2009)", "url": "https://dl.acm.org/doi/10.1145/1498765.1498785"},
-        {"title": "NVIDIA A100 数据中心 GPU（规格与带宽）", "url": "https://www.nvidia.com/en-us/data-center/a100/"}
-      ],
+      "resources": [],
       "quiz": [
-        {"id": "memory-hierarchy-q1", "type": "choice", "prompt": "在一个 fp32 向量加法 kernel（读 2 个数组、写 1 个数组）中，每个元素的算术强度约为多少？", "options": ["1 FLOP/B", "0.083 FLOP/B", "12 FLOP/B", "153 FLOP/B"], "answerIndex": 1, "explanation": "每个元素 1 次加法（1 FLOP），访存 3 x 4 = 12 字节，所以 I = 1/12 ≈ 0.083 FLOP/B，远低于 A100 FP32 的脊点 9.6 FLOP/B，是彻底的 memory-bound。"},
-        {"id": "memory-hierarchy-q2", "type": "short", "prompt": "什么是算术强度？它如何帮助你判断一个算子该往哪个方向优化？", "answer": "参考回答：算术强度 I = FLOPs / Bytes，即每搬运 1 字节数据做了多少次浮点运算。把它和机器脊点 I* = P_peak / BW 比较：A100 的 FP32 脊点约 9.6 FLOP/B、FP16 Tensor Core 约 153 FLOP/B。若 I 远小于脊点，算子受带宽限制，应减少访存字节（融合、量化、向量化）；若 I 大于脊点，则受算力限制，应提高 occupancy、用 Tensor Core。", "keywords": ["FLOPs/Bytes", "脊点", "memory-bound"], "explanation": "要点是「先算 I，再和 P_peak/BW 比」，据此决定减少字节还是提升算力。"},
-        {"id": "memory-hierarchy-q3", "type": "code", "prompt": "用 float4（16 字节）向量化改写拷贝 kernel 的读部分，使每个线程一次搬运 4 个 float，并要求处理 n 不是 4 的倍数时的尾部元素。", "starterCode": "__global__ void copy_vec4(const float* __restrict__ in, float* __restrict__ out, int n) {\n    int i = (blockIdx.x * blockDim.x + threadIdx.x) * 4;\n    // TODO: 用 float4 读取与写回, 并处理尾部\n}\n", "solution": "__global__ void copy_vec4(const float* __restrict__ in, float* __restrict__ out, int n) {\n    int i = (blockIdx.x * blockDim.x + threadIdx.x) * 4;\n    if (i + 4 <= n) {\n        float4 v = *reinterpret_cast<const float4*>(in + i);\n        *reinterpret_cast<float4*>(out + i) = v;\n    } else {\n        for (int j = i; j < n; ++j) out[j] = in[j];   // 尾部标量处理\n    }\n}\n", "checks": ["float4", "reinterpret_cast<const float4*>", "i + 4 <= n"], "explanation": "用 float4 一次搬 16 字节，事务数与指令数同时下降；i + 4 <= n 保证 16 字节对齐访问，剩余元素用标量补齐。"}
-      ]
+        {
+          "id": "forward-propagation-q1",
+          "type": "choice",
+          "prompt": "关于网络的前向传播，下列说法正确的是？",
+          "options": [
+            "数据从输出层流向输入层",
+            "数据从输入层逐层流向输出层，得到预测",
+            "前向传播用来更新权重",
+            "前向传播只在训练阶段发生"
+          ],
+          "answerIndex": 1,
+          "explanation": "前向传播是输入数据逐层向前流动得到预测值的过程，训练和推理阶段都会发生；反向传播才负责更新权重。"
+        },
+        {
+          "id": "forward-propagation-q2",
+          "type": "short",
+          "prompt": "前向传播中某一层的计算流程是什么？",
+          "answer": "参考回答：先做线性变换 z = W^[l] a^[l-1] + b^[l]，即上一层的输出 a^[l-1] 与权重 W 相乘再加偏置 b；再经过激活函数得到本层输出 a^[l] = f(z)。",
+          "keywords": [
+            "线性变换",
+            "激活函数",
+            "上一层"
+          ],
+          "explanation": "每一层 = 线性变换(乘权重加偏置) + 激活函数，输出作为下一层的输入。"
+        },
+        {
+          "id": "forward-propagation-q3",
+          "type": "code",
+          "prompt": "实现函数 forward，给定输入 x、权重 W、偏置 b，使用 sigmoid 激活，返回该层输出。",
+          "starterCode": "import numpy as np\n\ndef forward(x, W, b):\n    pass\n",
+          "solution": "import numpy as np\n\ndef forward(x, W, b):\n    z = W @ x + b\n    return 1 / (1 + np.exp(-z))\n",
+          "checks": [
+            "@",
+            "exp"
+          ],
+          "explanation": "用矩阵乘法实现线性变换加偏置，再套 sigmoid。"
+        }
+      ],
+      "track": "main"
     },
     {
-      "slug": "cuda-programming-model",
-      "title": "CUDA 编程模型与第一个 Kernel",
+      "slug": "back-propagation",
+      "title": "Back Propagation 反向传播",
       "order": 3,
-      "module": "CUDA 编程",
-      "difficulty": "基础",
-      "estimatedMinutes": 35,
-      "summary": "一个 CUDA 程序 = 主机端准备数据 + 启动 kernel + 取回结果；写对第一个向量加法 kernel 就掌握了全部骨架。",
-      "intuition": "写 CUDA 程序像外包一单流水线工作：先在主机上把原料摆好（cudaMalloc 分配显存、cudaMemcpy 拷进去），再写一张工序说明（kernel 函数），然后用 <<<grid, block>>> 告诉工厂开几条产线、每条线站几个工人，最后把成品运回来（cudaMemcpy 拷回）。NVCC 会把同一个 .cu 文件编译出两份代码：主机端代码和 GPU 端代码，而 <<< >>> 就是两者的接头暗号。第一次跑通时最该建立的两个直觉是：kernel 是异步的（不主动同步就可能读到旧数据），以及线程总数通常比数据多（所以必须写边界判断）。",
-      "formal": "CUDA 是异构编程模型：host（CPU）负责控制流与内存分配，device（GPU）执行 kernel。函数限定符有三种：__global__ 在 device 上执行、由 host 调用（返回类型必须为 void），__device__ 只能在 device 内调用，__host__ 是默认值（两者可同时标注以生成双份代码）。执行配置 <<<gridDim, blockDim, sharedBytes, stream>>> 决定启动多少个 block、每个 block 多少线程，总线程数 = gridDim.x x blockDim.x，常用 ceil(N / 256)。kernel 内用 blockIdx / threadIdx 定位数据，必须做 i < n 的边界判断。硬性约束：一个 block 最多 1024 线程，gridDim 每维上限 2^31-1；cudaMalloc 得到的指针 host 不能解引用；kernel 启动是异步的，取回结果前需要 cudaDeviceSynchronize 或依赖 cudaMemcpy 的同步语义。启动错误要用 cudaGetLastError() 抓取，否则 kernel 静默失败会白白浪费排查时间。",
-      "formula": "\\text{gridDim} = \\left\\lceil \\frac{N}{\\text{blockDim}} \\right\\rceil, \\qquad \\text{idx} = \\text{blockIdx.x} \\times \\text{blockDim.x} + \\text{threadIdx.x}",
-      "aiConnection": "深度学习框架里的每个算子最终都是一次（或几次）kernel 启动：PyTorch 的逐元素加法、LayerNorm、softmax 各自对应一个 kernel，一个训练 step 动辄启动几百上千个 kernel，每个有 3-10 微秒的启动开销。这就是小模型、小 batch 时 GPU 利用率上不去的原因，也是 CUDA Graph 与算子融合（把 add + LayerNorm 合成一个 kernel）能提速的原因。当你需要写自定义算子——特殊 loss、稀疏算子、量化的 dequant-GEMM——代码骨架就是这一节的内容：分配、拷贝、配置 <<<>>>、边界判断、错误检查。",
+      "module": "神经网络基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 25,
+      "summary": "反向传播利用链式法则，从输出层向输入层逐层计算损失对每个参数的梯度，用于更新权重。",
+      "intuition": "如果说前向传播是顺着流水线把原料加工成产品，那么反向传播就是逆着流水线把'哪里错了'的反馈信号往回传。产品端先评价'距离目标差了多少'（损失），然后把这个偏差信息沿着来路一层层分摊给每道工序——每道工序因此知道自己是该多做一点还是少做一点，最终每个人各自调整参数来减少误差。",
+      "formal": "反向传播的核心是链式法则。损失 L 对第 l 层权重 W^[l] 的梯度，可以通过传播误差项 δ^[l] 来计算：δ^[L] = ∇_a L ⊙ f'(z^[L])，然后逐层向前 δ^[l] = (W^[l+1])^T δ^[l+1] ⊙ f'(z^[l])。得到梯度后，使用权重的梯度来更新参数：W^[l] 沿 ∂L/∂W^[l] 的反方向更新。",
+      "formula": "\\frac{\\partial L}{\\partial W^{[l]}} = \\delta^{[l]} (a^{[l-1]})^T",
+      "aiConnection": "大模型训练中，反向传播要在数千亿参数上计算梯度，需要巨大的显存与算力。而推理阶段不反向传播，只做前向，这正是训练大模型远比使用大模型昂贵的原因。理解反向传播才能理解为什么训练如此困难与耗资源。",
       "codeExample": {
-        "lang": "cuda",
-        "filename": "vector_add.cu",
-        "code": "// 编译: nvcc -arch=sm_80 vector_add.cu -o vector_add && ./vector_add\n#include <cstdio>\n#include <cstdlib>\n#include <cuda_runtime.h>\n\n__global__ void vector_add(const float* __restrict__ a, const float* __restrict__ b,\n                           float* __restrict__ c, int n) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;   // 全局线程号\n    if (i < n) c[i] = a[i] + b[i];                   // 必须边界判断\n}\n\nint main() {\n    const int n = 1 << 20;                           // 1M 个元素\n    size_t bytes = (size_t)n * sizeof(float);\n    float* h_a = (float*)malloc(bytes);\n    float* h_b = (float*)malloc(bytes);\n    float* h_c = (float*)malloc(bytes);\n    for (int i = 0; i < n; ++i) { h_a[i] = 1.0f; h_b[i] = 2.0f; }\n\n    float *d_a, *d_b, *d_c;\n    cudaMalloc(&d_a, bytes);\n    cudaMalloc(&d_b, bytes);\n    cudaMalloc(&d_c, bytes);\n    cudaMemcpy(d_a, h_a, bytes, cudaMemcpyHostToDevice);\n    cudaMemcpy(d_b, h_b, bytes, cudaMemcpyHostToDevice);\n\n    int block = 256;\n    int grid = (n + block - 1) / block;              // 4096 个 block\n    vector_add<<<grid, block>>>(d_a, d_b, d_c, n);\n\n    cudaError_t err = cudaGetLastError();            // 抓启动期错误\n    if (err != cudaSuccess) {\n        printf(\"kernel 启动失败: %s\\n\", cudaGetErrorString(err));\n        return 1;\n    }\n    cudaMemcpy(h_c, d_c, bytes, cudaMemcpyDeviceToHost);\n    printf(\"c[0] = %.1f, c[%d] = %.1f (期望 3.0)\\n\", h_c[0], n - 1, h_c[n - 1]);\n\n    cudaFree(d_a); cudaFree(d_b); cudaFree(d_c);\n    free(h_a); free(h_b); free(h_c);\n    return 0;\n}"
+        "lang": "python",
+        "filename": "back_prop.py",
+        "code": "import numpy as np\n\ndef sigmoid(x):\n    return 1 / (1 + np.exp(-x))\n\ndef sigmoid_d(x):\n    s = sigmoid(x)\n    return s * (1 - s)\n\n# 单层网络：一个神经元\nX = np.array([[0.5], [1.0]])   # 2 个样本\nY = np.array([[1.0], [0.0]])   # 目标\nw = np.random.randn(1)\nb = np.zeros(1)\n\nlr = 0.1\nfor epoch in range(20):\n    z = w * X + b\n    a = sigmoid(z)\n    loss = np.mean((a - Y) ** 2)\n    # 反向传播：误差项的梯度\n    dL_da = 2 * (a - Y) / len(X)\n    da_dz = sigmoid_d(z)\n    dL_dw = np.sum(dL_da * da_dz * X)   # 对权重的梯度\n    dL_db = np.sum(dL_da * da_dz)       # 对偏置的梯度\n    w -= lr * dL_dw\n    b -= lr * dL_db\n    print(f\"epoch {epoch}: loss={loss:.4f}\")"
       },
       "mistakes": [
-        "忘记写 i < n 边界判断，越界写坏显存或结果错乱",
-        "grid 用整数除法 n / block，尾部不足一个 block 的元素被漏掉",
-        "kernel 启动后没有同步就读取结果，拿到未初始化的数据",
-        "不检查 cudaGetLastError，kernel 因配置非法启动失败却继续往下跑"
+        "忘记在梯度中乘上激活函数的导数（链式法则步骤缺失）",
+        "把前向传播和反向传播的维度弄反，导致矩阵形状不匹配",
+        "学习率设置过大，导致参数震荡或发散"
       ],
       "interviewPoints": [
-        "__global__ / __device__ / __host__ 的区别与调用规则，为什么 __global__ 必须返回 void",
-        "grid/block 各维上限与总线程数计算，为什么必须做边界判断",
-        "kernel 的异步执行语义与同步点（cudaMemcpy、cudaDeviceSynchronize）",
-        "为什么 blockDim 常取 128/256 而不是 1024（占用率、尾部浪费、寄存器压力）"
+        "「反向传播的本质是什么？」要答到链式法则加上计算图上的动态规划，复用中间梯度，因此比数值梯度快几个数量级",
+        "「为什么反向传播必须从输出层往输入层算？」要答到损失只定义在输出端，每层梯度依赖后一层已算出的误差项 δ，顺序不能颠倒",
+        "「梯度消失和梯度爆炸的根源是什么？」要答到误差项逐层乘以 Wᵀ 与激活函数导数，连乘因子小于 1 就衰减、大于 1 就爆炸",
+        "「梯度检查（gradient check）怎么做？」要答到用中心差分数值梯度与解析梯度比对相对误差，注意用双精度并避开 ReLU 折点"
       ],
-      "resources": [
-        {"title": "An Even Easier Introduction to CUDA（NVIDIA 官方入门）", "url": "https://developer.nvidia.com/blog/even-easier-introduction-cuda/"},
-        {"title": "CUDA C++ Programming Guide", "url": "https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html"}
-      ],
+      "resources": [],
       "quiz": [
-        {"id": "cuda-programming-model-q1", "type": "choice", "prompt": "关于 __global__ 函数，下列说法正确的是？", "options": ["它只能在 device 上被调用", "它在 device 上执行、由 host 调用，返回类型必须是 void", "它可以返回 int 表示线程号", "它必须配合 __shared__ 使用"], "answerIndex": 1, "explanation": "__global__ 是 kernel：host 通过 <<<>>> 启动、在 device 上执行，返回类型必须是 void；__device__ 函数才只能在 device 内调用。"},
-        {"id": "cuda-programming-model-q2", "type": "short", "prompt": "N = 1000 时，用 block = 256 启动 kernel，grid 应该设成多少？为什么不能直接用 1000/256？", "answer": "参考回答：grid 应设为 ceil(1000/256) = 4，总线程数 1024，多出的 24 个线程靠 if (i < n) 判断后空转。若直接用整数除法 1000/256 = 3，只会启动 768 个线程，最后 232 个元素永远不会被计算。所以 CUDA 里一律用 (n + block - 1) / block 向上取整，并在 kernel 内做边界判断。", "keywords": ["向上取整", "边界判断", "尾部元素"], "explanation": "要点是向上取整算出 grid，再用边界判断让多余线程空转，二者缺一不可。"},
-        {"id": "cuda-programming-model-q3", "type": "code", "prompt": "写一个完整的 CUDA kernel，把数组每个元素乘以 2，并给出正确的启动配置与启动错误检查。", "starterCode": "__global__ void scale2(float* __restrict__ x, int n) {\n    // TODO\n}\n\nint main() {\n    // TODO: 启动 kernel 并检查错误\n}\n", "solution": "__global__ void scale2(float* __restrict__ x, int n) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;\n    if (i < n) x[i] *= 2.0f;\n}\n\nint main() {\n    const int n = 1 << 20;\n    size_t bytes = (size_t)n * sizeof(float);\n    float* d_x;\n    cudaMalloc(&d_x, bytes);\n    cudaMemset(d_x, 0, bytes);\n    int block = 256;\n    int grid = (n + block - 1) / block;\n    scale2<<<grid, block>>>(d_x, n);\n    cudaError_t err = cudaGetLastError();\n    if (err != cudaSuccess) printf(\"启动失败: %s\\n\", cudaGetErrorString(err));\n    cudaDeviceSynchronize();\n    cudaFree(d_x);\n    return 0;\n}\n", "checks": ["blockIdx.x * blockDim.x + threadIdx.x", "i < n", "(n + block - 1) / block"], "explanation": "三要素齐全：全局索引、边界判断、向上取整的 grid，外加 cudaGetLastError 检查。"}
-      ]
+        {
+          "id": "back-propagation-q1",
+          "type": "choice",
+          "prompt": "反向传播主要依赖下列哪个数学工具？",
+          "options": [
+            "泰勒展开",
+            "链式法则",
+            "牛顿迭代",
+            "贝叶斯公式"
+          ],
+          "answerIndex": 1,
+          "explanation": "反向传播通过链式法则从输出层向输入层逐层传播误差梯度，把输出端的损失信号分摊到每一层的参数上。"
+        },
+        {
+          "id": "back-propagation-q2",
+          "type": "short",
+          "prompt": "为什么反向传播要从输出层往输入层逐层计算？",
+          "answer": "参考回答：因为损失只定义在输出端，梯度需要借助链式法则从输出层向回传播。每一层的梯度依赖其后一层的计算结果，因此必须从最后一层依次向前计算，最终得到每个参数的梯度。",
+          "keywords": [
+            "链式法则",
+            "输出层",
+            "向前"
+          ],
+          "explanation": "梯度由输出端损失依赖链式法则逐层回传，最后一层先算，逐层向前。"
+        },
+        {
+          "id": "back-propagation-q3",
+          "type": "code",
+          "prompt": "实现一个函数 dL_dw(X, a, Y, dz) 计算权重梯度：其中 z=w X + b，a=sigmoid(z)，请返回对 w 的梯度（使用 dL_da=2*(a-Y)/n，da_dz 自行计算）。",
+          "starterCode": "import numpy as np\n\ndef dL_dw(X, a, Y):\n    pass\n",
+          "solution": "import numpy as np\n\ndef dL_dw(X, a, Y):\n    da_dz = a * (1 - a)\n    dL_da = 2 * (a - Y) / len(X)\n    return np.sum(dL_da * da_dz * X)\n",
+          "checks": [
+            "da_dz",
+            "dL_da"
+          ],
+          "explanation": "利用 sigmoid 导数 da_dz=a*(1-a)，再链式相乘并求和得到权重梯度。"
+        }
+      ],
+      "track": "main"
     },
     {
-      "slug": "thread-indexing",
-      "title": "线程组织与索引计算",
+      "slug": "loss-function",
+      "title": "Loss Function 损失函数",
       "order": 4,
-      "module": "CUDA 编程",
-      "difficulty": "基础",
-      "estimatedMinutes": 30,
-      "summary": "把多维张量映射到 blockIdx/threadIdx 是 CUDA 的基本功；grid-stride 循环让 kernel 与数据规模解耦。",
-      "intuition": "索引计算就是排座位。一维数组像一排连号座位，我的全局线程号 = 前面所有 block 坐满的人数 + 本 block 内我的序号。二维矩阵像剧院：行号由 blockIdx.y 与 threadIdx.y 决定，列号由 x 方向决定，最后按行主序压平成一个线性下标 row * cols + col。座位排得好不好，直接决定访存是否连续、要不要额外判边界。一个实用经验：把最内层、内存连续的维度映射到 threadIdx.x，把批量维度映射到 blockIdx.z——这一步做对，后面 coalescing 的优化就成功了一半。",
-      "formal": "一维索引：idx = blockIdx.x * blockDim.x + threadIdx.x。二维：row = blockIdx.y * blockDim.y + threadIdx.y，col = blockIdx.x * blockDim.x + threadIdx.x，行主序线性化为 idx = row * cols + col（C/CUDA 默认行主序）。blockDim 可取 (16,16)、(32,8) 等任意组合，但一个 block 的总线程数不得超过 1024；gridDim 的 x 维上限 2^31-1，y/z 维上限 65535。当 N 很大或运行前不确定时用 grid-stride 循环：i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += gridDim.x * blockDim.x。这样只需启动约「SM 数 x 每 SM 可驻留 block 数」个 block，线程反复复用，既避免超长 grid 的调度开销，又让同一个 kernel 处理任意长度输入。注意 grid-stride 的步长是 gridDim.x * blockDim.x，写错就变成死循环或重复计算。",
-      "formula": "\\text{idx}_{1D} = \\text{blockIdx.x} \\cdot \\text{blockDim.x} + \\text{threadIdx.x}, \\qquad \\text{row} = \\text{blockIdx.y} \\cdot \\text{blockDim.y} + \\text{threadIdx.y}",
-      "aiConnection": "深度学习张量几乎都是多维的：(B, H, S, D) 这样的四维张量在 attention 里到处出现，KV cache 更是 (B, H, S_kv, D)。写自定义 kernel 的第一步就是决定哪个维度映射到 x、哪个到 y、哪个到 z，因为这决定了相邻线程是否访问相邻内存。读开源 kernel 时你会发现规律：最后一维（连续存储）几乎总在 threadIdx.x，batch 维度放在 blockIdx.z，序列维度放在 blockIdx.y。掌握这套映射，你才能看懂 FlashAttention、fused LayerNorm、量化 dequant kernel 的 launch 配置，也才能自己写对。",
+      "module": "神经网络基础",
+      "difficulty": "进阶",
+      "estimatedMinutes": 22,
+      "summary": "损失函数衡量模型预测与真实标签之间的差距，是训练优化的目标与监控指标。",
+      "intuition": "损失函数就像一把'误差标尺'。模型猜完答案后，拿标尺量一下：猜得离正确答案差多远。标尺越接近零，说明模型越准。训练的目的就是不断调整参数，让这把标尺上的读数越越小。不同的任务用不同的标尺——回归用均方误差（MSE），分类用交叉熵。",
+      "formal": "均方误差是回归任务常用损失：L = (1/n) Σ (ŷ_i - y_i)^2。交叉熵是分类常用损失：L = -Σ y_i log(ŷ_i)，其中 ŷ 是模型输出的概率。更一般地，损失函数 L(θ) 是参数 θ 的函数，训练即寻找使 L 最小的 θ。损失函数的形状与光滑性直接影响梯度下降能否顺利收敛。",
+      "formula": "L_{CE} = -\\sum y_i \\log \\hat{y}_i",
+      "aiConnection": "大语言模型用交叉熵损失训练：给定上文预测下一个 token，输出的概率分布与真实 token 的 one-hot 编码计算交叉熵。语言模型任务的损失因此常称为 next-token prediction loss，它决定了模型学到的语言能力。",
       "codeExample": {
-        "lang": "cuda",
-        "filename": "indexing.cu",
-        "code": "// 编译: nvcc -arch=sm_80 indexing.cu -o indexing && ./indexing\n#include <cstdio>\n#include <cuda_runtime.h>\n\n#define ROWS 4\n#define COLS 8\n\n// 二维索引: x 方向映射最内层(连续)维度, y 方向映射行\n__global__ void mat_add(const float* __restrict__ A, const float* __restrict__ B,\n                        float* __restrict__ C, int rows, int cols) {\n    int col = blockIdx.x * blockDim.x + threadIdx.x;\n    int row = blockIdx.y * blockDim.y + threadIdx.y;\n    if (row < rows && col < cols) {\n        int idx = row * cols + col;              // 行主序线性化\n        C[idx] = A[idx] + B[idx];\n    }\n}\n\n// grid-stride: 线程数与数据规模解耦, 一个 kernel 处理任意长度\n__global__ void add_one(float* __restrict__ x, int n) {\n    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n;\n         i += gridDim.x * blockDim.x)\n        x[i] += 1.0f;\n}\n\nint main() {\n    const int n = ROWS * COLS;\n    size_t bytes = (size_t)n * sizeof(float);\n    float h[ROWS * COLS];\n    for (int i = 0; i < n; ++i) h[i] = 1.0f;\n    float *A, *B, *C;\n    cudaMalloc(&A, bytes); cudaMalloc(&B, bytes); cudaMalloc(&C, bytes);\n    cudaMemcpy(A, h, bytes, cudaMemcpyHostToDevice);\n    cudaMemcpy(B, h, bytes, cudaMemcpyHostToDevice);\n\n    dim3 block(4, 2);                                 // 4 x 2 = 8 线程\n    dim3 grid((COLS + block.x - 1) / block.x, (ROWS + block.y - 1) / block.y);\n    mat_add<<<grid, block>>>(A, B, C, ROWS, COLS);\n    cudaDeviceSynchronize();\n    cudaMemcpy(h, C, bytes, cudaMemcpyDeviceToHost);\n    printf(\"C[0][0] = %.1f, C[%d][%d] = %.1f (期望 2.0)\\n\", h[0], ROWS - 1, COLS - 1, h[n - 1]);\n\n    add_one<<<2, 4>>>(C, n);                          // 只用 8 个线程处理 32 个元素\n    cudaDeviceSynchronize();\n    cudaMemcpy(h, C, bytes, cudaMemcpyDeviceToHost);\n    printf(\"加一之后 C[0][0] = %.1f (期望 3.0)\\n\", h[0]);\n\n    cudaFree(A); cudaFree(B); cudaFree(C);\n    return 0;\n}"
+        "lang": "python",
+        "filename": "loss_fn.py",
+        "code": "import numpy as np\n\n# 均方误差（回归用）\ndef mse(y_true, y_pred):\n    return np.mean((y_true - y_pred) ** 2)\n\n# 交叉熵（分类用，y_pred 为概率）\ndef cross_entropy(y_true, y_pred):\n    y_pred = np.clip(y_pred, 1e-12, 1.0)\n    return -np.sum(y_true * np.log(y_pred))\n\n# 示例：三个类别的预测概率\ny_true = np.array([0, 0, 1])   # 真实为第三类\ny_pred = np.array([0.1, 0.2, 0.7])\nprint(\"MSE:\", mse(y_true, y_pred))\nprint(\"CrossEntropy:\", cross_entropy(y_true, y_pred))"
       },
       "mistakes": [
-        "把 gridDim 与 blockDim 弄反，索引整体错位却看不出报错",
-        "二维 block 里用 threadIdx.x 当行号，导致最内层维度访存不连续",
-        "grid 大小用 n / block 截断，尾部数据静默丢失",
-        "grid-stride 循环里忘记 i += gridDim.x * blockDim.x，写成死循环"
+        "回归任务误用交叉熵，或分类任务误用均方误差，导致收敛困难",
+        "对概率取对数时不加 epsilon 限幅，出现 log(0) 的 NaN 报错",
+        "把损失理解为越小越绝对好，忽略过拟合（训练损失小但验证损失大）"
       ],
       "interviewPoints": [
-        "给定 (B, H, S, D) 张量与 block(16,16)，写出计算全局索引的完整表达式",
-        "blockDim 各维上限与一个 block 的总线程数上限（1024）",
-        "grid-stride 循环的写法、好处与适用场景",
-        "为什么最内层连续维度通常映射到 threadIdx.x，批量维度映射到 blockIdx.z"
+        "「MSE 和交叉熵为什么不能互换？」要答到 MSE 对应高斯噪声下的回归极大似然、交叉熵对应类别分布极大似然，互换则梯度不匹配",
+        "「交叉熵为什么总和 softmax 一起用？」要答到二者组合后梯度化简为 ŷ−y，实现上要用 log-sum-exp 技巧避免数值上溢",
+        "「为什么算 log 前要 clip 或加 epsilon？」要答到概率可能为 0，log(0) 得到 NaN，一步就污染整个训练",
+        "「训练损失下降但验证损失上升说明什么？」要答到已经过拟合，应加正则、早停或补充数据，而不是继续压低训练损失"
       ],
-      "resources": [
-        {"title": "CUDA C++ Programming Guide：Thread Hierarchy", "url": "https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html"},
-        {"title": "An Even Easier Introduction to CUDA", "url": "https://developer.nvidia.com/blog/even-easier-introduction-cuda/"}
-      ],
+      "resources": [],
       "quiz": [
-        {"id": "thread-indexing-q1", "type": "choice", "prompt": "启动配置为 grid(4, 3)、block(16, 8) 时，第 (blockIdx.y=2, threadIdx.y=5, blockIdx.x=1, threadIdx.x=7) 的线程，其行号与列号分别是？", "options": ["行 37, 列 23", "行 21, 列 23", "行 37, 列 15", "行 45, 列 23"], "answerIndex": 1, "explanation": "行号只看 y 方向：blockIdx.y * blockDim.y + threadIdx.y = 2*8 + 5 = 21；列号只看 x 方向：blockIdx.x * blockDim.x + threadIdx.x = 1*16 + 7 = 23。混用两个方向的 blockDim 是最常见的错法。"},
-        {"id": "thread-indexing-q2", "type": "short", "prompt": "grid-stride 循环相比「一个线程处理一个元素」有什么好处？", "answer": "参考回答：一是线程数与数据规模解耦，同一个 kernel 能处理任意长度输入，不必为每种长度重算 grid；二是可以用固定数量的 block（例如 SM 数乘以每 SM 可驻留 block 数）反复复用线程，避免启动上百万个 block 带来的调度开销，同时让每个线程连续处理多个元素，便于向量化读取、提升访存效率。", "keywords": ["解耦", "线程复用", "调度开销"], "explanation": "要点是线程复用与规模无关性，而不是简单地「少启动线程」。"},
-        {"id": "thread-indexing-q3", "type": "code", "prompt": "为形状 (B=2, S=4, D=8) 的三维张量写一个 kernel：用 block(8, 1, 1)、每个 block 处理一个 (b, s) 行，线程沿 D 维并行，把 x 乘以 2。给出索引表达式与启动配置。", "starterCode": "__global__ void scale_rows(float* __restrict__ x, int B, int S, int D) {\n    // TODO: 用 blockIdx.x 表示 s, blockIdx.y 表示 b, threadIdx.x 沿 D 维\n}\n", "solution": "__global__ void scale_rows(float* __restrict__ x, int B, int S, int D) {\n    int s = blockIdx.x;\n    int b = blockIdx.y;\n    int d = threadIdx.x;                      // 最内层连续维度 -> x\n    if (b < B && s < S && d < D) {\n        size_t idx = ((size_t)b * S + s) * D + d;\n        x[idx] *= 2.0f;\n    }\n}\n\nint main() {\n    const int B = 2, S = 4, D = 8;\n    size_t bytes = (size_t)B * S * D * sizeof(float);\n    float* d_x;\n    cudaMalloc(&d_x, bytes);\n    cudaMemset(d_x, 0, bytes);\n    dim3 block(D, 1, 1);\n    dim3 grid(S, B, 1);\n    scale_rows<<<grid, block>>>(d_x, B, S, D);\n    cudaDeviceSynchronize();\n    cudaFree(d_x);\n    return 0;\n}\n", "checks": ["blockIdx.y", "threadIdx.x", "((size_t)b * S + s) * D + d"], "explanation": "batch 放 blockIdx.y、序列放 blockIdx.x、最内层 D 放 threadIdx.x，保证同一 warp 的线程访问连续地址。"}
-      ]
+        {
+          "id": "loss-function-q1",
+          "type": "choice",
+          "prompt": "二分类任务最常用下列哪种损失函数？",
+          "options": [
+            "均方误差 MSE",
+            "交叉熵 Cross-Entropy",
+            "绝对误差 MAE",
+            "Hinge Loss"
+          ],
+          "answerIndex": 1,
+          "explanation": "分类任务输出概率分布，常与真实标签计算交叉熵，这正是大模型 next-token prediction 所用的损失。"
+        },
+        {
+          "id": "loss-function-q2",
+          "type": "short",
+          "prompt": "损失函数在训练中的作用是什么？",
+          "answer": "参考回答：损失函数量化模型预测与真实标签之间的差距，是优化算法（如梯度下降）最小化的目标。训练通过减小损失来更新参数，使预测越来越接近真实值；它也是衡量训练效果的监控指标。",
+          "keywords": [
+            "差距",
+            "目标",
+            "最小化"
+          ],
+          "explanation": "损失函数定义了优化目标，训练不断最小化它，同时作为训练监控指标。"
+        },
+        {
+          "id": "loss-function-q3",
+          "type": "code",
+          "prompt": "实现 cross_entropy(y_true, y_pred)，其中 y_pred 为概率（注意用 clip 避免 log(0)）。",
+          "starterCode": "import numpy as np\n\ndef cross_entropy(y_true, y_pred):\n    pass\n",
+          "solution": "import numpy as np\n\ndef cross_entropy(y_true, y_pred):\n    y_pred = np.clip(y_pred, 1e-12, 1.0)\n    return -np.sum(y_true * np.log(y_pred))\n",
+          "checks": [
+            "np.clip",
+            "np.log"
+          ],
+          "explanation": "对概率做 clip 下限保护后计算 -sum(y_true*log(y_pred))。"
+        }
+      ],
+      "track": "main"
     },
     {
-      "slug": "memory-coalescing",
-      "title": "内存合并访问与 Bank Conflict",
+      "slug": "optimizer",
+      "title": "Optimizer 优化器",
       "order": 5,
-      "module": "CUDA 编程",
+      "module": "神经网络基础",
       "difficulty": "进阶",
-      "estimatedMinutes": 40,
-      "summary": "相邻线程访问相邻地址时，32 个线程的 4 字节请求刚好拼成一个 128 字节 cache line；错开一步，带宽就掉 8-32 倍。",
-      "intuition": "把取数据想成去仓库取包裹。32 个工人去取 32 个相邻的包裹，管理员一次搬出一整箱（128 字节的 cache line）大家分——一次搬运满足 32 个请求。如果这 32 个人取的是间隔很远的 32 个包裹，管理员就得跑 32 趟，每趟只送出一个小包裹，剩下 124 字节全浪费。线程数一样、数据量一样，速度差 8 到 32 倍。共享内存里有同样的坑：32 个 bank 像 32 个抽屉，如果大家都去开同一个抽屉（或按 32 的倍数错开），就得排队，这叫 bank conflict。",
-      "formal": "全局内存以 32 字节 sector 为传输粒度、128 字节 cache line 为组织单位。一个 warp 的 32 个线程访问 a[base + lane] 时，32 x 4B = 128B 恰好落在一个 cache line 内，硬件合并成 1 次事务，有效带宽接近峰值；若步长为 32（相邻线程地址相差 128 字节），每个线程独占一条 cache line，同样 128B 有效数据需要 32 次事务，有效带宽降到约 1/32。用 float4（16 字节）向量化后，一个 warp 一次请求 512 字节、只需 4 条 cache line，指令数同时降到 1/4。共享内存有 32 个 bank，每个 bank 宽 4 字节，地址 a 落在 bank (a/4) mod 32：若 warp 内线程访问 tile[lane][k] 这类按 32 步进的模式，32 个线程全落在同一个 bank，一次访问被串行成 32 次；把数组声明成 tile[32][33]（每行多一列 padding）就能让相邻行错开一个 bank，冲突降为 0。",
-      "formula": "\\text{有效带宽} = \\frac{\\text{实际使用字节}}{\\text{实际传输字节}} \\times \\text{峰值带宽}, \\qquad \\text{bank} = \\left(\\frac{\\text{addr}}{4}\\right) \\bmod 32",
-      "aiConnection": "大模型里绝大多数算子都是 memory-bound：LayerNorm、softmax、残差相加、激活函数、embedding 查表，性能几乎完全由访存效率决定，而它们加起来能占训练 step 的相当一部分时间。常见的坑很具体：把 (B, S, D) 转置成 (B, D, S) 后仍按旧索引访问、KV cache 的 gather 索引不连续、MoE 按 token 路由导致随机访存、量化推理里 dequant 后按步长写回。面试被问「这个算子怎么优化」，先问访问模式是否合并，往往比换算法更有效。",
+      "estimatedMinutes": 24,
+      "summary": "优化器根据梯度决定参数如何更新，常见的有 SGD、Momentum、Adam 等，直接影响收敛速度与稳定性。",
+      "intuition": "优化器像一个在山坡上找最低点的登山者。梯度告诉你'往哪走能下坡'，但走多大一步（学习率）、如何利用历史经验避免原地抖动，就是优化器的职责。普通梯度下降像只走当前最陡坡；带动量的优化器像有惯性的滚球，能冲平缓区域；Adam 则给每个参数单独调节步子，又快又稳。",
+      "formal": "批量梯度下降更新规则为 θ_{t+1} = θ_t - η ∇L(θ_t)，η 是学习率。SGD 每次用一个样本估计梯度，噪声大但快。Momentum 引入历史梯度的累积：v_{t+1} = β v_t + (1-β)∇L(θ_t)，θ_{t+1}=θ_t - η v_{t+1}。Adam 结合动量（一阶矩）与 RMSProp（二阶矩），并做偏差校正，是当前最常用的优化器之一。",
+      "formula": "\\theta_{t+1} = \\theta_t - \\eta m_t / (\\sqrt{v_t} + \\epsilon)",
+      "aiConnection": "大型语言模型的训练普遍使用 AdamW 优化器并配以学习率预热和余弦退火，因为参数量巨大、梯度尺度不一，自适应步长能显著提升训练稳定性。优化器选择与学习率调度策略，是决定大规模训练能否成功的关键工程环节。",
       "codeExample": {
-        "lang": "cuda",
-        "filename": "coalescing.cu",
-        "code": "// 编译: nvcc -arch=sm_80 coalescing.cu -o coalescing && ./coalescing\n#include <cstdio>\n#include <cuda_runtime.h>\n\n#define N ((size_t)1 << 24)   // 16M 个 float = 64MB\n\n// 合并访问: 线程 t 访问 a[base + t], 32 个线程的 4 字节请求\n// 恰好落在同一个 128 字节 cache line 里 -> 1 次事务\n__global__ void coalesced(const float* __restrict__ a, float* __restrict__ out) {\n    size_t i = blockIdx.x * (size_t)blockDim.x + threadIdx.x;\n    out[i] = a[i] + 1.0f;\n}\n\n// 跨步访问: 相邻线程地址相差 32 个 float = 128 字节,\n// 每个线程独占一条 cache line, 只用 4/128 的有效数据 -> 32 次事务\n__global__ void strided(const float* __restrict__ a, float* __restrict__ out) {\n    size_t i = blockIdx.x * (size_t)blockDim.x + threadIdx.x;\n    size_t j = (i * 32) % N;\n    out[j] = a[j] + 1.0f;\n}\n\ntypedef void (*KernelFn)(const float*, float*);\n\nfloat bench(KernelFn k, const float* a, float* out, int grid, int block) {\n    cudaEvent_t s, e;\n    cudaEventCreate(&s); cudaEventCreate(&e);\n    k<<<grid, block>>>(a, out);                    // 预热\n    cudaDeviceSynchronize();\n    cudaEventRecord(s);\n    for (int r = 0; r < 5; ++r) k<<<grid, block>>>(a, out);\n    cudaEventRecord(e);\n    cudaEventSynchronize(e);\n    float ms = 0.0f;\n    cudaEventElapsedTime(&ms, s, e);\n    double bytes = 2.0 * (double)N * sizeof(float) * 5;   // 读 N 个 + 写 N 个\n    return (float)(bytes / (ms / 1e3) / 1e9);\n}\n\nint main() {\n    size_t bytes = N * sizeof(float);\n    float *a, *out;\n    cudaMalloc(&a, bytes);\n    cudaMalloc(&out, bytes);\n    cudaMemset(a, 0, bytes);\n    int block = 256, grid = (int)(N / block);\n    printf(\"合并访问: %7.1f GB/s\\n\", bench(coalesced, a, out, grid, block));\n    printf(\"跨步访问: %7.1f GB/s\\n\", bench(strided, a, out, grid, block));\n    printf(\"参考: A100 峰值约 2039 GB/s, H100 约 3350 GB/s\\n\");\n    cudaFree(a); cudaFree(out);\n    return 0;\n}"
+        "lang": "python",
+        "filename": "optimizer.py",
+        "code": "import numpy as np\n\n# 手写一个简单的带有动量的梯度下降优化器\nclass Momentum:\n    def __init__(self, lr=0.01, beta=0.9):\n        self.lr = lr\n        self.beta = beta\n        self.v = None\n\n    def step(self, params, grads):\n        if self.v is None:\n            self.v = [np.zeros_like(p) for p in params]\n        for i, p in enumerate(params):\n            self.v[i] = self.beta * self.v[i] + (1 - self.beta) * grads[i]\n            params[i] = p - self.lr * self.v[i]\n        return params\n\n# 简单二次函数 f(x)=x^2，最小值在 0\nparams = [np.array([10.0])]\ngrads = [np.array([20.0])]   # 2x\nopt = Momentum(lr=0.1)\nfor t in range(10):\n    grads[0] = 2 * params[0]\n    params = opt.step(params, grads)\n    print(params[0])"
       },
       "mistakes": [
-        "让相邻线程访问间隔 32 或 128 字节的数据，有效带宽直接掉一个数量级",
-        "共享内存数组不加 padding，出现 32 路 bank conflict 把访存串行化",
-        "明明可以用 float4 一次搬 16 字节，却仍用标量逐个搬运",
-        "转置或重排数据后仍按原索引访问，把合并访问变成跨步访问"
+        "学习率设置过大导致发散，过小导致收敛极其缓慢",
+        "以为 Adam 不需要调学习率，但默认与具体任务仍需调整",
+        "梯度爆炸时不做梯度裁剪（clip），导致训练不稳定"
       ],
       "interviewPoints": [
-        "什么是合并访问？一个 warp 访问 32 个连续 float 需要几次内存事务",
-        "bank conflict 的判定方法，以及 padding 为什么能消除冲突",
-        "float4 向量化为什么能提升带宽（事务数与指令数同时下降）",
-        "给一段 kernel 判断访存是否合并，并说明具体改法"
+        "「SGD、Momentum、Adam 的更新式分别是什么？」要答到 θ-=ηg、累积一阶矩当惯性、以及一阶矩除以二阶矩开方并做偏差校正",
+        "「Adam 为什么要做偏差校正？」要答到一阶矩与二阶矩都初始化为 0、前期估计偏向 0，除以 1-βᵗ 才无偏，否则最初几步步长异常小",
+        "「Adam 和 AdamW 的区别是什么？」要答到 Adam 把 weight decay 混进梯度与自适应步长耦合，AdamW 解耦",
+        "「为什么要用学习率预热和梯度裁剪？」要答到前期梯度尺度不稳，预热避免大步长发散，裁剪防梯度爆炸，是大模型训练标配"
       ],
-      "resources": [
-        {"title": "How to Access Global Memory Efficiently in CUDA C/C++ Kernels", "url": "https://developer.nvidia.com/blog/how-access-global-memory-efficiently-cuda-c-kernels/"},
-        {"title": "Using Shared Memory in CUDA C/C++", "url": "https://developer.nvidia.com/blog/using-shared-memory-cuda-cc/"}
-      ],
+      "resources": [],
       "quiz": [
-        {"id": "memory-coalescing-q1", "type": "choice", "prompt": "一个 warp 的 32 个线程访问 a[base + lane]（float，lane = 0..31），硬件需要几次 128 字节的事务？", "options": ["32 次", "4 次", "1 次", "8 次"], "answerIndex": 2, "explanation": "32 x 4 字节 = 128 字节，恰好落在一个 cache line 内，硬件合并为 1 次事务，这就是合并访问的理想形态。"},
-        {"id": "memory-coalescing-q2", "type": "short", "prompt": "共享内存里的 bank conflict 是怎么产生的？为什么把数组声明成 [32][33] 能解决？", "answer": "参考回答：共享内存有 32 个 bank，每个 bank 宽 4 字节，地址 a 落在 bank (a/4) mod 32。若一个 warp 的线程访问同一列（地址相差 32 个 float 的整数倍），它们会落到同一个 bank，硬件只能串行服务，称为 bank conflict。把行宽从 32 改成 33 后，每行的起始地址相对上一行偏移 1 个 bank，同一列的线程分散到 32 个不同 bank，冲突降为 0。", "keywords": ["32 个 bank", "同列访问", "padding"], "explanation": "要点是「地址步长是 32 的倍数导致同 bank」，padding 打乱步长即可。"},
-        {"id": "memory-coalescing-q3", "type": "code", "prompt": "有一个 32x32 的共享内存数组 tile，线程按 tile[threadIdx.x][k] 访问会产生 bank conflict。请改成无冲突的声明方式并写出访问语句。", "starterCode": "__global__ void kernel(float* out) {\n    __shared__ float tile[32][32];   // TODO: 改成无 bank conflict\n    // TODO: 访问 tile[threadIdx.x][k]\n}\n", "solution": "__global__ void kernel(float* out) {\n    __shared__ float tile[32][33];         // 每行多 1 列 padding\n    int k = 0;\n    tile[threadIdx.x][k] = (float)threadIdx.x;\n    __syncthreads();\n    // 现在 warp 内 32 个线程访问的地址步长为 33 个 float,\n    // 落在 32 个不同的 bank 上, 无冲突\n    out[threadIdx.x] = tile[threadIdx.x][k];\n}\n", "checks": ["__shared__ float tile[32][33]", "tile[threadIdx.x][k]"], "explanation": "行宽 33 使相邻行的同一列落在不同 bank，消除 32 路冲突。"}
-      ]
+        {
+          "id": "optimizer-q1",
+          "type": "choice",
+          "prompt": "关于 Adam 优化器，下列说法正确的是？",
+          "options": [
+            "它不使用梯度",
+            "它结合了动量与自适应学习率",
+            "它只适用于线性模型",
+            "它完全不需要设置学习率"
+          ],
+          "answerIndex": 1,
+          "explanation": "Adam 结合了一阶矩（动量）与二阶矩（自适应步长），是当前训练大模型最常用的优化器之一。"
+        },
+        {
+          "id": "optimizer-q2",
+          "type": "short",
+          "prompt": "Momentum（动量）优化器解决了普通 SGD 的什么问题？",
+          "answer": "参考回答：普通 SGD 只依赖当前梯度，容易在山谷或平缓区域抖动、收敛慢。Momentum 累积历史梯度作为速度项（v），相当于给更新加上了惯性，能平滑震荡并加速穿过平缓区域，使收敛更稳定快速。",
+          "keywords": [
+            "惯性",
+            "历史梯度",
+            "震荡"
+          ],
+          "explanation": "动量利用历史梯度累积形成惯性，平滑梯度震荡、加速穿越平缓区域。"
+        },
+        {
+          "id": "optimizer-q3",
+          "type": "code",
+          "prompt": "实现一个简单的 SGD 更新函数：给定参数 param 和梯度 grad、学习率 lr，返回更新后的参数。",
+          "starterCode": "def sgd_step(param, grad, lr):\n    pass\n",
+          "solution": "def sgd_step(param, grad, lr):\n    return param - lr * grad\n",
+          "checks": [
+            "lr",
+            "param -"
+          ],
+          "explanation": "标准 SGD 规则：沿梯度的反方向减去 lr 乘以梯度。"
+        }
+      ],
+      "track": "main"
     },
     {
-      "slug": "shared-memory-tiling",
-      "title": "共享内存与 Tiling",
+      "slug": "pytorch",
+      "title": "PyTorch",
       "order": 6,
-      "module": "CUDA 编程",
+      "module": "深度学习框架与应用",
       "difficulty": "进阶",
-      "estimatedMinutes": 45,
-      "summary": "把会被反复使用的数据先搬进共享内存，用一次全局读取换 TILE 次计算，这是矩阵乘法提速的第一个数量级。",
-      "intuition": "做菜时，矩阵乘法里每个 A 的元素会被用 N 次，每个 B 的元素也会被用 N 次。如果每次都要跑回仓库拿，就是 N 倍的搬运量。Tiling 的思路是：一个 block 负责 C 的一个 16x16 小块，它只需要 A 的 16 行和 B 的 16 列，先把这一小片搬进 block 私有、速度接近寄存器的共享内存，然后 256 个线程在这一小片上反复计算。搬运量从每个输出元素 2N 次读取降到 2N/TILE 次。这就像把常用的调料先倒进手边的小碟子，而不是每炒一下都跑一趟储藏室。",
-      "formal": "朴素 GEMM 计算 N x N 的 C = A x B 需要 2N^3 次 FLOPs，但若每个乘加都从全局内存取操作数，访存量高达 2N^3 个元素（每个元素 4 字节）。tiling 后 block 级共享内存缓存 TILE x TILE 的 A、B 分块，块内每个元素被 16 个线程复用 16 次，访存量降到 2N^3 / TILE。16 x 16 x 4B x 2 = 2KB 共享内存占用极小，但受 bank 冲突与 __syncthreads 开销影响，实测通常只有 cuBLAS 的 20%-40%。两个关键细节：__syncthreads() 必须成对出现在「写共享内存之后」和「读共享内存之前」，否则会读到上一轮的旧数据；把 A 分块转置存放为 As[k][m] 能让共享内存读取也无冲突。",
-      "formula": "\\text{访存量}_{\\text{naive}} = 2N^{3} \\times 4\\text{B}, \\qquad \\text{访存量}_{\\text{tiled}} = \\frac{2N^{3}}{\\text{TILE}} \\times 4\\text{B}",
-      "aiConnection": "GEMM 是大模型里最耗时的算子：前向与反向的 Linear 层、attention 里的 QK^T 与 PV 都是 GEMM，占训练时间的大头。理解 tiling，你才能解释为什么 cuBLAS/CUTLASS 能把 A100 的 FP16 算力打到 300 TFLOPS 以上，也才能理解 FlashAttention 为什么把 Q/K/V 分块搬进共享内存——它本质上是把 GEMM 的 tiling 思想搬到 attention 上，顺带干掉了 N x N 的中间矩阵。面试手写 kernel 时，能不能说出「搬进 shared memory 复用 TILE 次」以及 __syncthreads 的位置，是区分「会写 CUDA」和「背过 CUDA」的分界线。",
+      "estimatedMinutes": 24,
+      "summary": "PyTorch 是一个以张量为核心的深度学习框架，用自动求导和强大生态简化了模型定义与训练。",
+      "intuition": "前面几课用 numpy 手写神经网络很辛苦：梯度都要自己推、自己算。PyTorch 就是帮你把这些杂活全包了的'托管工厂'。你只需用张量（Tensor）描述数据和参数，像搭积木一样定义网络层，PyTorch 会自动记录每次运算并计算梯度，你专心设计结构、调优即可。",
+      "formal": "PyTorch 的核心数据结构是 torch.Tensor，支持 GPU 加速。nn.Module 用于组织网络层，通过定义 forward 方法描述前向计算。autograd 引擎会在前向时构建计算图，并在调用 loss.backward() 时自动求出所有 requires_grad 参数的梯度。结合 torch.optim 中的优化器与 nn 中的损失函数，一套标准的训练循环只需前向、计算损失、反向、更新参数四步。",
+      "formula": "loss.backward() \\;\\; \\Rightarrow \\;\\; \\text{autograd 计算} \\;\\; \\partial L / \\partial \\theta",
+      "aiConnection": "几乎所有主流开源大语言模型（如 Llama、Qwen、DeepSeek）都基于 PyTorch 训练与部署。PyTorch 的自动求导与灵活的动态图机制，让科研到工程化的迁移变得顺畅，是大模型开发的事实标准框架。",
       "codeExample": {
-        "lang": "cuda",
-        "filename": "tiled_matmul.cu",
-        "code": "// 编译: nvcc -arch=sm_80 tiled_matmul.cu -o tiled && ./tiled\n#include <cstdio>\n#include <cstdlib>\n#include <cuda_runtime.h>\n\n#define TILE 16\n#define N 1024\n\n__global__ void tiled_matmul(const float* __restrict__ A, const float* __restrict__ B,\n                             float* __restrict__ C) {\n    __shared__ float As[TILE][TILE];\n    __shared__ float Bs[TILE][TILE];\n    int tx = threadIdx.x, ty = threadIdx.y;\n    int row = blockIdx.y * TILE + ty;\n    int col = blockIdx.x * TILE + tx;\n    float acc = 0.0f;\n    for (int t = 0; t < N / TILE; ++t) {\n        As[ty][tx] = A[row * N + t * TILE + tx];     // 行内连续 -> 合并访问\n        Bs[ty][tx] = B[(t * TILE + ty) * N + col];   // 行内连续 -> 合并访问\n        __syncthreads();                              // 等本块数据搬完\n        #pragma unroll\n        for (int k = 0; k < TILE; ++k)\n            acc += As[ty][k] * Bs[k][tx];             // 从共享内存复用\n        __syncthreads();                              // 等所有人算完再覆盖\n    }\n    C[row * N + col] = acc;\n}\n\nint main() {\n    size_t bytes = (size_t)N * N * sizeof(float);\n    float *A, *B, *C, *h;\n    cudaMalloc(&A, bytes); cudaMalloc(&B, bytes); cudaMalloc(&C, bytes);\n    h = (float*)malloc(bytes);\n    for (int i = 0; i < N * N; ++i) h[i] = 1.0f;      // 全 1 矩阵, C 的每个元素应为 N\n    cudaMemcpy(A, h, bytes, cudaMemcpyHostToDevice);\n    cudaMemcpy(B, h, bytes, cudaMemcpyHostToDevice);\n\n    dim3 block(TILE, TILE);\n    dim3 grid(N / TILE, N / TILE);\n    tiled_matmul<<<grid, block>>>(A, B, C);           // 预热\n    cudaDeviceSynchronize();\n\n    cudaEvent_t s, e;\n    cudaEventCreate(&s); cudaEventCreate(&e);\n    cudaEventRecord(s);\n    for (int r = 0; r < 20; ++r) tiled_matmul<<<grid, block>>>(A, B, C);\n    cudaEventRecord(e);\n    cudaEventSynchronize(e);\n    float ms = 0.0f;\n    cudaEventElapsedTime(&ms, s, e);\n\n    cudaMemcpy(h, C, sizeof(float), cudaMemcpyDeviceToHost);\n    printf(\"C[0][0] = %.0f (期望 %d)\\n\", h[0], N);\n    printf(\"tiled SGEMM: %.2f ms, %.1f GFLOPS (A100 FP32 峰值 19500 GFLOPS)\\n\",\n           ms / 20, 2.0 * N * N * N * 20 / (ms / 1e3) / 1e9);\n    cudaFree(A); cudaFree(B); cudaFree(C); free(h);\n    return 0;\n}"
+        "lang": "python",
+        "filename": "pytorch_basic.py",
+        "code": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\n# 定义一个简单线性层网络\nmodel = nn.Sequential(\n    nn.Linear(3, 8),\n    nn.ReLU(),\n    nn.Linear(8, 1),\n)\n\n# 输入一个 batch：2 个样本，每个 3 维\nx = torch.randn(2, 3)\ny = torch.randn(2, 1)\n\ncriterion = nn.MSELoss()\noptimizer = optim.Adam(model.parameters(), lr=0.01)\n\n# 标准训练循环四步\nfor epoch in range(5):\n    pred = model(x)\n    loss = criterion(pred, y)\n    optimizer.zero_grad()\n    loss.backward()\n    optimizer.step()\n    print(f\"epoch {epoch}: loss={loss.item():.4f}\")"
       },
       "mistakes": [
-        "忘记 __syncthreads()，或只写一次，导致读到上一轮的旧数据",
-        "tile 开得过大（如 64x64 fp32 = 32KB），shared 占用过高把 occupancy 压得很低",
-        "写共享内存时不注意索引顺序，引入 bank conflict 抵消了收益",
-        "不做边界判断，N 不是 TILE 整数倍时越界访问"
+        "忘记在反向传播前调用 optimizer.zero_grad()，导致梯度累加错误",
+        "把数据当作普通 numpy 数组，未转为 torch.Tensor 而报错",
+        "调用 .item() 前把张量直接用于 numpy 运算，导致类型不一致"
       ],
       "interviewPoints": [
-        "tiling 为什么能减少全局访存？具体减少多少倍",
-        "__syncthreads() 的作用，以及它在循环里必须出现两次的原因",
-        "shared memory 容量上限与 occupancy 之间的权衡怎么算",
-        "如何通过转置存放或 padding 让共享内存访问也无冲突"
+        "「PyTorch 的 autograd 是怎么工作的？」要答到前向时动态构建计算图，backward 时按链式法则自动求出所有梯度",
+        "「训练循环的四步是什么？zero_grad 能省吗？」要答到前向→损失→zero_grad→backward→step，梯度不清零会累加",
+        "「动态图和静态图的区别？」要答到 PyTorch 边跑边建图、便于调试与变长控制流；静态图先定义后执行、利于整体优化与部署",
+        "「detach()、no_grad()、item() 什么时候用？」要答到切断梯度、关图省显存、把单元素张量取成 Python 数值"
       ],
-      "resources": [
-        {"title": "Using Shared Memory in CUDA C/C++", "url": "https://developer.nvidia.com/blog/using-shared-memory-cuda-cc/"},
-        {"title": "CUDA C++ Best Practices Guide（shared memory 与 tiling）", "url": "https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html"}
-      ],
+      "resources": [],
       "quiz": [
-        {"id": "shared-memory-tiling-q1", "type": "choice", "prompt": "用 16x16 的 tile 做 GEMM，理论全局访存量大约降到朴素实现的多少？", "options": ["1/2", "1/4", "1/16", "不变"], "answerIndex": 2, "explanation": "分块后每个元素被 block 内 16 个线程各复用 16 次，访存量从 2N^3 降到 2N^3/16，即 1/16。"},
-        {"id": "shared-memory-tiling-q2", "type": "short", "prompt": "为什么 tiled GEMM 的循环里需要两个 __syncthreads()？", "answer": "参考回答：第一个 __syncthreads() 放在把全局数据写入共享内存之后，保证所有线程都能读到完整的本块数据，而不是别人还没写完的半成品；第二个放在块内计算完成之后、下一轮覆盖共享内存之前，防止写得快的线程提前覆盖了别人还在用的数据。少任何一个都会产生竞态，结果随调度变化而错误。", "keywords": ["写后读", "读后写", "竞态"], "explanation": "两个同步点分别防止「读未写完」与「覆盖还在用的数据」两类竞态。"},
-        {"id": "shared-memory-tiling-q3", "type": "code", "prompt": "补全 tiled GEMM 内核中「把 A、B 分块搬进共享内存」的部分（TILE=16，block 为 16x16，A、B 为 N x N 行主序）。", "starterCode": "__global__ void tiled(const float* __restrict__ A, const float* __restrict__ B,\n                     float* __restrict__ C, int N) {\n    __shared__ float As[16][16];\n    __shared__ float Bs[16][16];\n    int tx = threadIdx.x, ty = threadIdx.y;\n    int row = blockIdx.y * 16 + ty;\n    int col = blockIdx.x * 16 + tx;\n    float acc = 0.0f;\n    for (int t = 0; t < N / 16; ++t) {\n        // TODO: 搬数据 + 同步 + 计算 + 同步\n    }\n    C[row * N + col] = acc;\n}\n", "solution": "    for (int t = 0; t < N / 16; ++t) {\n        As[ty][tx] = A[row * N + t * 16 + tx];\n        Bs[ty][tx] = B[(t * 16 + ty) * N + col];\n        __syncthreads();\n        #pragma unroll\n        for (int k = 0; k < 16; ++k)\n            acc += As[ty][k] * Bs[k][tx];\n        __syncthreads();\n    }\n", "checks": ["As[ty][tx] = A[row * N", "Bs[ty][tx] = B[(t * 16 + ty) * N + col]", "__syncthreads()"], "explanation": "搬运时让 tx 沿行内连续维度保证合并访问，计算前同步一次、覆盖前再同步一次。"}
-      ]
+        {
+          "id": "pytorch-q1",
+          "type": "choice",
+          "prompt": "PyTorch 训练循环中，正确顺序正确的是？",
+          "options": [
+            "optimizer.step -> loss.backward -> zero_grad",
+            "zero_grad -> loss.backward -> optimizer.step",
+            "loss.backward -> optimizer.step -> zero_grad",
+            "zero_grad -> optimizer.step -> loss.backward"
+          ],
+          "answerIndex": 1,
+          "explanation": "标准顺序：先清空梯度 zero_grad，前向并算损失后 loss.backward() 求梯度，最后 optimizer.step() 更新参数。"
+        },
+        {
+          "id": "pytorch-q2",
+          "type": "short",
+          "prompt": "PyTorch 的 autograd 机制是如何工作的？",
+          "answer": "参考回答：在前向传播时，autograd 会动态记录每一步运算，构建计算图（computational graph），并标记哪些张量需要梯度（requires_grad=True）。当调用 loss.backward() 时，它依据链式法则沿计算图反向传播，自动计算所有叶张量的梯度，从而省去手动推导梯度。",
+          "keywords": [
+            "计算图",
+            "链式法则",
+            "backward"
+          ],
+          "explanation": "autograd 在前向时记录计算图，backward 时用链式法则自动求梯度。"
+        },
+        {
+          "id": "pytorch-q3",
+          "type": "code",
+          "prompt": "补全训练循环中缺失的三行：清空梯度、反向传播、更新参数。",
+          "starterCode": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\nmodel = nn.Linear(3, 1)\nx, y = torch.randn(2, 3), torch.randn(2, 1)\ncriterion = nn.MSELoss()\noptimizer = optim.SGD(model.parameters(), lr=0.01)\n\npred = model(x)\nloss = criterion(pred, y)\n# 在此补全三行\n",
+          "solution": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\nmodel = nn.Linear(3, 1)\nx, y = torch.randn(2, 3), torch.randn(2, 1)\ncriterion = nn.MSELoss()\noptimizer = optim.SGD(model.parameters(), lr=0.01)\n\npred = model(x)\nloss = criterion(pred, y)\noptimizer.zero_grad()\nloss.backward()\noptimizer.step()\n",
+          "checks": [
+            "zero_grad",
+            "backward",
+            "optimizer.step"
+          ],
+          "explanation": "补齐 zero_grad、loss.backward()、optimizer.step() 三行。"
+        }
+      ],
+      "track": "main"
     },
     {
-      "slug": "matmul-optimization",
-      "title": "矩阵乘法优化：从朴素到分块",
+      "slug": "cnn",
+      "title": "CNN 卷积网络",
       "order": 7,
-      "module": "Kernel 优化",
+      "module": "深度学习框架与应用",
       "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "从朴素三重循环到寄存器分块 + 向量化 + 双缓冲，GEMM 优化是理解所有高性能 kernel 的最佳样本。",
-      "intuition": "上一节的 tiling 只解决了一半问题：数据搬进了共享内存，但每个线程仍然反复从共享内存读 A、B 的同一个元素。更快的做法是让每个线程一次算 4x4 = 16 个输出，把 4 个 A 元素和 4 个 B 元素读进寄存器，做 16 次乘加——寄存器读取只要 1 个周期且不占访存带宽，算术强度一下子上去了。这就像切菜工不再一次只切一片，而是左手拿一叠、右手拿一叠，一刀下去出 16 片。再往前一步是双缓冲：把下一块数据提前取到第二组共享内存，让搬运与计算重叠，硬件永远不空等。",
-      "formal": "寄存器分块（register blocking / thread coarsening）让每个线程计算 TM x TN 的微块。以 BM = BN = 64、BK = 16、TM = TN = 4、block = 16x16 为例：每个线程在 k 循环内只读 TM + TN = 8 个共享内存元素，却做了 TM x TN = 16 次 FMA，共享内存访问与 FLOPs 的比值从 1:1 降到 1:2。再叠加 float4 向量化加载与双缓冲（预取下一块），就能逼近硬件上限。性能量级参考：A100 的 FP32 峰值 19.5 TFLOPS、HBM 2039 GB/s，脊点 9.6 FLOP/B；朴素 SGEMM 约 100 GFLOPS，tiled 约 400-800 GFLOPS，寄存器分块可到 2-4 TFLOPS，cuBLAS 约 15 TFLOPS；FP16 Tensor Core 峰值 312 TFLOPS（H100 约 990 TFLOPS），必须用 WMMA/mma 指令，普通 CUDA Core 写法摸不到。",
-      "formula": "\\text{AI}_{\\text{GEMM}} = \\frac{2N^{3}}{3N^{2} \\times 4\\text{B}} = \\frac{N}{6}\\ \\text{FLOP/B} \\quad (N = 4096 \\Rightarrow 683\\ \\text{FLOP/B} \\gg I^{*} = 9.6)",
-      "aiConnection": "面试里「手写一个矩阵乘法并优化」几乎是 GPU 相关岗位的必考题，标准答题路径就是：朴素 -> 共享内存 tiling -> 寄存器分块 -> 向量化 -> 双缓冲，每一级要能说出提升原理与预期倍数。工作中你很少真的手写 SGEMM，但同一套思路直接用在自定义算子上：FlashAttention 的 tile 尺寸、MoE 的 group GEMM、量化推理的 dequant-GEMM 融合，都是这套方法论的变体。反过来，当你能算出 GEMM 的算术强度远高于脊点、属于 compute-bound，就不会浪费时间去做访存优化。",
+      "estimatedMinutes": 24,
+      "summary": "卷积神经网络利用卷积核在局部滑动提取空间特征，尤其擅长处理图像等网格化数据。",
+      "intuition": "看一张图时，你不会把每个像素孤立地读，而是先注意到局部的小图案——边缘、纹理、形状。卷积核就像一小块'放大镜'，在整个图上滑来滑去，在每处提取局部特征；堆叠起来，前面几层看到边缘，中间层看到部件，深层看到完整物体。这正是 CNN 与人眼相似的层次化理解方式。",
+      "formal": "卷积操作把核 W 与输入局部区域做点积再滑窗：y[i,j] = Σ_m Σ_n x[i+m, j+n] * W[m,n]。卷积核共享权重，大大减少了参数量并具备平移不变性。通常在卷积后接池化（pooling）降低分辨率、增强鲁棒性，再接激活函数和多层堆叠。输出特征图尺寸由卷积核大小、步长（stride）与填充（padding）共同决定。",
+      "formula": "y[i,j] = \\sum_m \\sum_n x[i+m,\\,j+n] \\, W[m,n]",
+      "aiConnection": "大语言模型虽以文本为主，但多模态模型（如能看图的大模型）常借助视觉编码器（多为 CNN 或视觉 Transformer）把图像转成特征向量，再与文本特征融合。理解卷积的局部性与参数共享，是把握图像理解模型的基础。",
       "codeExample": {
-        "lang": "cuda",
-        "filename": "sgemm_reg.cu",
-        "code": "// 编译: nvcc -arch=sm_80 sgemm_reg.cu -o sgemm_reg && ./sgemm_reg\n// 每个线程算 4x4 个输出: 共享内存读取 8 次, FMA 16 次\n#include <cstdio>\n#include <cstdlib>\n#include <cuda_runtime.h>\n\n#define BM 64\n#define BN 64\n#define BK 16\n#define TM 4\n#define TN 4\n#define N 1024\n\n__global__ void sgemm_reg(const float* __restrict__ A, const float* __restrict__ B,\n                          float* __restrict__ C) {\n    __shared__ float As[BK][BM];        // 转置存放: 读 As[k][m] 无 bank conflict\n    __shared__ float Bs[BK][BN];\n    int tx = threadIdx.x, ty = threadIdx.y;      // block 为 (16,16) = 256 线程\n    int tid = ty * 16 + tx;\n    int row0 = blockIdx.y * BM, col0 = blockIdx.x * BN;\n    float acc[TM][TN] = {0.0f};\n\n    for (int k0 = 0; k0 < N; k0 += BK) {\n        #pragma unroll\n        for (int i = 0; i < 4; ++i) {            // 256 线程搬 64x16 = 1024 个元素\n            int idx = tid + i * 256;\n            int m = idx % BM, k = idx / BM;      // 相邻线程取相邻 m -> 合并访问\n            As[k][m] = A[(row0 + m) * N + k0 + k];\n            Bs[k][m] = B[(k0 + k) * N + col0 + m];\n        }\n        __syncthreads();\n        #pragma unroll\n        for (int k = 0; k < BK; ++k) {\n            float regA[TM], regB[TN];\n            #pragma unroll\n            for (int i = 0; i < TM; ++i) regA[i] = As[k][ty * TM + i];\n            #pragma unroll\n            for (int j = 0; j < TN; ++j) regB[j] = Bs[k][tx * TN + j];\n            #pragma unroll\n            for (int i = 0; i < TM; ++i)\n                #pragma unroll\n                for (int j = 0; j < TN; ++j) acc[i][j] += regA[i] * regB[j];\n        }\n        __syncthreads();\n    }\n    #pragma unroll\n    for (int i = 0; i < TM; ++i)\n        #pragma unroll\n        for (int j = 0; j < TN; ++j)\n            C[(row0 + ty * TM + i) * N + col0 + tx * TN + j] = acc[i][j];\n}\n\nint main() {\n    size_t bytes = (size_t)N * N * sizeof(float);\n    float *A, *B, *C, *h;\n    cudaMalloc(&A, bytes); cudaMalloc(&B, bytes); cudaMalloc(&C, bytes);\n    h = (float*)malloc(bytes);\n    for (int i = 0; i < N * N; ++i) h[i] = 1.0f;\n    cudaMemcpy(A, h, bytes, cudaMemcpyHostToDevice);\n    cudaMemcpy(B, h, bytes, cudaMemcpyHostToDevice);\n\n    dim3 block(16, 16), grid(N / BN, N / BM);\n    sgemm_reg<<<grid, block>>>(A, B, C);          // 预热\n    cudaDeviceSynchronize();\n\n    cudaEvent_t s, e;\n    cudaEventCreate(&s); cudaEventCreate(&e);\n    cudaEventRecord(s);\n    for (int r = 0; r < 50; ++r) sgemm_reg<<<grid, block>>>(A, B, C);\n    cudaEventRecord(e);\n    cudaEventSynchronize(e);\n    float ms = 0.0f;\n    cudaEventElapsedTime(&ms, s, e);\n\n    cudaMemcpy(h, C, sizeof(float), cudaMemcpyDeviceToHost);\n    printf(\"C[0][0] = %.0f (期望 %d)\\n\", h[0], N);\n    printf(\"register-tiled SGEMM: %.2f ms, %.1f GFLOPS\\n\",\n           ms / 50, 2.0 * N * N * N * 50 / (ms / 1e3) / 1e9);\n    printf(\"对比: A100 上 cuBLAS SGEMM 约 15000 GFLOPS, FP16 Tensor Core 峰值 312 TFLOPS\\n\");\n    cudaFree(A); cudaFree(B); cudaFree(C); free(h);\n    return 0;\n}"
+        "lang": "python",
+        "filename": "cnn_mnist.py",
+        "code": "import torch\nimport torch.nn as nn\n\n# 一个简单的 CNN 用于 MNIST（28x28 灰度图）\nclass SimpleCNN(nn.Module):\n    def __init__(self):\n        super().__init__()\n        # 卷积层：1 通道输入，16 个 3x3 核\n        self.conv1 = nn.Conv2d(in_channels=1, out_channels=16, kernel_size=3)\n        self.relu = nn.ReLU()\n        self.pool = nn.MaxPool2d(2)\n        self.fc = nn.Linear(16 * 13 * 13, 10)  # 展平后接全连接\n\n    def forward(self, x):\n        x = self.pool(self.relu(self.conv1(x)))\n        x = x.view(x.size(0), -1)\n        return self.fc(x)\n\nmodel = SimpleCNN()\nx = torch.randn(1, 1, 28, 28)\nout = model(x)\nprint(out.shape)  # (1, 10) 10 个类别分数"
       },
       "mistakes": [
-        "只做共享内存 tiling 不做寄存器分块，共享内存带宽成为新的瓶颈",
-        "微块尺寸与 block 尺寸不匹配，导致覆盖不全或算出界",
-        "忽略边界判断，M/N/K 不是 tile 整数倍时结果错误",
-        "一味加大 tile 导致寄存器溢出（spill 到 local memory），性能反而下降"
+        "输入通道数与卷积层 in_channels 不匹配而报错",
+        "卷积核大小与步长导致输出尺寸计算错误，全连接层维度对不上",
+        "以为 CNN 只能处理图像，忽略了它在文本、音频中的一维卷积变体"
       ],
       "interviewPoints": [
-        "GEMM 优化的完整路径，以及每一级的预期收益量级",
-        "寄存器分块为什么能提升算术强度，共享内存访问与 FMA 的比例怎么算",
-        "A100/H100 的 FP16 Tensor Core 峰值算力与脊点，GEMM 属于哪一类算子",
-        "如何判断一个 GEMM kernel 是算力受限还是访存受限"
+        "「卷积为什么比全连接更适合图像？」要答到局部感受野、权重共享与平移不变性，参数量从与像素数同量级降到只与核大小有关",
+        "「输出特征图的尺寸怎么算？」要答到 (H+2P-K)/S+1，并说清 K、S、P 各自的影响，算错就会让后面全连接层维度对不上",
+        "「1x1 卷积有什么用？」要答到它不改变空间尺寸、只做跨通道的线性组合，常用于升降维与压缩计算量，是瓶颈结构的关键",
+        "「CNN 和视觉 Transformer 怎么取舍？」要答到 CNN 自带局部性先验、小数据效率高；ViT 建模全局但更依赖数据量"
       ],
-      "resources": [
-        {"title": "NVIDIA CUTLASS：开源 GEMM 模板库", "url": "https://github.com/NVIDIA/cutlass"},
-        {"title": "CUDA C++ Best Practices Guide", "url": "https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html"}
-      ],
+      "resources": [],
       "quiz": [
-        {"id": "matmul-optimization-q1", "type": "choice", "prompt": "每个线程计算 4x4 微块（TM=TN=4）时，k 循环内「共享内存读取次数 : FMA 次数」是多少？", "options": ["16 : 16", "8 : 16", "4 : 16", "1 : 16"], "answerIndex": 1, "explanation": "每个 k 读 TM + TN = 8 个共享内存元素（4 个 A、4 个 B），做 TM x TN = 16 次 FMA，比例为 8:16 = 1:2，比不做寄存器分块时的 1:1 好一倍。"},
-        {"id": "matmul-optimization-q2", "type": "short", "prompt": "为什么大矩阵乘法在 A100 上是 compute-bound，而向量加法是 memory-bound？", "answer": "参考回答：看算术强度。N x N 的 fp32 GEMM 有 2N^3 次 FLOPs、约 3N^2 x 4 字节访存，I = N/6；N = 4096 时约 683 FLOP/B，远高于 A100 FP32 脊点 9.6 FLOP/B，所以受算力限制。向量加法每个元素只做 1 次 FLOP 却要搬 12 字节，I ≈ 0.083 FLOP/B，远低于脊点，所以受带宽限制。", "keywords": ["算术强度", "脊点", "compute-bound"], "explanation": "关键是分别算出 I 并与 P_peak/BW 比较，而不是凭感觉判断。"},
-        {"id": "matmul-optimization-q3", "type": "code", "prompt": "写出寄存器分块内核里「从共享内存读入寄存器并累加」的内层循环（TM=TN=4，As/Bs 已按 [BK][BM]、[BK][BN] 转置存放，ty/tx 为线程坐标）。", "starterCode": "for (int k = 0; k < BK; ++k) {\n    // TODO: regA[4], regB[4] 读入并做 16 次 FMA\n}\n", "solution": "for (int k = 0; k < BK; ++k) {\n    float regA[TM], regB[TN];\n    #pragma unroll\n    for (int i = 0; i < TM; ++i) regA[i] = As[k][ty * TM + i];\n    #pragma unroll\n    for (int j = 0; j < TN; ++j) regB[j] = Bs[k][tx * TN + j];\n    #pragma unroll\n    for (int i = 0; i < TM; ++i)\n        #pragma unroll\n        for (int j = 0; j < TN; ++j) acc[i][j] += regA[i] * regB[j];\n}\n", "checks": ["regA[i] = As[k][ty * TM + i]", "regB[j] = Bs[k][tx * TN + j]", "acc[i][j] += regA[i] * regB[j]"], "explanation": "先把 4+4 个元素读进寄存器，再做 16 次 FMA，把共享内存访问摊薄到 1:2。"}
-      ]
+        {
+          "id": "cnn-q1",
+          "type": "choice",
+          "prompt": "卷积核权重共享的主要好处是？",
+          "options": [
+            "加快 GPU 加载",
+            "大幅减少参数量并提升平移不变性",
+            "防止过拟合到特定位置",
+            "让网络只能看局部"
+          ],
+          "answerIndex": 1,
+          "explanation": "同一卷积核在整个图像上共享权重，既极大降低参数量，又使特征检测对不同位置的同类模式响应一致（平移不变性）。"
+        },
+        {
+          "id": "cnn-q2",
+          "type": "short",
+          "prompt": "为什么 CNN 适合处理图像数据？",
+          "answer": "参考回答：图像具有空间局部性与平移不变性——相邻像素高度相关，且同一模式（如边缘）可能出现在图像任意位置。卷积核在局部滑动提取特征并共享权重，正好契合这种局部性与平移不变性；层级堆叠还能从边缘逐层组合成部件再到整体。",
+          "keywords": [
+            "局部",
+            "平移",
+            "共享"
+          ],
+          "explanation": "CNN 的局部感受野、权重共享与分层特征提取契合图像的空间结构与平移不变性。"
+        },
+        {
+          "id": "cnn-q3",
+          "type": "code",
+          "prompt": "用 PyTorch 定义一个卷积层：输入通道 3，输出通道 32，卷积核大小为 3x3。",
+          "starterCode": "import torch.nn as nn\n\nconv = None\n",
+          "solution": "import torch.nn as nn\n\nconv = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3)\nprint(conv)\n",
+          "checks": [
+            "nn.Conv2d",
+            "out_channels=32"
+          ],
+          "explanation": "用 nn.Conv2d 指定 in_channels、out_channels 与 kernel_size。"
+        }
+      ],
+      "track": "main"
     },
     {
-      "slug": "reduction-scan",
-      "title": "归约与扫描",
+      "slug": "rnn",
+      "title": "RNN 循环网络",
       "order": 8,
-      "module": "Kernel 优化",
+      "module": "深度学习框架与应用",
       "difficulty": "进阶",
-      "estimatedMinutes": 45,
-      "summary": "归约把 N 个值合成 1 个，是 loss 求和、LayerNorm、softmax 的公共骨架；warp shuffle 与多级归约是关键。",
-      "intuition": "数一堆硬币。1000 个人各数一枚，然后两两配对把结果相加，500 个人报数；再两两配对，250 人……十轮之后只剩一个数字。这就是归约的树形结构：log2(N) 轮就能把 N 个数加起来，而不是让一个人从头加到尾。GPU 上要多注意两点：跨 warp 的合并必须靠共享内存，而 warp 内部可以直接用 __shfl_down_sync 在线程之间传值，既不用共享内存也不用同步——这是把归约从「一般快」推到「接近带宽上限」的关键一步。",
-      "formal": "归约把 N 个元素通过满足结合律的运算（+、max、min）合并为一个，树形并行的时间复杂度是 O(log N) 步、O(N) 工作量。block 内实现分两级：先用 __shfl_down_sync 做 warp 内归约（5 步处理 32 个值），每个 warp 的 lane 0 把部分和写入共享内存，__syncthreads 后由第 0 个 warp 再归约一次，最后每个 block 输出一个部分和。跨 block 需要第二次 kernel 启动（two-pass）或 atomicAdd（原子加，浮点结果不保证可复现）。归约是典型的 memory-bound：每个元素只做 1 次加法却要读 4 字节，算术强度 0.25 FLOP/B，远低于 A100 的脊点 9.6，所以优化目标是打满带宽（float4、grid-stride、足够的并发 block），而不是减少加法次数。扫描（prefix sum / scan）是归约的推广，输出每个位置的前缀和：Hillis-Steele 用 O(N log N) 工作量换 O(log N) 深度，Blelloch 则是 O(N) 工作量的 up-sweep / down-sweep 两趟。",
-      "formula": "\\text{深度} = O(\\log N), \\quad \\text{工作量} = O(N), \\quad I_{\\text{reduce}} = \\frac{1\\ \\text{FLOP}}{4\\ \\text{B}} = 0.25\\ \\text{FLOP/B}",
-      "aiConnection": "训练里到处是归约：loss 在 batch 维度求平均（每个 step 至少一次）、LayerNorm 求均值与方差、softmax 求最大值与指数和、梯度裁剪求全局范数。这些算子单个往往只占 1%-3%，但数量多、又都是 memory-bound，累加起来能吃掉 step 时间的 10%-20%。更重要的是，FlashAttention 的核心正是「在线 softmax」——把需要全局归约的 max 与 sum 拆成可以在分块中增量更新的 running max / running sum，从而避免物化整个 N x N 矩阵。不理解归约，就读不懂 FlashAttention 为什么成立。",
+      "estimatedMinutes": 22,
+      "summary": "循环神经网络按时间步依次处理序列，用隐藏状态记忆历史信息，适合文本、语音等序列数据。",
+      "intuition": "读一句话时，你的理解是逐词推进的：读到第六个词，大脑还记着前面五个词的意思。RNN 就像一个这样'边读边记'的读者——它维护一个隐藏状态，每读进一个新词就更新一次记忆，把新词和旧记忆融合起来，再传给下一时刻的自己。因为有记忆，它才能理解上下文、顺序和依赖关系。",
+      "formal": "在时刻 t，RNN 用当前输入 x_t 与上一时刻的隐藏状态 h_{t-1} 计算当前隐藏状态：h_t = tanh(W_x x_t + W_h h_{t-1} + b)。输出通常是 h_t 经变换得到。RNN 通过参数共享，在所有时间步复用同一组权重。但长序列会出现梯度消失/爆炸问题，因此实践中常用 LSTM 或 GRU 这类改进结构，并引入门控机制来调节记忆的写入与遗忘。",
+      "formula": "h_t = \\tanh(W_x x_t + W_h h_{t-1} + b)",
+      "aiConnection": "大语言模型取代了经典 RNN 成为序列建模主力，但 RNN 的思想——用隐藏状态顺序地记忆上下文——仍是理解语言模型的基础。LSTM 的门控、GRU 的简化思想，在理解 Transformer 之前能帮助你把握序列模型如何捕捉时序依赖。",
       "codeExample": {
-        "lang": "cuda",
-        "filename": "reduce.cu",
-        "code": "// 编译: nvcc -arch=sm_80 reduce.cu -o reduce && ./reduce\n#include <cstdio>\n#include <cstdlib>\n#include <cuda_runtime.h>\n\n__inline__ __device__ float warp_reduce_sum(float v) {\n    #pragma unroll\n    for (int offset = 16; offset > 0; offset >>= 1)\n        v += __shfl_down_sync(0xffffffffu, v, offset);   // 5 步归约 32 个值\n    return v;\n}\n\n__global__ void fill_ones(float* __restrict__ a, int n) {\n    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += gridDim.x * blockDim.x)\n        a[i] = 1.0f;\n}\n\n__global__ void reduce_sum(const float* __restrict__ in, float* __restrict__ out, int n) {\n    float sum = 0.0f;\n    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += gridDim.x * blockDim.x)\n        sum += in[i];                                    // grid-stride 累加\n    sum = warp_reduce_sum(sum);\n    __shared__ float partial[32];                        // 每 block 最多 32 个 warp\n    int lane = threadIdx.x % 32, wid = threadIdx.x / 32;\n    if (lane == 0) partial[wid] = sum;\n    __syncthreads();                                     // 等所有 warp 写完\n    if (wid == 0) {\n        sum = (threadIdx.x < blockDim.x / 32) ? partial[lane] : 0.0f;\n        sum = warp_reduce_sum(sum);\n        if (threadIdx.x == 0) out[blockIdx.x] = sum;     // 每个 block 一个部分和\n    }\n}\n\nint main() {\n    const int n = 1 << 24;                               // 16M 个 1.0f\n    size_t bytes = (size_t)n * sizeof(float);\n    float *d_in, *d_out;\n    cudaMalloc(&d_in, bytes);\n    int block = 256, grid = 512;                         // 512 个 block, 每 block 一个部分和\n    cudaMalloc(&d_out, grid * sizeof(float));\n    fill_ones<<<grid, block>>>(d_in, n);\n    cudaDeviceSynchronize();\n\n    cudaEvent_t s, e;\n    cudaEventCreate(&s); cudaEventCreate(&e);\n    cudaEventRecord(s);\n    for (int r = 0; r < 20; ++r) reduce_sum<<<grid, block>>>(d_in, d_out, n);\n    cudaEventRecord(e);\n    cudaEventSynchronize(e);\n    float ms = 0.0f;\n    cudaEventElapsedTime(&ms, s, e);\n\n    float* h = (float*)malloc(grid * sizeof(float));\n    cudaMemcpy(h, d_out, grid * sizeof(float), cudaMemcpyDeviceToHost);\n    double total = 0.0;\n    for (int i = 0; i < grid; ++i) total += h[i];\n    printf(\"sum = %.0f (期望 %d)\\n\", total, n);\n    printf(\"有效带宽: %.1f GB/s (A100 峰值 2039 GB/s)\\n\",\n           (double)n * sizeof(float) * 20 / (ms / 1e3) / 1e9);\n    cudaFree(d_in); cudaFree(d_out); free(h);\n    return 0;\n}"
+        "lang": "python",
+        "filename": "rnn_step.py",
+        "code": "import numpy as np\n\ndef rnn_step(x_t, h_prev, W_x, W_h, b):\n    # 单个时间步：h_t = tanh(W_x x_t + W_h h_{t-1} + b)\n    h_t = np.tanh(W_x @ x_t + W_h @ h_prev + b)\n    return h_t\n\n# 词向量维度 3，隐藏维度 4\nW_x = np.random.randn(4, 3)\nW_h = np.random.randn(4, 4)\nb = np.zeros(4)\n\nh = np.zeros(4)   # 初始隐藏状态\nseq = [np.random.randn(3) for _ in range(5)]  # 5 个时间步的输入\nfor t, x in enumerate(seq):\n    h = rnn_step(x, h, W_x, W_h, b)\n    print(f\"t={t}: h={np.round(h, 3)}\")"
       },
       "mistakes": [
-        "warp 内归约也用共享内存，白白多花同步开销（应该用 __shfl_down_sync）",
-        "跨 warp 归约忘记 __syncthreads，读到还没写完的部分和",
-        "block 数开得过少，归约打不满带宽，性能只有峰值的一小半",
-        "用 atomicAdd 做浮点归约后假设结果可复现，导致两次训练的 loss 对不齐"
+        "以为 RNN 能无限记住长序列，实际长距离依赖会因梯度消失变差",
+        "把隐藏状态维度与输入维度混用，导致矩阵乘法维度不匹配",
+        "忽略时间步循环，只处理单个时间步就以为完成了序列建模"
       ],
       "interviewPoints": [
-        "block 内归约的两级结构与 __shfl_down_sync 的用法（5 步归约 32 个值）",
-        "归约为什么是 memory-bound，优化方向是什么",
-        "在线 softmax（online softmax）如何把全局归约变成分块增量更新",
-        "scan 的 Hillis-Steele 与 Blelloch 实现在工作量/深度上的取舍"
+        "「RNN 的隐藏状态怎么更新？」要答到 h_t=tanh(W_x x_t+W_h h_{t-1}+b)，且权重在所有时间步共享",
+        "「RNN 为什么会有梯度消失？」要答到反向要连乘 W_h 与 tanh 导数，谱半径小于 1 时随时间指数衰减，长依赖学不到",
+        "「LSTM 的门控是怎么缓解梯度消失的？」要答到 cell state 走加法更新的常数误差传送带，遗忘门、输入门、输出门调节保留与写入",
+        "「RNN 和 Transformer 的核心差别？」要答到 RNN 串行、隐状态定长、难并行；注意力看到全序列可并行，代价是 O(n²)"
       ],
-      "resources": [
-        {"title": "Faster Parallel Reductions on Kepler（warp shuffle 归约）", "url": "https://developer.nvidia.com/blog/faster-parallel-reductions-kepler/"},
-        {"title": "GPU Gems 3：Parallel Prefix Sum (Scan) with CUDA", "url": "https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda"}
-      ],
+      "resources": [],
       "quiz": [
-        {"id": "reduction-scan-q1", "type": "choice", "prompt": "用一个 warp（32 线程）对 32 个值做树形归约，最少需要几步 shuffle？", "options": ["32 步", "5 步", "16 步", "1 步"], "answerIndex": 1, "explanation": "每步把参与归约的元素数减半：32 -> 16 -> 8 -> 4 -> 2 -> 1，共 log2(32) = 5 步，对应 offset 依次取 16、8、4、2、1。"},
-        {"id": "reduction-scan-q2", "type": "short", "prompt": "一个求和归约 kernel 只跑到峰值带宽的 30%，你会从哪些方向排查？", "answer": "参考回答：归约是 memory-bound，算术强度只有 0.25 FLOP/B，所以先看访存效率：是否用了 float4 向量化（事务数能降到 1/4）、是否用 grid-stride 让每个线程连续处理多个元素、block 数是否足够多（至少 SM 数乘以若干倍，否则并发 warp 不够、延迟藏不住）。其次看是否用了 warp shuffle 代替共享内存归约，以及是否有线程长期空转。", "keywords": ["float4", "grid-stride", "并发 warp"], "explanation": "memory-bound kernel 的排查顺序永远是「字节数 -> 事务效率 -> 并发度」。"},
-        {"id": "reduction-scan-q3", "type": "code", "prompt": "用 __shfl_down_sync 写一个 warp 内求和归约函数，输入每个线程的一个 float，返回 lane 0 上的总和。", "starterCode": "__inline__ __device__ float warp_reduce_sum(float v) {\n    // TODO\n}\n", "solution": "__inline__ __device__ float warp_reduce_sum(float v) {\n    #pragma unroll\n    for (int offset = 16; offset > 0; offset >>= 1)\n        v += __shfl_down_sync(0xffffffffu, v, offset);\n    return v;   // lane 0 拿到完整总和\n}\n", "checks": ["__shfl_down_sync", "offset >>= 1", "0xffffffff"], "explanation": "每次把下方 offset 个 lane 的值取上来相加，5 步后 lane 0 即总和；mask 用 0xffffffff 表示整个 warp 都参与。"}
-      ]
-    },
-    {
-      "slug": "cublas-pytorch-ops",
-      "title": "cuBLAS、cuDNN 与 PyTorch 算子",
-      "order": 9,
-      "module": "Kernel 优化",
-      "difficulty": "进阶",
-      "estimatedMinutes": 40,
-      "summary": "生产代码不该手写 GEMM：cuBLAS/cuDNN 已接近硬件峰值，PyTorch 算子的性能取决于形状与是否融合。",
-      "intuition": "自己写 SGEMM 是很好的练习，但上线时应该调用 cuBLAS：NVIDIA 为每种架构、每种形状都调好了 kernel，甚至有针对特定尺寸的汇编级 micro-kernel，手工实现通常只能达到它的 1/3。真正值得你花时间的是另外两件事：选对算子（用融合算子替代一串小算子）和选对精度（TF32/BF16/FP8 能带来数倍吞吐）。这就像你不该自己造螺丝，但必须知道该拧哪颗螺丝、该用多大扭矩。",
-      "formal": "cuBLAS 提供 GEMM 家族（Sgemm/Dgemm/Hgemm/GemmEx，GemmEx 支持 TF32/BF16/FP16 与混合精度），接口是列主序（column-major），与 C/CUDA 默认的行主序相反：对行主序的 C = A x B，必须交换 A、B 并传 CUBLAS_OP_N，写成 cublasSgemm(handle, OP_N, OP_N, n, m, k, &alpha, B, n, A, k, &beta, C, n)，否则算出来是 C 的转置。cuDNN 覆盖卷积、RNN、attention；CUTLASS 是开源模板库，能生成接近 cuBLAS 的 kernel 并支持自定义 epilogue（把 bias、激活融合进 GEMM）。PyTorch 侧：torch.matmul 在 fp32 下走 cuBLAS，是否用 TF32 由 torch.backends.cuda.matmul.allow_tf32 控制（默认 False，打开后 A100 上 FP32 GEMM 约快 3 倍但精度下降）；torch.backends.cudnn.benchmark=True 会让 cuDNN 自动搜索最快卷积算法。性能量级：A100 SGEMM 约 15-19 TFLOPS，TF32 约 120-156 TFLOPS，FP16 Tensor Core 约 250-312 TFLOPS。",
-      "formula": "C_{m \\times n} = \\alpha A_{m \\times k} B_{k \\times n} + \\beta C_{m \\times n} \\quad (\\text{cuBLAS 列主序参数顺序}: m, n, k)",
-      "aiConnection": "算法岗日常做的不是写 GEMM，而是决定「这个算子该用谁」：Linear 走 cuBLAS、卷积走 cuDNN、attention 走 SDPA/FlashAttention、归一化用融合 LayerNorm。知道 TF32 默认关闭，就能解释为什么同样的模型别人比你快 3 倍；知道 cuBLAS 是列主序，就不会在自己写 C++ 扩展时算出转置的结果；知道小算子会被 kernel 启动开销主导，就会优先选融合算子或用 torch.compile。这些都是「同一份数学，不同速度」的直接来源。",
-      "codeExample": {
-        "lang": "cuda",
-        "filename": "cublas_sgemm.cu",
-        "code": "// 编译: nvcc -arch=sm_80 cublas_sgemm.cu -o cublas_sgemm -lcublas && ./cublas_sgemm\n#include <cstdio>\n#include <cuda_runtime.h>\n#include <cublas_v2.h>\n\n__global__ void fill_one(float* __restrict__ a, int n) {\n    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += gridDim.x * blockDim.x)\n        a[i] = 1.0f;\n}\n\nint main() {\n    const int M = 1024, N = 1024, K = 1024;\n    size_t bytes = (size_t)M * K * sizeof(float);\n    float *A, *B, *C;\n    cudaMalloc(&A, bytes);\n    cudaMalloc(&B, bytes);\n    cudaMalloc(&C, bytes);\n    fill_one<<<1024, 256>>>(A, M * K);   // 全 1 矩阵, C 的每个元素应为 K\n    fill_one<<<1024, 256>>>(B, K * N);\n    cudaMemset(C, 0, bytes);\n\n    cublasHandle_t handle;\n    cublasCreate(&handle);\n    float alpha = 1.0f, beta = 0.0f;\n    // cuBLAS 是列主序: 计算 C^T = B^T A^T, 恰好等于行主序下的 C = A x B\n    cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N,\n                N, M, K,           // 注意 m 与 n 交换\n                &alpha, B, N,      // 第一个操作数传 B\n                A, K,              // 第二个操作数传 A\n                &beta, C, N);\n    cudaDeviceSynchronize();\n\n    float h = 0.0f;\n    cudaMemcpy(&h, C, sizeof(float), cudaMemcpyDeviceToHost);\n    printf(\"C[0][0] = %.1f (期望 %d)\\n\", h, K);\n\n    cudaEvent_t s, e;\n    cudaEventCreate(&s); cudaEventCreate(&e);\n    cudaEventRecord(s);\n    for (int r = 0; r < 20; ++r)\n        cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K,\n                    &alpha, B, N, A, K, &beta, C, N);\n    cudaEventRecord(e);\n    cudaEventSynchronize(e);\n    float ms = 0.0f;\n    cudaEventElapsedTime(&ms, s, e);\n    printf(\"cuBLAS SGEMM: %.2f ms, %.1f TFLOPS (A100 FP32 峰值 19.5 TFLOPS)\\n\",\n           ms / 20, 2.0 * M * N * K * 20 / (ms / 1e3) / 1e12);\n\n    cublasDestroy(handle);\n    cudaFree(A); cudaFree(B); cudaFree(C);\n    return 0;\n}"
-      },
-      "mistakes": [
-        "直接用行主序数据调 cuBLAS 而不交换 A/B，结果整体转置",
-        "以为 fp32 训练默认启用 TF32，实际需要显式设置 allow_tf32",
-        "把一串 elementwise 小算子逐个调用，浪费 kernel 启动开销与带宽",
-        "cudnn.benchmark 一直关着，卷积算法次优却以为是模型本身慢"
+        {
+          "id": "rnn-q1",
+          "type": "choice",
+          "prompt": "RNN 维持'记忆'的方式是？",
+          "options": [
+            "把每个词独立编码",
+            "通过隐藏状态 h_t 在时间步之间传递历史信息",
+            "用卷积核在序列上滑动",
+            "把整个序列一次性放进来"
+          ],
+          "answerIndex": 1,
+          "explanation": "RNN 每步结合当前输入与上一时刻隐藏状态 h_{t-1} 更新 h_t，从而在时间步间传递历史上下文信息。"
+        },
+        {
+          "id": "rnn-q2",
+          "type": "short",
+          "prompt": "RNN 的主要局限是什么？",
+          "answer": "参考回答：一方面存在梯度消失/爆炸问题，导致对长序列远距离依赖的学习困难；另一方面它按时间步串行计算，难以并行、训练效率低。因此实践中常改用 LSTM/GRU 缓解梯度问题，而堆叠与并行能力更强的 Transformer 则成为现代序列模型的主流。",
+          "keywords": [
+            "梯度",
+            "依赖",
+            "并行"
+          ],
+          "explanation": "RNN 的局限包括梯度消失/爆炸导致的远距离依赖困难，以及串行计算导致的低并行效率。"
+        },
+        {
+          "id": "rnn-q3",
+          "type": "code",
+          "prompt": "实现函数 rnn_step(x_t, h_prev, W_x, W_h, b)，返回当前时刻隐藏状态 h_t = tanh(W_x x_t + W_h h_{t-1} + b)。",
+          "starterCode": "import numpy as np\n\ndef rnn_step(x_t, h_prev, W_x, W_h, b):\n    pass\n",
+          "solution": "import numpy as np\n\ndef rnn_step(x_t, h_prev, W_x, W_h, b):\n    return np.tanh(W_x @ x_t + W_h @ h_prev + b)\n",
+          "checks": [
+            "np.tanh",
+            "W_h"
+          ],
+          "explanation": "按公式合并当前输入与上一隐藏状态，再经 tanh 激活。"
+        }
       ],
-      "interviewPoints": [
-        "cuBLAS 的列主序陷阱，以及行主序 GEMM 的正确调用方式",
-        "TF32 / BF16 / FP16 / FP8 的精度与吞吐权衡，各自适用什么场景",
-        "PyTorch 里影响 GEMM 与卷积性能的开关（allow_tf32、cudnn.benchmark、channels_last）",
-        "什么时候该写自定义 kernel，什么时候该直接用现成库"
-      ],
-      "resources": [
-        {"title": "cuBLAS 官方文档", "url": "https://docs.nvidia.com/cuda/cublas/index.html"},
-        {"title": "NVIDIA CUTLASS（自定义 GEMM 与 epilogue 融合）", "url": "https://github.com/NVIDIA/cutlass"}
-      ],
-      "quiz": [
-        {"id": "cublas-pytorch-ops-q1", "type": "choice", "prompt": "用行主序数据调用 cublasSgemm 计算 C = A x B 时，正确的做法是？", "options": ["直接按 A、B 顺序传入即可", "交换 A、B 的位置并交换 m/n", "必须先手动转置数据再调用", "cuBLAS 不支持行主序，只能改用 cuDNN"], "answerIndex": 1, "explanation": "cuBLAS 是列主序，直接传入会算出 C 的转置；把 A、B 交换并交换 m/n 参数，等价于在列主序下计算 C^T，结果正好是行主序的 C。"},
-        {"id": "cublas-pytorch-ops-q2", "type": "short", "prompt": "TF32 是什么？在 PyTorch 里怎么控制它，开启后有什么代价？", "answer": "参考回答：TF32 是 Tensor Core 上的一种 19 位浮点格式（8 位指数、10 位尾数），在 A100 上做 FP32 GEMM 时把乘加降为 TF32 精度，吞吐可从约 19.5 TFLOPS 提升到 120-156 TFLOPS，约 3 倍。PyTorch 里由 torch.backends.cuda.matmul.allow_tf32 控制，默认 False。代价是尾数位减少、精度下降，对数值敏感的任务（长序列累加、小批量归一化统计）可能影响收敛。", "keywords": ["19 位", "allow_tf32", "精度"], "explanation": "要点是「默认关闭、显式开启、用精度换约 3 倍吞吐」。"},
-        {"id": "cublas-pytorch-ops-q3", "type": "code", "prompt": "用 PyTorch 打印当前 TF32 开关状态，开启它，并用 torch.profiler 统计一次 matmul 的 CUDA 耗时。", "starterCode": "import torch\n\n# TODO: 打印并开启 allow_tf32\n# TODO: 用 torch.profiler 统计 matmul\n", "solution": "import torch\nfrom torch.profiler import profile, ProfilerActivity\n\nprint('tf32 before:', torch.backends.cuda.matmul.allow_tf32)\ntorch.backends.cuda.matmul.allow_tf32 = True\ntorch.backends.cudnn.benchmark = True\n\na = torch.randn(4096, 4096, device='cuda')\nb = torch.randn(4096, 4096, device='cuda')\n\nwith profile(activities=[ProfilerActivity.CUDA]) as prof:\n    for _ in range(10):\n        c = a @ b\ntorch.cuda.synchronize()\nprint(prof.key_averages().table(sort_by='cuda_time_total', row_limit=5))\n", "checks": ["allow_tf32", "ProfilerActivity.CUDA", "cuda_time_total"], "explanation": "开关在 torch.backends.cuda.matmul 下，profiler 按 cuda_time_total 排序即可看到 matmul 占用的真实 GPU 时间。"}
-      ]
-    },
-    {
-      "slug": "profiling-roofline",
-      "title": "性能剖析与 Roofline 模型",
-      "order": 10,
-      "module": "性能工程",
-      "difficulty": "高阶",
-      "estimatedMinutes": 45,
-      "summary": "先用 Roofline 算出算子该有多快，再用 ncu/nsys 找出它为什么没到，这是性能工程的标准闭环。",
-      "intuition": "医生不会先开药再问症状。性能优化同理：先量出这个 kernel 的算术强度，算出理论最优时间（Roofline 上限），再和实测对比——如果实测已经是理论值的 90%，就别优化它了，去优化别的算子；如果只有 20%，再用 profiler 看是访存没合并、occupancy 太低还是 bank conflict。没有这套流程，「优化」就退化成凭感觉调参数：改改 block size、加个 __restrict__，然后祈祷变快。",
-      "formal": "Roofline 模型给出性能上限 P = min(P_peak, I x BW)，其中 I 是算术强度（FLOPs / Bytes），两条线的交点 I* = P_peak / BW 称为脊点。A100 参考值：FP32 19.5 TFLOPS / 2039 GB/s ≈ 9.6 FLOP/B；FP16 Tensor Core 312 TFLOPS / 2039 GB/s ≈ 153 FLOP/B；H100 FP16 Tensor Core 约 990 TFLOPS / 3350 GB/s ≈ 295 FLOP/B。工具链分工：ncu（Nsight Compute）做单 kernel 深度剖析，关键指标有 sm__throughput（SM 管线利用率）、gpu__compute_memory_throughput 与 dram__bytes.sum.per_second（显存带宽利用率）、sm__warps_active（占用率）、l1tex__t_sector_hit_rate（L1 命中率）；nsys（Nsight Systems）做时间线级剖析，看 kernel 之间的空隙、CPU 是否成为瓶颈、通信与计算是否重叠；torch.profiler 给出算子级耗时排序，是定位「谁在吃时间」的最快入口。判据：Memory Throughput > 60% 且 Compute < 60% 即 memory-bound，优化方向是减少字节数（融合、量化、向量化）；反之是 compute-bound，方向是提高占用率、用 Tensor Core、减少分支。",
-      "formula": "P = \\min\\left(P_{\\text{peak}},\\ I \\times \\text{BW}\\right), \\qquad I^{*} = \\frac{P_{\\text{peak}}}{\\text{BW}}",
-      "aiConnection": "这是算法岗面试与真实工作的分水岭：能不能拿数据说话。被问「你的模型为什么慢」，标准回答是「nsys 显示 attention 占 40%，ncu 显示它 Memory Throughput 85%、Compute 30%，说明是 memory-bound，于是我把 KV cache 量化到 int8 并融合了两处 elementwise，端到端提速 18%」。面试官常追问「你怎么知道该优化哪个 kernel」，答案就是先看 torch.profiler 的占比排序，再对 Top kernel 做 Roofline 判断——绝不要花一周去优化只占 3% 的算子。",
-      "codeExample": {
-        "lang": "bash",
-        "filename": "profile_workflow.sh",
-        "code": "# 场景: 已有可执行文件 ./sgemm_reg, 以及一个 PyTorch 模型\n\n# 1. 算子级: 谁在吃时间? 先看占比排序\npython3 - <<'PY'\nimport torch, torch.nn as nn\nfrom torch.profiler import profile, ProfilerActivity\n\nmodel = nn.Sequential(nn.Linear(4096, 4096), nn.GELU(), nn.Linear(4096, 4096)).cuda().half()\nx = torch.randn(32, 512, 4096, device='cuda', dtype=torch.half)\nwith profile(activities=[ProfilerActivity.CUDA]) as prof:\n    for _ in range(10):\n        model(x)\ntorch.cuda.synchronize()\nprint(prof.key_averages().table(sort_by='cuda_time_total', row_limit=8))\nPY\n\n# 2. 单 kernel 深度剖析: 先看 Speed Of Light 面板 (Compute % vs Memory %)\nncu --set speedoflight ./sgemm_reg\n\n# 3. 只取关键指标, 比 --set full 快得多\nncu --metrics sm__throughput.avg.pct_of_peak_sustained_elapsed,gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed,dram__bytes.sum.per_second,sm__warps_active.avg.pct_of_peak_sustained_active,l1tex__t_sector_hit_rate.pct ./sgemm_reg\n\n# 4. 时间线级: kernel 之间有空隙吗? CPU 是不是瓶颈? 通信有没有和计算重叠?\nnsys profile -t cuda,nvtx,osrt --stats=true -o prof ./sgemm_reg\nnsys stats --report cuda_gpu_kern_sum,cuda_gpu_mem_time_sum prof.nsys-rep | head -40\n\n# 5. 手工算算术强度, 判断该往哪个方向优化\npython3 - <<'PY'\npeak_fp32, bw = 19.5e12, 2039e9        # A100: 19.5 TFLOPS FP32, 2039 GB/s\nridge = peak_fp32 / bw\nN = 1024\nflops = 2 * N ** 3\nnbytes = 3 * N * N * 4                 # 读 A + 读 B + 写 C\nI = flops / nbytes\nprint('ridge point = %.1f FLOP/B' % ridge)\nprint('SGEMM I = %.1f FLOP/B -> %s' % (I, 'compute-bound' if I > ridge else 'memory-bound'))\nPY"
-      },
-      "mistakes": [
-        "不看 profiler 凭直觉优化，把时间花在只占 2% 的算子上",
-        "只看 kernel 自身耗时，忽略 kernel 之间的空隙与 CPU 侧瓶颈",
-        "把 occupancy 当成唯一指标，memory-bound kernel 该看的是带宽利用率",
-        "用 ncu --set full 去跑长训练脚本，重放机制让 profiling 慢上百倍"
-      ],
-      "interviewPoints": [
-        "Roofline 模型与脊点的计算，如何据此判断 memory-bound / compute-bound",
-        "ncu 的关键指标有哪些，Speed Of Light 面板怎么读",
-        "ncu 与 nsys 的分工：单 kernel 深度剖析 vs 时间线级剖析",
-        "拿到一个变慢的训练任务，你的排查顺序是什么"
-      ],
-      "resources": [
-        {"title": "NVIDIA Nsight Compute 官方文档", "url": "https://developer.nvidia.com/nsight-compute"},
-        {"title": "NVIDIA Nsight Systems 官方文档", "url": "https://developer.nvidia.com/nsight-systems"},
-        {"title": "PyTorch Profiler 文档", "url": "https://pytorch.org/docs/stable/profiler.html"}
-      ],
-      "quiz": [
-        {"id": "profiling-roofline-q1", "type": "choice", "prompt": "在 A100（FP32 19.5 TFLOPS、带宽 2039 GB/s）上，一个算子的算术强度为 3 FLOP/B，它的性能上限由什么决定？", "options": ["算力，因为 3 已经很高", "带宽，因为 3 < 脊点 9.6 FLOP/B", "两者都无关", "只看 occupancy"], "answerIndex": 1, "explanation": "A100 FP32 脊点 = 19.5e12 / 2039e9 ≈ 9.6 FLOP/B。算术强度 3 < 9.6，算子落在 Roofline 的带宽斜线一侧，上限为 3 x 2039 ≈ 6.1 TFLOPS，属于 memory-bound。"},
-        {"id": "profiling-roofline-q2", "type": "short", "prompt": "ncu 显示某个 kernel 的 Compute 为 25%、Memory 为 88%，你会怎么优化？", "answer": "参考回答：Memory 高、Compute 低说明它是 memory-bound，瓶颈在显存带宽而不是算力。优化方向是减少搬运的字节数：把多个逐元素算子融合成一个 kernel 避免中间结果落盘、用 fp16/bf16/int8 降低数据宽度、检查访存是否合并并改用 float4 向量化、提高数据复用（把可复用的数据放进共享内存）。提高 occupancy 或换算法在这个场景下通常没有收益。", "keywords": ["memory-bound", "算子融合", "向量化"], "explanation": "判据是 Memory 高而 Compute 低，因此优化字节数而不是算力。"},
-        {"id": "profiling-roofline-q3", "type": "code", "prompt": "用 bash 写出：对一个可执行文件 ./my_kernel 采集 ncu 的 Speed Of Light 数据，并用 nsys 生成时间线报告（输出文件名为 prof）。", "starterCode": "# TODO: ncu 与 nsys 命令\n", "solution": "# 单 kernel 深度剖析: Speed Of Light 面板给出 Compute % 与 Memory %\nncu --set speedoflight ./my_kernel\n\n# 也可以只取关键指标, 更快\nncu --metrics sm__throughput.avg.pct_of_peak_sustained_elapsed,gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed,dram__bytes.sum.per_second ./my_kernel\n\n# 时间线级剖析: 看 kernel 空隙、CPU 瓶颈、通信与计算是否重叠\nnsys profile -t cuda,nvtx,osrt --stats=true -o prof ./my_kernel\nnsys stats --report cuda_gpu_kern_sum prof.nsys-rep | head -30\n", "checks": ["ncu --set speedoflight", "nsys profile", "-o prof"], "explanation": "ncu 负责单 kernel 指标，nsys 负责时间线；两者配合才能既知道「谁慢」又知道「为什么慢」。"}
-      ]
-    },
-    {
-      "slug": "flash-attention",
-      "title": "FlashAttention 与算子融合",
-      "order": 11,
-      "module": "性能工程",
-      "difficulty": "高阶",
-      "estimatedMinutes": 50,
-      "summary": "FlashAttention 用分块 + 在线 softmax 把 attention 显存从 O(N^2) 降到 O(N)，同时减少 HBM 读写，是算子融合的教科书案例。",
-      "intuition": "标准 attention 会先把 N x N 的分数矩阵算出来写进显存，再读回来做 softmax，再写一次、读一次去乘 V。N = 4096 时，这个中间矩阵每个头就是 4096 x 4096 x 2 字节 ≈ 32MB，读写四趟就是几百 MB 的搬运，而真正有用的计算没那么多。FlashAttention 的做法是：不物化这个矩阵，把 Q、K、V 切成小块，一块一块地在片上（共享内存与寄存器）算分数，用「在线 softmax」增量更新最大值与归一化因子，算完一块就丢掉。显存从 O(N^2) 变成 O(N)，HBM 访问次数也大幅减少。",
-      "formal": "标准 attention 每个头的 FLOPs 为 4N^2 d，显存与 HBM 访问都是 O(N^2)。其理想算术强度 I = 4N^2 d / (8Nd) = N/2（fp16 下读 Q/K/V/O 共 8Nd 字节），N = 4096 时约 2048 FLOP/B，远高于 A100 fp16 脊点 153，本应是 compute-bound——慢的真正原因是 N x N 中间矩阵的额外读写（写 S、读 S、写 P、读 P，约 4 x 2N^2 x 2B）。FlashAttention 通过 tiling 把中间结果留在片上，并把 softmax 改写为在线形式：维护 running max m 与 running sum l，处理新块时先算 m_new = max(m, max_j s_j)，把已有累加器乘以 exp(m - m_new) 缩放，再加上新块的贡献。反向传播时用保存的 m、l 重算分数，因此无需保存 N x N 矩阵，显存从 O(N^2) 降到 O(N)。FA2 进一步减少非 matmul 的 FLOPs 并把工作更好地分配到各 warp，A100 上可达约 70% 的 FP16 峰值算力（约 220 TFLOPS），长序列下比标准实现快 2-4 倍、显存省 5-20 倍。",
-      "formula": "\\text{mem}_{\\text{std}} = O(N^{2}) \\longrightarrow \\text{mem}_{\\text{FA}} = O(N), \\qquad m^{\\text{new}} = \\max(m, \\max_j s_j), \\quad l^{\\text{new}} = l\\,e^{m - m^{\\text{new}}} + \\sum_j e^{s_j - m^{\\text{new}}}",
-      "aiConnection": "这是过去五年对长上下文大模型影响最大的算子级创新，也是「算法岗为什么要懂 GPU」的最佳例证：同一个数学公式，只因为改变了数据在存储层级之间的流动方式，就让 32K 上下文的训练从不可能变成可能。实际工作里你调用 torch.nn.functional.scaled_dot_product_attention（PyTorch 2.0+ 会自动在 FlashAttention、内存高效、数学三种后端间选择），但面试被问「如何把 attention 的显存从 O(N^2) 降下来」，标准答案就是分块 + 在线 softmax + 反向重算，并且要能说出省掉的是哪几次 HBM 读写。",
-      "codeExample": {
-        "lang": "cuda",
-        "filename": "flash_attn_simple.cu",
-        "code": "// 编译: nvcc -arch=sm_80 flash_attn_simple.cu -o fa && ./fa\n// 简化版 FlashAttention 前向: 每个线程负责一行 query, 分块遍历 K/V,\n// 用在线 softmax 增量更新, 全程不物化 N*N 的分数矩阵\n#include <cstdio>\n#include <cstdlib>\n#include <cmath>\n#include <cuda_runtime.h>\n\n#define D 64      // head dim\n#define BC 64     // K/V 的列块大小\n\n__global__ void flash_attn_fwd(const float* __restrict__ Q, const float* __restrict__ K,\n                               const float* __restrict__ V, float* __restrict__ O,\n                               int N, float scale) {\n    int row = blockIdx.x * blockDim.x + threadIdx.x;\n    if (row >= N) return;\n    const float* q = Q + (size_t)row * D;\n    float acc[D];\n    float m = -INFINITY, l = 0.0f;                 // running max / running sum\n    for (int d = 0; d < D; ++d) acc[d] = 0.0f;\n\n    for (int j0 = 0; j0 < N; j0 += BC) {\n        int jend = min(j0 + BC, N);\n        float m_blk = -INFINITY;                   // 第一遍: 本块的 max\n        for (int j = j0; j < jend; ++j) {\n            const float* k = K + (size_t)j * D;\n            float s = 0.0f;\n            for (int d = 0; d < D; ++d) s += q[d] * k[d];\n            m_blk = fmaxf(m_blk, s * scale);\n        }\n        float m_new = fmaxf(m, m_blk);\n        float alpha = __expf(m - m_new);           // 旧累加器的缩放系数\n        for (int d = 0; d < D; ++d) acc[d] *= alpha;\n        l *= alpha;\n        for (int j = j0; j < jend; ++j) {          // 第二遍: 累加 P @ V\n            const float* k = K + (size_t)j * D;\n            float s = 0.0f;\n            for (int d = 0; d < D; ++d) s += q[d] * k[d];\n            float p = __expf(s * scale - m_new);\n            const float* v = V + (size_t)j * D;\n            for (int d = 0; d < D; ++d) acc[d] += p * v[d];\n            l += p;\n        }\n        m = m_new;\n    }\n    float* o = O + (size_t)row * D;\n    for (int d = 0; d < D; ++d) o[d] = acc[d] / l;  // 最后统一归一化\n}\n\nint main() {\n    const int N = 1024;\n    size_t bytes = (size_t)N * D * sizeof(float);\n    float *Q, *K, *V, *O, *h;\n    cudaMalloc(&Q, bytes); cudaMalloc(&K, bytes);\n    cudaMalloc(&V, bytes); cudaMalloc(&O, bytes);\n    h = (float*)malloc(bytes);\n    for (size_t i = 0; i < (size_t)N * D; ++i) h[i] = 0.01f * (float)(i % 17);\n    cudaMemcpy(Q, h, bytes, cudaMemcpyHostToDevice);\n    cudaMemcpy(K, h, bytes, cudaMemcpyHostToDevice);\n    cudaMemcpy(V, h, bytes, cudaMemcpyHostToDevice);\n\n    int block = 256, grid = (N + block - 1) / block;\n    flash_attn_fwd<<<grid, block>>>(Q, K, V, O, N, 1.0f / sqrtf((float)D));\n    cudaDeviceSynchronize();\n\n    cudaMemcpy(h, O, 3 * sizeof(float), cudaMemcpyDeviceToHost);\n    printf(\"O[0][0..2] = %.5f %.5f %.5f\\n\", h[0], h[1], h[2]);\n    printf(\"标准 attention 的中间矩阵 %.1f MB -> FlashAttention 只保留 O(N*D) = %.2f MB\\n\",\n           (double)N * N * 4 / 1e6, (double)N * D * 4 / 1e6);\n    cudaFree(Q); cudaFree(K); cudaFree(V); cudaFree(O); free(h);\n    return 0;\n}"
-      },
-      "mistakes": [
-        "以为 FlashAttention 是近似算法，其实它算的是精确 attention",
-        "只说「分块」不说在线 softmax，解释不了为什么可以不保存 N x N 矩阵",
-        "忽略 causal mask 下只需计算一半的分块，白白多算一倍",
-        "在极短序列（N < 512）上仍期待大幅提速，此时 attention 本来就不是瓶颈"
-      ],
-      "interviewPoints": [
-        "FlashAttention 如何把显存从 O(N^2) 降到 O(N)：分块 + 在线 softmax + 反向重算",
-        "为什么 attention 在长序列下理论上是 compute-bound，实际却被访存拖慢",
-        "FA1 / FA2 / FA3 的主要改进点，以及 PyTorch SDPA 的后端选择逻辑",
-        "causal mask、GQA/MQA 与 FlashAttention 如何配合，KV cache 又如何影响显存"
-      ],
-      "resources": [
-        {"title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness", "url": "https://arxiv.org/abs/2205.14135"},
-        {"title": "FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning", "url": "https://arxiv.org/abs/2307.08691"},
-        {"title": "PyTorch scaled_dot_product_attention 文档", "url": "https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html"}
-      ],
-      "quiz": [
-        {"id": "flash-attention-q1", "type": "choice", "prompt": "FlashAttention 把 attention 的显存复杂度从 O(N^2) 降到 O(N)，最关键的技术是？", "options": ["把 fp32 换成 fp16 存储", "分块计算 + 在线 softmax，不物化 N x N 分数矩阵", "用稀疏注意力只算一部分位置", "把 attention 换成卷积"], "answerIndex": 1, "explanation": "FlashAttention 通过 tiling 把中间结果留在片上，用 running max / running sum 的在线 softmax 增量更新，因此不需要保存 N x N 的分数矩阵；它是精确计算，不是近似，也不是稀疏化。"},
-        {"id": "flash-attention-q2", "type": "short", "prompt": "为什么说 FlashAttention 是「IO-aware」的优化？它省掉的是哪些访存？", "answer": "参考回答：它的出发点不是减少 FLOPs（精确 attention 的 FLOPs 不变），而是减少 HBM 与片上存储之间的数据搬运。标准实现要把 N x N 的分数矩阵 S 和概率矩阵 P 写入再读回显存，约 4 次 N^2 量级的读写；FlashAttention 把 Q/K/V 分块搬进共享内存与寄存器，中间结果不落显存，只在最后写回 O，从而把访存从 O(N^2) 降到 O(N^2 d / M) 量级（M 为片上容量）。", "keywords": ["IO-aware", "不落显存", "O(N^2) 读写"], "explanation": "要点是「FLOPs 不变，省的是 HBM 读写」，这正是 IO-aware 的含义。"},
-        {"id": "flash-attention-q3", "type": "code", "prompt": "补全在线 softmax 的核心几行：给定本块最大分数 m_blk、旧的 running max m 与 running sum l，更新 m、缩放累加器 acc[D] 并累加新块的指数和。", "starterCode": "// m: running max, l: running sum, acc[D]: 未归一化输出\nfloat m_new = fmaxf(m, m_blk);\n// TODO: 计算 alpha, 缩放 acc 与 l, 再用本块的 p 累加\n", "solution": "float m_new = fmaxf(m, m_blk);\nfloat alpha = __expf(m - m_new);      // 旧累加器需要乘的缩放系数\nfor (int d = 0; d < D; ++d) acc[d] *= alpha;\nl *= alpha;\nfor (int j = j0; j < jend; ++j) {     // 本块贡献\n    float s = dot(q, K + (size_t)j * D) * scale;\n    float p = __expf(s - m_new);\n    for (int d = 0; d < D; ++d) acc[d] += p * V[(size_t)j * D + d];\n    l += p;\n}\nm = m_new;\n", "checks": ["__expf(m - m_new)", "acc[d] *= alpha", "l += p"], "explanation": "最大值更新后，之前累计的指数和必须整体乘 exp(m - m_new) 重新对齐，这是在线 softmax 的正确性核心。"}
-      ]
-    },
-    {
-      "slug": "nccl-multigpu",
-      "title": "多卡通信与 NCCL 基础",
-      "order": 12,
-      "module": "性能工程",
-      "difficulty": "高阶",
-      "estimatedMinutes": 45,
-      "summary": "多卡训练的性能上限由通信决定：理解 AllReduce 的通信量、NVLink 与 PCIe 的带宽差异、以及计算通信重叠。",
-      "intuition": "8 个人合作写一本书，每人写一章。要让所有人拿到完整书稿（AllReduce 的语义），有两种办法：一是每个人把自己的章节念给其他 7 个人听，通信量是 7S；二是围成一圈，每人把手上的一叠传给右边、同时接收左边的一叠，转 7 圈之后人人手里都是完整的书（Ring AllReduce），通信量约 2S，几乎与人数无关。NCCL 做的就是第二种，并自动根据 NVLink、PCIe、InfiniBand 的拓扑选路。",
-      "formal": "AllReduce 的 Ring 算法分 reduce-scatter 与 all-gather 两个阶段，每张卡发送与接收的数据量各为 (N-1)/N x S，总通信量记为 2(N-1)/N x S，N 很大时趋近 2S，与卡数无关。时间下界 T ≈ 2(N-1)/N x S / BW + 2(N-1) x 单跳延迟：小消息由延迟主导，大消息由带宽主导，这就是小消息堆卡数扩展效率暴跌的原因。硬件量级：A100 的 NVLink 3 双向 600 GB/s（单向约 300 GB/s），H100 的 NVLink 4 双向 900 GB/s；PCIe Gen4 x16 单向实测约 25 GB/s，400Gb InfiniBand 约 50 GB/s。NCCL 报告的 algbw 是按数据量算的带宽，busbw = algbw x 2(N-1)/N 才是能与硬件带宽对比的数字——看 nccl-tests 结果必须看 busbw。数据并行下梯度 AllReduce 的通信量约等于 2 x 参数量（7B 模型 fp16 约 28GB/step），若不能与反向计算重叠，就会成为吞吐瓶颈，这也是 ZeRO、梯度累积、通信压缩的动机。",
-      "formula": "\\text{AllReduce 通信量} = \\frac{2(N-1)}{N} \\times S \\xrightarrow{\\ N \\gg 1\\ } 2S, \\qquad T \\approx \\frac{2(N-1)}{N} \\cdot \\frac{S}{\\text{BW}} + 2(N-1)\\cdot\\tau",
-      "aiConnection": "算法岗在多卡环境里最常遇到的两个问题是「为什么加卡不提速」和「为什么扩到 32 卡反而变慢」——答案通常是通信。判断方法很直接：用 nsys 看时间线里 NCCL kernel 与计算 kernel 是否重叠，用 nccl-tests 测出这台机器真实的 busbw，再算一下通信量与计算量的比值。你选择 DDP、FSDP、张量并行还是流水并行，本质上都是在权衡「通信量 vs 显存节省」，而这些决策的前提就是本节这几个数字。",
-      "codeExample": {
-        "lang": "bash",
-        "filename": "multigpu_check.sh",
-        "code": "# 1. 先看拓扑: 哪些卡之间有 NVLink, 哪些只能走 PCIe\nnvidia-smi topo -m\n# A100/H100 整机应看到 NV12 / NV18 全互联; 出现 PHB / SYS 说明要过 PCIe 或跨 NUMA\n\n# 2. 编译并运行 nccl-tests 的 AllReduce 基准 (8 卡, 消息从 8MB 扫到 1GB)\ngit clone --depth 1 https://github.com/NVIDIA/nccl-tests.git\ncd nccl-tests\nmake MPI=1 MPI_HOME=/usr/lib/x86_64-linux-gnu/openmpi CUDA_HOME=/usr/local/cuda -j\n./build/all_reduce_perf -b 8M -e 1G -f 2 -g 8 -c 1 -n 50\n# 关键列: algbw 按数据量算, busbw = algbw * 2(N-1)/N 才能与硬件带宽对比\n# 8x A100 NVLink: 大消息 busbw 期望 200-280 GB/s; 纯 PCIe 机器只有 20-25 GB/s\n\n# 3. 打开 NCCL 日志, 确认它选了哪条通信路径\nNCCL_DEBUG=INFO NCCL_DEBUG_SUBSYS=INIT,GRAPH ./build/all_reduce_perf -b 128M -e 128M -f 2 -g 8\n\n# 4. 用 torchrun 跑真实 DDP, 关键是三行初始化 + 梯度分桶\ntorchrun --nproc_per_node=8 train_ddp.py\n#   dist.init_process_group(backend='nccl')\n#   torch.cuda.set_device(local_rank)\n#   model = nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[local_rank])\n\n# 5. 时间线: NCCL kernel 有没有和反向计算重叠? 有没有 GPU 空转?\nnsys profile -t cuda,nvtx,osrt -o ddp_prof torchrun --nproc_per_node=8 train_ddp.py\nnsys stats --report cuda_gpu_kern_sum ddp_prof.nsys-rep | head -30"
-      },
-      "mistakes": [
-        "把 algbw 当成硬件带宽看，忽略 busbw 的 2(N-1)/N 换算",
-        "在小消息上盲目堆卡数，延迟主导导致扩展效率暴跌",
-        "在纯 PCIe 机器上跑张量并行，通信量比数据并行大一个数量级",
-        "不做通信与计算重叠，梯度同步时 GPU 全部空转"
-      ],
-      "interviewPoints": [
-        "Ring AllReduce 的两个阶段与通信量推导，为什么与卡数几乎无关",
-        "NVLink 与 PCIe 的带宽差异，以及它如何影响并行策略的选择",
-        "algbw 与 busbw 的区别，怎么判断多卡扩展效率是否正常",
-        "数据并行、张量并行、流水并行的通信量量级对比与取舍"
-      ],
-      "resources": [
-        {"title": "NCCL 官方文档", "url": "https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/index.html"},
-        {"title": "NVIDIA nccl-tests 基准工具", "url": "https://github.com/NVIDIA/nccl-tests"},
-        {"title": "Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism", "url": "https://arxiv.org/abs/1909.08053"}
-      ],
-      "quiz": [
-        {"id": "nccl-multigpu-q1", "type": "choice", "prompt": "8 张卡做 Ring AllReduce，每张卡的发送数据量约为总数据量 S 的多少？", "options": ["S", "S/8", "7S/8", "2S"], "answerIndex": 2, "explanation": "Ring AllReduce 分 reduce-scatter 与 all-gather 两阶段，每阶段每卡发送 (N-1)/N x S，两阶段合计发送 2(N-1)/N x S；单阶段的发送量是 (N-1)/N x S = 7S/8。"},
-        {"id": "nccl-multigpu-q2", "type": "short", "prompt": "为什么小消息的多卡 AllReduce 扩展效率很差，而大消息却接近线性？", "answer": "参考回答：AllReduce 的耗时可以写成 T ≈ 通信量/BW + 跳数 x 单跳延迟。小消息时通信量很小，耗时被固定延迟（每跳几微秒，Ring 上要转 2(N-1) 跳）主导，加卡只会增加跳数，所以扩展效率急剧下降；大消息时通信量项占主导，带宽是瓶颈，而 Ring 算法的通信量趋近 2S、与卡数几乎无关，因此扩展效率接近线性。", "keywords": ["延迟主导", "跳数", "带宽主导"], "explanation": "关键是区分「延迟项」与「带宽项」谁占主导，以及 Ring 通信量与卡数无关这一性质。"},
-        {"id": "nccl-multigpu-q3", "type": "code", "prompt": "用 bash 写出三步排查：查看 GPU 拓扑、编译并运行 nccl-tests 的 AllReduce 基准（8 卡、8MB 到 1GB）、用 nsys 抓取 DDP 训练的时间线。", "starterCode": "# TODO: 拓扑 / nccl-tests / nsys 三条命令\n", "solution": "# 1. 拓扑: 确认是 NVLink 全互联还是走 PCIe\nnvidia-smi topo -m\n\n# 2. 实测 AllReduce 带宽 (重点看 busbw 列)\ngit clone --depth 1 https://github.com/NVIDIA/nccl-tests.git\ncd nccl-tests && make MPI=1 MPI_HOME=/usr/lib/x86_64-linux-gnu/openmpi CUDA_HOME=/usr/local/cuda -j\n./build/all_reduce_perf -b 8M -e 1G -f 2 -g 8 -c 1 -n 50\n\n# 3. 时间线: NCCL kernel 是否与反向计算重叠\nnsys profile -t cuda,nvtx,osrt -o ddp_prof torchrun --nproc_per_node=8 train_ddp.py\nnsys stats --report cuda_gpu_kern_sum ddp_prof.nsys-rep | head -30\n", "checks": ["nvidia-smi topo -m", "all_reduce_perf", "nsys profile"], "explanation": "拓扑决定物理带宽上限，nccl-tests 给出实测 busbw，nsys 判断通信是否被隐藏。"}
-      ]
+      "track": "main"
     }
   ]
 }

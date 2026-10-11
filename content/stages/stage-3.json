@@ -1,562 +1,497 @@
 {
   "stage": 3,
-  "stageSlug": "linux-git",
-  "stageTitle": "Linux + Git",
-  "stageEmoji": "🐧",
-  "stageDesc": "终端、Shell 与 Git 工作流：算法工程师每天都在用的协作底座",
+  "stageSlug": "tools-and-method",
+  "stageTitle": "学习工具与方法",
+  "stageEmoji": "🧰",
+  "stageDesc": "文件、编辑器、终端、学习方法，以及从高中到 AI 算法岗的完整路线",
+  "act": 1,
+  "actName": "第一幕 · 起步",
   "category": "基础",
   "lessons": [
     {
-      "slug": "terminal",
-      "title": "Terminal 终端",
+      "slug": "files-and-folders",
+      "title": "文件与文件夹：路径、扩展名、编码",
       "order": 1,
-      "module": "Linux 基础",
+      "module": "先把工具用顺手",
       "difficulty": "基础",
-      "estimatedMinutes": 20,
-      "summary": "终端是用户通过文本命令与系统交互的入口，是服务器与开发环境的主要操作方式。",
-      "intuition": "图形界面是'点鼠标'，终端是'敲命令'。你在屏幕上输入一行文字，回车，系统就按你的文字去执行动作。对服务器、远程机器和 AI 训练来说，往往没有图形界面，一切都要靠终端完成。终端就像你和系统之间的一根电话线，你说一句，它回一句。",
-      "formal": "终端（Terminal）是命令行界面（CLI）的载体，用户输入文本命令，`shell` 解释并交给操作系统执行，结果以文本输出。常见的终端模拟器有 iTerm2、GNOME Terminal 等。`$` 提示符表示普通用户，`#` 表示 root。终端的核心是`命令 + 参数 + 选项`的结构。工作流包括查看当前目录（`pwd`）、切换目录（`cd`）、列出文件（`ls`）。在 AI/服务器场景，终端常通过 SSH 远程使用，或作为容器、GPU 集群的唯一交互入口。掌握终端是高效运维与开发的基础。",
+      "track": "main",
+      "estimatedMinutes": 25,
+      "summary": "文件是数据的最小单位，文件夹负责分类，路径是找到文件的地址。这一节讲清绝对路径与相对路径、常见扩展名，以及中文乱码的真正原因——编码不一致。",
+      "intuition": "你的电脑本质上是一个巨大的文件柜：文件是一张纸，文件夹是抽屉，路径就是从柜子门口走到那张纸的走法。双击打开一份作业，其实是你沿着某条路径找到了那个文件。写代码时最常见的翻车不是算法写错，而是「找不到文件」——路径写错了。扩展名（.txt / .py / .jpg / .csv）是贴在纸上的标签，告诉系统这张纸该用什么工具读；编码则是「这张纸是用哪种语言写的」，用错语言去读，中文就会变成一串看不懂的符号。顺带记住两个名字：Windows 上路径长这样 C:\\Users\\anna\\train.csv，管文件的程序叫「文件资源管理器」；macOS 上叫「访达」。",
+      "formal": "路径分两种。绝对路径从根目录写起：macOS 与 Linux 以 / 开头（/Users/anna/ai-lab/train.csv）。相对路径从当前目录写起：. 是当前目录，.. 是上一级，./data/train.csv 与 ../images/a.jpg 都属于相对路径，先知道自己在哪才能解析。\n扩展名决定默认用什么软件打开，但不改变内容：a.csv 改名成 a.txt，内容一个字节都没变。常见的有 .txt 纯文本、.py 源码、.jpg 图片、.csv 表格（逗号分隔，每行一条记录）。\n编码是「字节到字符」的映射表：同一串字节按 UTF-8 读是「名字」，按 GBK 读就成了「鍚嶅瓧」。UTF-8 是通用默认，GBK 是早期中文 Windows 的默认，不一致就出乱码。",
       "formula": "",
-      "aiConnection": "训练大模型几乎都在 Linux 服务器的终端里进行：激活环境、运行训练脚本、查看 GPU 占用、监控日志。终端是你与远程 GPU 集群对话的唯一窗口，熟练掌握 shell 命令是面向前沿 AI 开发的必备前提。",
+      "aiConnection": "数据文件格式直接决定你用什么代码读它：.csv 用 pandas 的 read_csv 并显式指定 encoding，.jpg 与 .png 用图像库解码成像素张量，日志常是 .jsonl 每行一个 JSON。训练脚本的报错很大一部分是路径问题——本地写 ./data/train.csv 能跑，传到服务器后工作目录变了就抛 FileNotFoundError。中文乱码同样来自编码：GBK 存的标注文件按 UTF-8 读会得到一堆问号，清洗时会污染标签。路径、扩展名与编码，是数据工程的基本功。",
       "codeExample": {
         "lang": "bash",
-        "filename": "terminal.sh",
-        "code": "#!/bin/bash\n# 终端基本命令\npwd                      # 打印当前目录\nls -la                   # 列出所有文件（含隐藏）\ncd /tmp                  # 切换目录\necho \"你好，终端\"        # 打印文本\n# 查看当前用户与主机名\nwhoami\nhostname"
+        "filename": "files-and-folders.sh",
+        "code": "#!/bin/bash\n# 1) 我在哪：打印当前目录的绝对路径\npwd\n# 输出（macOS 示例）：/Users/anna\n\n# 2) 这个抽屉里有什么\nls\n# 输出：Desktop  Documents  Downloads  Pictures ...\n\n# 3) 加 -l 看细节：权限、大小、修改时间\nls -l\n# 输出：-rw-r--r--  1 anna  staff  1024 10 11 21:30 notes.txt\n\n# 4) 建项目目录：-p 可以一次建多级\nmkdir -p ai-lab/data\ncd ai-lab\npwd\n# 输出：/Users/anna/ai-lab        ← 绝对路径\n# 相对路径 ./data 指的是 /Users/anna/ai-lab/data\n\n# 5) 写一个 UTF-8 文件（UTF-8 是现在的通用默认编码）\nprintf '名字,分数\\n小明,90\\n' > data/scores.csv\ncat data/scores.csv\n# 输出：名字,分数\n#       小明,90\n\n# 6) 扩展名只是标签：file 命令读文件头，才知道真实类型\nfile data/scores.csv\n# 输出：data/scores.csv: CSV text\n# 把它改名成 scores.txt，内容依然是一份 CSV\n\n# 7) 编码：同一串字节，换一种解读规则就成了乱码\niconv -f UTF-8 -t GBK data/scores.csv > data/scores_gbk.csv\ncat data/scores_gbk.csv\n# 输出：��,��      ← 终端按 UTF-8 解读 GBK 字节，中文就花了\niconv -f GBK -t UTF-8 data/scores_gbk.csv\n# 输出：名字,分数   ← 用对编码再读一次，内容完好无损"
       },
       "mistakes": [
-        "把终端和 shell 混为一谈，终端是界面、shell 是解释器",
-        "在 `#` root 提示符下随意执行危险命令",
-        "盲目运行不认识的命令，忽略其可能造成的破坏",
-        "误以为终端有图形界面，实际只能靠文本命令"
+        "只写文件名不写路径，脚本换个目录运行就找不到文件（应写清相对路径或绝对路径）",
+        "文件其实叫 a.py.txt，资源管理器隐藏了扩展名（应打开扩展名显示）",
+        "乱码时反复改内容，其实是编码不一致（应统一存 UTF-8 并显式指定编码）",
+        "把绝对路径写死在代码里，换台机器或换服务器立刻失效（应改成相对路径或配置项）"
       ],
       "interviewPoints": [
-        "「终端和 shell 有什么区别？」要答到终端是交互界面、shell 是命令解释器，说明 SSH 到 GPU 服务器后你在和谁对话",
-        "「为什么 AI 工程师必须会命令行？」要答到服务器无图形界面、批量运维与远程调试，说明查 GPU 和日志的常用操作",
-        "「$ 和 # 提示符代表什么？」要答到普通用户与 root 的权限差异，说明在 root 下误执行破坏性命令的风险"
+        "「csv 和 jsonl 各适合什么场景？」要答到 csv 是规整的二维表格、体积小、适合结构化特征；jsonl 每行一个对象、能装变长与嵌套字段，对话与标注数据常用它",
+        "「读数据遇到乱码你怎么排查？」要答到先看真实字节判断是 UTF-8 还是 GBK，再显式指定 encoding 重新读，而不是去改文件内容",
+        "「为什么代码里不该写死绝对路径？」要答到换机器、换容器、换服务器后目录结构不同，绝对路径必然失效，工程上用相对路径或配置项"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "Python 官方教程 · 读写文件",
+          "url": "https://docs.python.org/zh-cn/3/tutorial/inputoutput.html"
+        },
+        {
+          "title": "维基百科 · UTF-8 编码",
+          "url": "https://zh.wikipedia.org/wiki/UTF-8"
+        }
+      ],
       "quiz": [
         {
-          "id": "terminal-q1",
+          "id": "files-and-folders-q1",
           "type": "choice",
-          "prompt": "显示当前所在工作目录的命令是？",
+          "prompt": "当前目录是 /Users/anna/ai-lab，那么 ./data/train.csv 指的是哪个文件？",
           "options": [
-            "ls",
-            "pwd",
-            "cd",
-            "echo"
+            "/Users/anna/data/train.csv",
+            "/Users/anna/ai-lab/data/train.csv",
+            "/data/train.csv",
+            "系统盘根目录下的 data/train.csv"
           ],
           "answerIndex": 1,
-          "explanation": "pwd（print working directory）打印当前工作目录；ls 列文件、cd 切换、echo 打印文本。"
+          "explanation": ". 表示当前目录，所以 ./data/train.csv 展开后是 /Users/anna/ai-lab/data/train.csv；/data/train.csv 是从根目录写起的绝对路径，../data 才是上一级目录。"
         },
         {
-          "id": "terminal-q2",
+          "id": "files-and-folders-q2",
           "type": "short",
-          "prompt": "终端和 shell 有什么区别？",
-          "answer": "终端（terminal）是用户输入命令的界面/程序；shell 是解释命令的程序，接收终端输入的命令并交给内核执行。终端负责显示与输入，shell 负责解析与执行。",
+          "prompt": "为什么同一个中文文件换个软件打开会变成乱码？请说明原因和解决办法。",
+          "answer": "参考回答：文件的字节没有变，变的是读取时用的编码。写入时用 GBK、读取时按 UTF-8 解释，中文就会变成乱码。解决办法是统一用 UTF-8 保存，并在读取时显式指定编码，例如 pandas 的 read_csv 里传 encoding 参数；已经乱码的文件要用正确编码转回来，而不是去改内容。",
           "keywords": [
-            "终端",
-            "shell",
-            "命令"
+            "编码",
+            "UTF-8",
+            "encoding"
           ],
-          "explanation": "终端是界面，shell 是命令解释器。"
+          "explanation": "抓住「字节不变、解读规则不一致」这一点，并说出显式指定 encoding 的做法，就能拿到主要分数。"
         },
         {
-          "id": "terminal-q3",
+          "id": "files-and-folders-q3",
           "type": "code",
-          "prompt": "依次写出三条命令：打印当前目录、列出所有文件（含隐藏）、切换到 /tmp。",
-          "starterCode": "#!/bin/bash\n",
-          "solution": "#!/bin/bash\npwd\nls -la\ncd /tmp",
+          "prompt": "写出在终端里依次完成四件事的命令：① 打印当前目录的绝对路径；② 在当前位置新建 ai-lab/data 两级目录；③ 把两行文本（表头「名字,分数」与一行数据「小明,90」）写入 ai-lab/data/scores.csv；④ 打印这个文件的内容。",
+          "starterCode": "#!/bin/bash\n# ① 打印当前目录\n",
+          "solution": "#!/bin/bash\npwd\nmkdir -p ai-lab/data\nprintf '名字,分数\\n小明,90\\n' > ai-lab/data/scores.csv\ncat ai-lab/data/scores.csv",
+          "checks": [
+            "pwd",
+            "mkdir -p",
+            "scores.csv",
+            "cat"
+          ],
+          "explanation": "pwd 确认位置，mkdir -p 一次建多级目录，重定向 > 写入文件，cat 打印内容——四条命令覆盖了「我在哪、建目录、写文件、看文件」。"
+        }
+      ]
+    },
+    {
+      "slug": "text-and-code-editor",
+      "title": "文本编辑器与代码编辑器",
+      "order": 2,
+      "module": "先把工具用顺手",
+      "difficulty": "基础",
+      "track": "main",
+      "estimatedMinutes": 25,
+      "summary": "记事本能改文字，但写代码会处处踩坑。这一节讲清代码编辑器 = 文本编辑器 + 语法高亮 + 自动补全，并给出 VS Code 的安装步骤与三个必装设置。",
+      "intuition": "写字用 Word，写代码要用另一种工具。Word 会在你打字时偷偷插入格式信息（字体、字号、段落样式），还会把英文直引号自动换成弯引号、把半角括号变成全角括号——这些对人是美化，对程序是灾难，因为程序只认纯文本和半角符号。记事本没有这个问题，但它把所有文字涂成同一个颜色，也不告诉你括号有没有配对。代码编辑器就是为「同时给人看和给机器看」设计的：它给不同语法上色，帮你补全名字，在你少写一个括号时立刻标红。",
+      "formal": "纯文本编辑器（记事本、macOS 的「文本编辑」、nano、vim）只做一件事：把字符按编码写进文件。代码编辑器 = 纯文本编辑器 + 三项增强：① 语法高亮，用颜色区分关键字、字符串、注释；② 自动补全与括号配对，输入 pri 提示 print；③ 集成工具链：内置终端、调试器、Git 面板。\nVS Code 免费、跨平台、扩展多：到官网 code.visualstudio.com 下载安装，装完在终端执行 code --version 能打印版本号，说明命令行入口配好了。\n三个必装设置：Files: Auto Save 设为 onFocusChange，切走就存；Editor: Font Size 调到 16，默认 14 久看伤眼；Files: Encoding 固定 utf8，中文不乱码。写 Python 还要装官方扩展 ms-python.python。",
+      "formula": "",
+      "aiConnection": "算法工程师一天里大部分时间在读代码而不是写代码：读开源实现、改训练脚本、跑通论文附带的仓库。编辑器决定了这件事的效率——跳转到函数定义、全局搜索符号、并排比较两个版本，这些操作在记事本里根本不存在。工程上还常把编辑器配置提交进仓库（.editorconfig、.vscode/settings.json），保证所有人的缩进、换行符、编码一致，CI 里的格式检查也是同一套规则的自动化。你在本地把编码和缩进设对，等于提前消灭了「我这儿能跑、你那儿报错」的经典事故。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "setup-vscode.sh",
+        "code": "#!/bin/bash\n# 1) 先分清两类工具\n#    记事本 / 文本编辑 = 纯文本，没有高亮、没有补全、不报错\n#    VS Code           = 纯文本 + 语法高亮 + 补全 + 调试 + Git\n\n# 2) 安装：到官网下载 .dmg（macOS）或 .exe（Windows），装完拖进应用程序\n#    https://code.visualstudio.com/\n\n# 3) 配好命令行入口（macOS：Cmd+Shift+P → Install 'code' command in PATH）\ncode --version\n# 输出：1.9x.x / 哈希 / arm64   ← 有版本号说明 PATH 配好了\n\n# 4) 打开文件夹而不是单个文件：只有打开文件夹才有项目结构\nmkdir -p ~/ai-lab/hello && cd ~/ai-lab/hello\ncode .\n# 你会看到：左侧资源管理器列出 hello 目录，右侧是空的编辑区\n\n# 5) 三个必装设置（Cmd/Ctrl + , 打开设置，搜索下面的关键词）\n#    Files: Auto Save        -> onFocusChange   切走就存，不怕忘保存\n#    Editor: Font Size       -> 16              默认 14 偏小，久看伤眼\n#    Files: Encoding         -> utf8            统一编码，中文不乱码\n#    再装 Python 扩展 ms-python.python，才有补全与调试\n\n# 6) 设置也可以直接改 JSON（Cmd/Ctrl+Shift+P → Open User Settings (JSON)）\ncat ~/Library/Application\\ Support/Code/User/settings.json\n# 输出（macOS 路径；Windows 在 %APPDATA%\\Code\\User\\settings.json）：\n# {\n#   \"files.autoSave\": \"onFocusChange\",\n#   \"editor.fontSize\": 16,\n#   \"files.encoding\": \"utf8\"\n# }"
+      },
+      "mistakes": [
+        "Word 写代码，弯引号与全角括号导致语法错误（必须存纯文本，标点用半角）",
+        "文件实际叫 a.py.txt，因为隐藏了扩展名（应打开扩展名显示）",
+        "记事本存成 ANSI 或 GBK，中文注释到服务器就乱码（应统一存 UTF-8）",
+        "不装 Python 扩展，抱怨没有补全和调试（语言支持来自扩展）"
+      ],
+      "interviewPoints": [
+        "「你怎么保证团队代码风格一致？」要答到编辑器与仓库级配置（.editorconfig、settings.json）、自动格式化工具（black、ruff）、提交前钩子与 CI 检查",
+        "「拿到一个陌生仓库你怎么快速看懂？」要答到用全局搜索与跳转定义，从入口脚本（train.py、main.py）顺着调用链读，而不是逐行硬啃",
+        "「代码里混用 Tab 和空格会怎样？」要答到 Python 会抛 TabError 或 IndentationError，靠编辑器显示空白字符并把缩进统一成 4 个空格"
+      ],
+      "resources": [
+        {
+          "title": "VS Code 官方文档 · 设置",
+          "url": "https://code.visualstudio.com/docs/getstarted/settings"
+        },
+        {
+          "title": "VS Code 官网下载",
+          "url": "https://code.visualstudio.com/"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "text-and-code-editor-q1",
+          "type": "choice",
+          "prompt": "下面哪一项不是代码编辑器相对于记事本的增强？",
+          "options": [
+            "语法高亮，用颜色区分关键字、字符串与注释",
+            "自动补全与括号配对",
+            "内置终端、调试器与 Git 面板",
+            "自动把代码翻译成中文注释"
+          ],
+          "answerIndex": 3,
+          "explanation": "前三项都是代码编辑器的标准能力；编辑器不会替你翻译或改写内容，注释必须自己写，写注释本身也是理解代码的过程。"
+        },
+        {
+          "id": "text-and-code-editor-q2",
+          "type": "short",
+          "prompt": "为什么不能用 Word 或 WPS 这类软件写代码？",
+          "answer": "参考回答：因为 Word 是富文本编辑器，会在文件里写入字体、字号、段落等格式信息，还会把英文直引号自动换成弯引号、把半角标点变成全角标点。程序只认纯文本和半角符号，弯引号或全角括号会直接造成语法错误。写代码应当用纯文本编辑器或代码编辑器，并把文件保存成 UTF-8 纯文本。",
+          "keywords": [
+            "纯文本",
+            "弯引号",
+            "格式信息"
+          ],
+          "explanation": "答到「富文本会写入格式信息」与「标点被替换成程序不认的字符」两点，就抓住了要害。"
+        },
+        {
+          "id": "text-and-code-editor-q3",
+          "type": "code",
+          "prompt": "写出在终端里完成四步的命令：① 检查 VS Code 的命令行入口并打印版本号；② 新建 ~/ai-lab/hello 目录并进入；③ 用 VS Code 打开这个文件夹（不是单个文件）；④ 打印 VS Code 用户配置文件 settings.json 的内容（macOS 路径）。",
+          "starterCode": "#!/bin/bash\n# ① 检查 VS Code 命令行入口\n",
+          "solution": "#!/bin/bash\ncode --version\nmkdir -p ~/ai-lab/hello\ncd ~/ai-lab/hello\ncode .\ncat ~/Library/Application\\ Support/Code/User/settings.json",
+          "checks": [
+            "code --version",
+            "mkdir -p",
+            "code .",
+            "settings.json"
+          ],
+          "explanation": "code --version 验证命令行入口，code . 打开当前文件夹（点号就是当前目录），设置文件里能看到 autoSave、fontSize、encoding 三项。"
+        }
+      ]
+    },
+    {
+      "slug": "terminal-first-look",
+      "title": "终端初识：程序员为什么爱用黑窗口",
+      "order": 3,
+      "module": "先把工具用顺手",
+      "difficulty": "基础",
+      "track": "main",
+      "estimatedMinutes": 30,
+      "summary": "终端是用打字代替点鼠标的操作方式。这一节用 pwd、ls、cd、mkdir、cat 五条命令起步，每条都说清你会看到什么，并解释它为什么是服务器上唯一的交互方式。",
+      "intuition": "图形界面里，你想进一个文件夹就双击它；终端里，你打出它的名字再回车。看起来更麻烦，那为什么程序员偏爱黑窗口？因为点鼠标一次只能做一件事，而命令可以写成一行做完一千件事：把 3000 张图片按日期分进 12 个文件夹、从 500 个日志里抓出所有报错行、在机房的服务器上启动训练——这些操作在图形界面里几乎无法完成，在终端里往往就是一两行文字。终端不是老古董，它把操作变成了可复述、可重复、可自动化的语言。",
+      "formal": "终端（Terminal）是一个程序窗口，它把你的输入交给 Shell（命令解释器，macOS 默认 zsh，Linux 常见 bash）执行，再把结果打印回来。命令的结构是：命令名 + 选项 + 参数，例如 ls -l /tmp 里 ls 是命令，-l 是选项，/tmp 是参数。\n五条起步命令：pwd 打印当前目录的绝对路径；ls 列出目录内容（-l 看权限、大小、时间，-a 连隐藏文件一起列）；cd 切换目录（cd .. 回上一级，cd ~ 回主目录）；mkdir 新建目录（-p 一次建多级）；cat 打印文件内容（适合小文件，大文件用 less）。\n两条纪律：终端没有回收站，rm 删掉就没了，动手前先 pwd 与 ls 确认位置；命令卡住用 Ctrl+C 中断，不要直接关窗口。三个提效键：Tab 补全路径、↑ 翻历史命令、Ctrl+R 搜索历史。",
+      "formula": "",
+      "aiConnection": "训练几乎都发生在远程服务器或集群上，你连过去只有一条 SSH 通道，没有桌面可点。日常动作全在终端：nvidia-smi 看显卡利用率与显存，python train.py --epochs 50 启动训练，tail -f train.log 盯日志，tmux 让任务在断网后继续跑。数据集动辄几十 GB、上百万个文件，用 cp、mv、find、rsync 批量处理比图形界面快几个数量级；把这些命令写进 shell 脚本就是可复现的实验记录，同事照着能跑出同样结果，这在工程里就是可信度。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "terminal-first-look.sh",
+        "code": "#!/bin/bash\n# 1) pwd：我在哪（打印当前目录的绝对路径）\npwd\n# 你会看到：/Users/anna        ← 一行绝对路径，没有别的输出\n\n# 2) ls：这里有什么\nls\n# 你会看到：Desktop  Documents  Downloads  notes.txt\nls -l\n# 你会看到：-rw-r--r--  1 anna  staff  1024 10 11 21:30 notes.txt\nls -a\n# 你会看到多出 . 与 .. 以及 .zshrc 这类隐藏文件\n\n# 3) mkdir：建目录，-p 一次建多级\nmkdir -p ~/ai-lab/notes\n# 你会看到：什么都不打印 —— 终端里「没有消息就是成功」\n\n# 4) cd：换目录\ncd ~/ai-lab/notes\npwd\n# 你会看到：/Users/anna/ai-lab/notes\ncd ..\npwd\n# 你会看到：/Users/anna/ai-lab      ← 回到上一级\ncd -\npwd\n# 你会看到：/Users/anna/ai-lab/notes ← 跳回刚才那个目录\n\n# 5) cat：把文件内容打印出来\nprintf '第一条笔记：pwd 看位置\\n' > today.txt\ncat today.txt\n# 你会看到：第一条笔记：pwd 看位置\n\n# 6) 三个提效键（不是命令，是按键）\n#    Tab     补全路径：输入 cd ~/ai- 然后按 Tab，会自动补成 ~/ai-lab/\n#    ↑       翻出上一条命令，不用重新打字\n#    Ctrl+C  中断当前正在跑的程序（比如卡住的训练）\n# 7) 命令可以串起来：一行做完一批事\nls -l ~/ai-lab/notes/*.txt\n# 你会看到：每个 txt 文件的权限、大小、时间，一次全列出来"
+      },
+      "mistakes": [
+        "不先 pwd 和 ls 确认位置就删改文件（终端没有回收站，删错难恢复）",
+        "路径有空格却不加引号，cd my data 被当成两个参数（应写引号）",
+        "在错误的目录下运行脚本，报找不到文件却以为代码有 bug（先 pwd 再运行）",
+        "程序卡住时直接关窗口，而不是 Ctrl+C 中断（可能留下没结束的进程）"
+      ],
+      "interviewPoints": [
+        "「怎么查看一台服务器上 GPU 的占用情况？」要答到 nvidia-smi 看显存与利用率，配合 watch -n 1 持续观察，进程异常时定位并结束它",
+        "「训练要跑 10 小时，断网就中断怎么办？」要答到用 tmux 或 nohup 让进程脱离终端，日志重定向到文件，再用 tail -f 跟踪进度",
+        "「怎么在上万个文件里找出包含某关键词的文件？」要答到 find 配合 grep（或 grep -r），并说清为什么比图形界面搜索更可控、更快"
+      ],
+      "resources": [
+        {
+          "title": "MIT · The Missing Semester（命令行与环境）",
+          "url": "https://missing.csail.mit.edu/"
+        },
+        {
+          "title": "GitHub · The Art of Command Line（命令行艺术）",
+          "url": "https://github.com/jlevy/the-art-of-command-line"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "terminal-first-look-q1",
+          "type": "choice",
+          "prompt": "在终端里执行 mkdir -p ~/ai-lab/notes，如果一切正常，屏幕上会出现什么？",
+          "options": [
+            "打印新建目录的完整路径",
+            "什么都不打印，直接回到等待输入的状态",
+            "提示 Success: 1 directory created",
+            "列出 ~/ai-lab 下的所有文件"
+          ],
+          "answerIndex": 1,
+          "explanation": "Unix 命令的惯例是「没有消息就是成功」：只有出错时才打印信息。想确认结果，用 ls ~/ai-lab 或 pwd 自己看一眼。"
+        },
+        {
+          "id": "terminal-first-look-q2",
+          "type": "short",
+          "prompt": "为什么算法工程师的工作离不开终端？请给出至少两个理由。",
+          "answer": "参考回答：第一，训练在远程服务器或集群上跑，连过去只有 SSH 通道，没有图形界面，看显卡、启任务、查日志都得靠命令；第二，批量操作效率高，几十 GB 数据、上万个文件的筛选与搬运，一条命令就能完成，图形界面几乎做不到；第三，命令能写进脚本重复执行，实验过程可复现、可交给同事照着跑。",
+          "keywords": [
+            "SSH",
+            "批量",
+            "可复现"
+          ],
+          "explanation": "答到「远程服务器只有命令行」和「批量与可复现」这两层，就说明理解了终端在工作流里的位置。"
+        },
+        {
+          "id": "terminal-first-look-q3",
+          "type": "code",
+          "prompt": "依次写出五条命令：① 打印当前目录；② 列出当前目录的全部文件（含隐藏文件与详细信息）；③ 新建 ~/ai-lab/logs 目录；④ 进入该目录；⑤ 打印该目录下一个名为 note.txt 的文件内容。",
+          "starterCode": "#!/bin/bash\n# ① 当前目录\n",
+          "solution": "#!/bin/bash\npwd\nls -la\nmkdir -p ~/ai-lab/logs\ncd ~/ai-lab/logs\ncat note.txt",
           "checks": [
             "pwd",
             "ls -la",
-            "cd /tmp"
+            "mkdir -p",
+            "cd ",
+            "cat"
           ],
-          "explanation": "三条基础命令分别查看目录、列出文件、切换目录。"
+          "explanation": "pwd 定位、ls -la 看全量细节、mkdir -p 建目录、cd 进入、cat 看文件，这五条是终端里最高频的动作。"
         }
       ]
     },
     {
-      "slug": "shell",
-      "title": "Shell",
-      "order": 2,
-      "module": "Linux 基础",
-      "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "Shell 是解释并执行命令的程序，支持变量、管道、重定向与脚本，是操作系统的命令语言。",
-      "intuition": "shell 就是那个'听懂人话'的翻译官。你在终端敲 `ls`，shell 把它翻译成系统能执行的请求，再把结果翻译回给你。它不只是逐个翻译命令，还能把多个命令串起来：用管道（|）把前一个的输出喂给后一个，用重定向把输出写进文件。写一个 shell 脚本，就像写一份'给系统的工作清单'，按顺序执行一串动作。",
-      "formal": "shell 是命令解释器。`bash`、`zsh` 是常用 shell。功能包括：`变量`（`name=value`，取用用 `$name`）、`管道`（`|` 把前一个命令的标准输出传给下一个）、`重定向`（`>` 覆盖写文件、`>>` 追加、`<` 读取）、`通配符`（`*`、`?`）、`命令替换`（`$(cmd)`）。环境变量如 `PATH`、`HOME` 由 shell 维护。shell 脚本以 `#!/bin/bash`（shebang）开头，用 `chmod +x` 赋予执行权限。`echo $?` 查看上一条命令退出码（0 表示成功）。",
-      "formula": "",
-      "aiConnection": "AI 工程里常用 shell 脚本封装训练流程：激活虚拟环境、设置环境变量、启动训练、处理输出日志。管道与重定向让你能批量处理文件、把训练日志写盘、用 grep 过滤错误信息，是自动化运维与实验脚本的核心。",
-      "codeExample": {
-        "lang": "bash",
-        "filename": "shell.sh",
-        "code": "#!/bin/bash\n# 变量\nname=\"AI\"\necho \"你好, $name\"\n\n# 命令替换\nnow=$(date)\necho \"当前时间: $now\"\n\n# 管道：把 ls 结果过滤\nls -la / | head -n 3\n\n# 重定向：写文件\necho \"写入的内容\" > output.txt\necho \"追加内容\" >> output.txt\ncat output.txt\n\n# 查看退出码\necho \"退出码: $?\""
-      },
-      "mistakes": [
-        "赋值时有空格 `name = a` 会报错，应为 `name=a`",
-        "取变量忘加 $，如 echo name 只打印字面 name",
-        "混淆 `>`（覆盖）与 `>>`（追加）",
-        "脚本未加执行权限或 shebang 导致无法运行"
-      ],
-      "interviewPoints": [
-        "「管道和重定向有什么区别？」要答到进程间数据流与文件读写，说明用 grep 过滤训练日志、用 >> 追加日志的写法",
-        "「> 和 >> 有什么区别？」要答到覆盖与追加，说明误用 > 清空日志的事故以及 nohup 重定向的实践",
-        "「shell 脚本怎么封装训练流程？」要答到 shebang、chmod +x、环境变量与 set -e，说明退出码 $? 在自动化里的作用"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "shell-q1",
-          "type": "choice",
-          "prompt": "把上一条命令的标准输出写入文件的符号是？",
-          "options": [
-            "|",
-            ">>",
-            ">",
-            "<"
-          ],
-          "answerIndex": 2,
-          "explanation": "`>` 把输出重定向并覆盖写入文件；`>>` 追加；`|` 管道传给下一条命令。"
-        },
-        {
-          "id": "shell-q2",
-          "type": "short",
-          "prompt": "管道 `|` 的作用是什么？",
-          "answer": "管道把前一条命令的标准输出作为后一条命令的标准输入，实现命令串联处理，如 `ls -la | grep .txt` 先列出文件再过滤出 txt 文件，无需中间文件。",
-          "keywords": [
-            "管道",
-            "输出",
-            "grep"
-          ],
-          "explanation": "管道用于串接命令，传递输出作为输入。"
-        },
-        {
-          "id": "shell-q3",
-          "type": "code",
-          "prompt": "写一段 shell：定义变量 name 为 AI，然后把它输出到文件 greeting.txt。",
-          "starterCode": "#!/bin/bash\n",
-          "solution": "#!/bin/bash\nname=\"AI\"\necho \"$name\" > greeting.txt",
-          "checks": [
-            "name=\"AI\"",
-            "> greeting"
-          ],
-          "explanation": "赋值变量并用重定向写文件。"
-        }
-      ]
-    },
-    {
-      "slug": "command",
-      "title": "Command 常用命令",
-      "order": 3,
-      "module": "Linux 基础",
-      "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "Linux 常用命令覆盖文件、目录、进程、查看与权限管理，是日常操作的必备集合。",
-      "intuition": "Linux 命令就像工具箱里的各种工具：有的管文件（ls、cp、mv、rm），有的管目录（mkdir、cd），有的看进程（ps、top），有的查内容（cat、grep）。你不必一次记住所有，但掌握最常用的十几个，就足以在大多数场景下高效工作。",
-      "formal": "常用 Linux 命令分组：`文件与目录`：`ls` 列出、`cd` 切换、`pwd` 当前位置、`mkdir` 建目录、`cp` 复制、`mv` 移动/重命名、`rm` 删除、`cat` 查看、`find` 查找；`查看与过滤`：`grep` 按模式搜索、`head/tail` 看头尾、`wc` 计数；`权限`：`chmod` 改权限、`chown` 改拥有者；`进程`：`ps` 查看进程、`top` 动态监控、`kill` 结束；`系统`：`df` 磁盘、`free` 内存。命令常用组合，如 `grep -rn \"keyword\" dir` 递归搜索。注意 `rm`、`mv` 等有破坏性，需谨慎。",
-      "formula": "",
-      "aiConnection": "AI 开发常要批量处理数据集、查日志、杀进程（如显存占用卡死的训练）等，都靠这套命令。尤其 `grep` 过滤日志、`nvidia-smi` 查看 GPU、`df` 看磁盘是否装满，是训练与排障的高频操作。",
-      "codeExample": {
-        "lang": "bash",
-        "filename": "command.sh",
-        "code": "#!/bin/bash\n# 创建目录与文件\nmkdir -p data\ncd data\n\n# 创建与查看文件\nprintf \"apple\\nbanana\\napple\\n\" > fruits.txt\ncat fruits.txt\n\n# 过滤与统计\ngrep \"apple\" fruits.txt\nwc -l fruits.txt\n\n# 复制与移动\ncp fruits.txt fruits_backup.txt\nmv fruits_backup.txt renamed.txt\n\n# 查看进程与磁盘\nps aux | head -n 3\ndf -h | head -n 3"
-      },
-      "mistakes": [
-        "用 rm -rf 不注意路径导致误删重要文件",
-        "混淆 cp 与 mv，mv 会移动/重命名",
-        "忘了 chmod 加执行权限导致脚本无法运行",
-        "混淆 `grep`（过滤内容）与 `find`（按路径查找）"
-      ],
-      "interviewPoints": [
-        "「怎么在日志里快速定位错误？」要答到 grep -rn、tail -f 与管道组合，说明训练崩溃时查 traceback 的常用套路",
-        "「cp、mv、rm 有哪些坑？」要答到移动即重命名、删除不可恢复，说明 rm -rf 配合通配符误删数据的风险",
-        "「怎么排查 GPU 和磁盘问题？」要答到 nvidia-smi 看显存占用、df -h 看磁盘写满，说明 OOM 与磁盘满导致训练中断的区别"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "command-q1",
-          "type": "choice",
-          "prompt": "在文件中按关键字搜索的行命令是？",
-          "options": [
-            "find",
-            "grep",
-            "ls",
-            "ps"
-          ],
-          "answerIndex": 1,
-          "explanation": "grep 用于在文件内容中按模式搜索；find 按路径/属性找文件。"
-        },
-        {
-          "id": "command-q2",
-          "type": "short",
-          "prompt": "`cp` 与 `mv` 有什么区别？",
-          "answer": "cp 复制文件到新位置，原文件保留；mv 移动或重命名，原路径上的文件消失。mv 同时具备重命名功能（目标路径为同目录新名）。",
-          "keywords": [
-            "cp",
-            "mv",
-            "重命名"
-          ],
-          "explanation": "cp 复制保留原文件，mv 移动/重命名。"
-        },
-        {
-          "id": "command-q3",
-          "type": "code",
-          "prompt": "写出连续命令：创建目录 data，进入后创建一个文件 info.txt，再用 grep 搜索它。",
-          "starterCode": "#!/bin/bash\n",
-          "solution": "#!/bin/bash\nmkdir data\ncd data\necho \"hello world\" > info.txt\ngrep \"hello\" info.txt",
-          "checks": [
-            "mkdir",
-            "grep"
-          ],
-          "explanation": "建目录、写文件、grep 搜索。"
-        }
-      ]
-    },
-    {
-      "slug": "git",
-      "title": "Git",
+      "slug": "how-to-use-this-site",
+      "title": "怎么用这个学习站",
       "order": 4,
-      "module": "Git 与 GitHub",
+      "module": "方法与路线",
       "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "Git 是分布式版本控制系统，记录文件的每次变更，支持多分支、协作与回滚。",
-      "intuition": "Git 就像给代码拍'时光机快照'。每次你提交（commit），Git 就帮整个项目拍一张完整的照片，并存起来。以后无论改了多少、想回哪一步，都能一键跳回任意快照。而且这照片不是存在某台电脑上，而是你本地就有一份完整的历史，所以叫'分布式'——所有人都有完整版本库。",
-      "formal": "Git 是分布式版本控制系统（DVCS）。核心概念：`working directory`（工作区，当前修改）、`staging area`（暂存区，`git add` 后的变更）、`repository`（仓库，`git commit` 后的历史）。`git init` 初始化仓库。基本流程：`git add` 暂存变更，`git commit -m \"msg\"` 提交本地历史，`git status` 查看状态，`git log` 查看提交历史，`git diff` 查看差异。`git clone` 克隆远程仓库，`git pull` 拉取，`git push` 推送。分支用 `git branch`、`git checkout`/`git switch` 切换。Git 记录的是每次提交的完整快照与父子关系，因而支持灵活回滚。",
+      "track": "main",
+      "estimatedMinutes": 20,
+      "summary": "这一节是本站的使用说明：闯关地图怎么读、主线与支线怎么选、练习与错题本怎么用，以及右侧面板里的 AI 导师与学习笔记。",
+      "intuition": "学不动往往不是因为难，而是因为不知道自己走到哪了。这个学习站把 近 200 个知识点铺成一张闯关地图：每个节点是一节内容，走过一节它就亮起来；模块之间有一处营火，让你停下来把上一模块的题再练一遍；每个阶段的尽头有一个首领，打完它才算通过这个阶段。地图的作用是把「我学到哪了」变成一眼可见的事——看得见进度，人才撑得过中间那段最枯燥的路。",
+      "formal": "地图元素的读法：节点 = 一个知识点（一节讲义），点击进入；营火 = 模块之间的休整点，点进去练上一模块的题；首领 = 阶段通关检验，把这一阶段的知识点全部过一遍才算通过；节点形状代表难度，外圈亮度代表掌握状态（未开始、学习中、复习中、已掌握）；实线表示这段路已经走通，虚线表示还没走到。\n两条路线：主线 125 节，从零基础打地基到能独立训练模型，必修；支线 74 节，面向算法岗面试与工程深化（如 GPU、CUDA、论文复现），按需选修，主线没走完就跳会因缺前置而效率更低。\n练习与错题本：每节 3 道题（选择、简答、编程），答错自动进错题本，正确率低于 70% 的知识点进薄弱清单，练习页支持随机抽题。\n右侧面板：「AI 导师」带着本节内容可直接追问，「学习笔记」支持 Markdown 与公式；左上角图标是设置入口，进度存在本地不会丢。",
       "formula": "",
-      "aiConnection": "AI 项目的代码、模型配置、实验脚本都靠 Git 管理版本，便于复现与回滚。训练代码任何改动都提交 Git，能清楚追踪实验变更，也方便与团队协作和回溯导致结果变化的原因。",
+      "aiConnection": "把学习站当工作台用，而不是当视频课看：AI 导师适合追问「这个公式为什么成立」「这段代码换个写法行不行」，但不要让它替你写完整作业——面试现场没有人替你解释。真正与工作对齐的用法是：每学完一节，在笔记里留下具体数字与结论（例如 7B 模型用 bf16 存权重约占 14GB），面试前把错题本和薄弱清单当复习提纲过一遍。自己找答案、自己验证，正是算法岗每天在做的事。",
       "codeExample": {
-        "lang": "bash",
-        "filename": "git.sh",
-        "code": "#!/bin/bash\n# 初始化仓库\nmkdir myproj && cd myproj\ngit init\n\n# 配置（首次）\ngit config user.name \"你的名字\"\ngit config user.email \"you@example.com\"\n\n# 添加并提交\necho \"hello\" > README.md\ngit add README.md\ngit commit -m \"初始化项目\"\n\n# 查看状态与历史\ngit status\ngit log"
+        "lang": "text",
+        "filename": "site-checklist.txt",
+        "code": "【第 1 天】把地图走一遍（约 20 分钟）\n□ 打开「学习路线」，找到自己在哪：第一幕 · 起步 → 学习工具与方法\n□ 确认自己在主线上（主线 125 节必修；支线 74 节按需，先别跳）\n□ 点开第一节节点，读完讲义，滚到底部做完 3 道题\n□ 答错的题 → 打开「练习测验」→ 切到「错题本」，确认它已经进去了\n□ 点开右缘的「AI 导师」，问一句：这一节我哪里最容易搞错？\n□ 点开右缘的「学习笔记」，写三句话：解决了什么问题 / 核心机制 / 工作里怎么用\n\n【地图符号速查】\n节点        一个知识点（一节讲义），点击进入\n节点外圈    掌握状态：未开始 / 学习中 / 复习中 / 已掌握\n节点形状    难度：普通 / 精英 / 未知\n营火        模块之间的休整点，点进去练上一模块的题\n首领        阶段通关检验，做完才算过这一阶段\n实线        这一段已经走通；虚线 = 还没走到\n\n【每天怎么用】\n1. 打开首页看「今天学什么」，或直接进地图接着上次的节点\n2. 学完一节 → 做题 → 错题当天标记，隔天重做\n3. 正确率低于 70% 的知识点会进薄弱清单，周末专门清一遍\n4. 收工前写一句笔记，关掉浏览器（进度存在本地，不会丢）\n\n【设置入口】左上角图标 → 模型接口 / 本地数据 / 学习时长"
       },
       "mistakes": [
-        "直接用 git commit 而忘记 git add，导致变更未被提交",
-        "混淆 git push（推送）与 git pull（拉取）方向",
-        "在提交信息里写不清楚，难以回溯变更意图",
-        "以为 commit 会自动同步到远程，必须显式 push"
+        "只看讲义不做题，正确率永远停在 0，错题本里也没有可复习的内容（做题才是检验）",
+        "主线没打完就刷支线，如刚学 Python 就看 CUDA（缺前置知识，效率更低）",
+        "笔记写成抄书，复习等于重读一遍（应写自己的话：解决什么、机制、怎么用）",
+        "一个模块学完不经过营火直接冲下一节（不复盘会让上个模块的投入作废）"
       ],
       "interviewPoints": [
-        "「Git 为什么叫分布式版本控制？」要答到本地有完整历史、离线也能提交，说明远程仓库只是协作节点而非唯一真相",
-        "「工作区、暂存区、仓库三者的关系？」要答到 add 与 commit 分阶段的意义，说明暂存区为何能支持精细提交",
-        "「实验代码怎么用 Git 管理？」要答到每改配置就提交、用分支隔离实验，说明如何回溯是哪次改动影响了指标"
+        "「你怎么管理自己的学习进度？」要答到有明确路线与里程碑，用错题与薄弱清单驱动复习，而不是随机刷课、学一节丢一节",
+        "「遇到不会的问题你的处理流程是什么？」要答到先查官方文档与源码、再向 AI 追问，最后写最小例子自己验证一遍",
+        "「你的笔记都记什么？」要答到记结论与具体数字、记踩过的坑与解决方式，而不是抄原文"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "Anki · 间隔重复记忆工具（错题与卡片复习）",
+          "url": "https://apps.ankiweb.net/"
+        },
+        {
+          "title": "roadmap.sh · AI 与数据科学家学习路线图",
+          "url": "https://roadmap.sh/ai-data-scientist"
+        }
+      ],
       "quiz": [
         {
-          "id": "git-q1",
+          "id": "how-to-use-this-site-q1",
           "type": "choice",
-          "prompt": "把暂存区的变更记录到本地历史的命令是？",
+          "prompt": "地图上两个节点之间的连线画成实线，说明什么？",
           "options": [
-            "git add",
-            "git commit",
-            "git push",
-            "git stage"
+            "这两个知识点难度最高，需要更多时间",
+            "前一个知识点已经标记为已掌握，这一段路已经走通",
+            "这两个知识点属于支线，可以先跳过",
+            "这条路上有一个营火，必须先去复习"
           ],
           "answerIndex": 1,
-          "explanation": "git commit 把暂存区变更提交为一次历史记录；git add 只是暂存。"
+          "explanation": "实线代表已走通（前一节状态为已掌握），虚线代表还没走到；难度由节点形状表示，营火是单独的节点。"
         },
         {
-          "id": "git-q2",
+          "id": "how-to-use-this-site-q2",
           "type": "short",
-          "prompt": "工作区、暂存区、仓库三者有什么区别？",
-          "answer": "工作区是你正在编辑的实际文件；暂存区是 git add 后准备提交的变更集合；仓库是 git commit 后保存的版本历史。变更从工作区→暂存区→仓库逐步推进。",
+          "prompt": "本站的主线和支线分别是什么？刚起步的零基础学习者应该先学哪一条，为什么？",
+          "answer": "参考回答：主线 125 节，从零基础打地基一直到能独立训练模型，是必修；支线 74 节，面向算法岗面试与工程深化，例如 GPU、CUDA、论文复现，按需选修。零基础应先走主线，因为支线依赖主线的前置知识，缺了编程与数学基础直接看 CUDA 或论文复现，只会变成抄代码，效率更低。",
           "keywords": [
-            "工作区",
-            "暂存区",
-            "提交"
+            "主线",
+            "支线",
+            "前置知识"
           ],
-          "explanation": "文件变更经 add 暂存再到 commit 进仓库。"
+          "explanation": "答出两条线的定位差异，并说清「支线依赖主线前置知识」这个理由，就完整了。"
         },
         {
-          "id": "git-q3",
+          "id": "how-to-use-this-site-q3",
           "type": "code",
-          "prompt": "写出命令：初始化一个 Git 仓库，然后创建一个 README.md 并完成首次提交。",
-          "starterCode": "#!/bin/bash\n",
-          "solution": "#!/bin/bash\ngit init\necho \"hello\" > README.md\ngit add README.md\ngit commit -m \"first commit\"",
+          "prompt": "用终端把本周要学的三节整理成一个清单文件：① 新建 ~/ai-lab/plan 目录；② 把三行内容（每行一节的名字，例如「1 文件与文件夹」）写入 ~/ai-lab/plan/week1.txt；③ 打印这个文件确认内容；④ 数一下它有几行。写出命令。",
+          "starterCode": "#!/bin/bash\n# ① 建计划目录\n",
+          "solution": "#!/bin/bash\nmkdir -p ~/ai-lab/plan\nprintf '1 文件与文件夹\\n2 文本编辑器与代码编辑器\\n3 终端初识\\n' > ~/ai-lab/plan/week1.txt\ncat ~/ai-lab/plan/week1.txt\nwc -l ~/ai-lab/plan/week1.txt",
           "checks": [
-            "git init",
-            "git add",
-            "git commit"
+            "mkdir -p",
+            "week1.txt",
+            "cat",
+            "wc -l"
           ],
-          "explanation": "init、add、commit 三步完成首次提交。"
+          "explanation": "mkdir -p 建目录，重定向写入清单，cat 确认内容，wc -l 数行数——把学习计划也变成可以验证的文件。"
         }
       ]
     },
     {
-      "slug": "github",
-      "title": "GitHub",
+      "slug": "learning-methods",
+      "title": "学习方法：间隔重复、刻意练习、费曼技巧",
       "order": 5,
-      "module": "Git 与 GitHub",
+      "module": "方法与路线",
       "difficulty": "基础",
-      "estimatedMinutes": 21,
-      "summary": "GitHub 是基于 Git 的远程代码托管平台，支持协作、Issue、Pull Request 与 CI/CD。",
-      "intuition": "Git 是把代码历史存在你本地，而 GitHub 是把你的仓库搬到云端，让全世界或团队都能看到、协作。就像你有了一台时光机（Git），而 GitHub 是大家共享的那间'时光机博物馆'——你把快照放上去，别人可以看、可以提意见、可以一起改。",
-      "formal": "GitHub 是托管的远程 Git 仓库平台。`remote` 是远程仓库别名（通常为 `origin`）。基本协作流程：`git remote add origin <url>` 关联远程；`git push -u origin main` 首次推送；`git pull` 拉取更新。协作机制包括 `fork`（复制仓库）、`branch`（分支开发）、`Pull Request`（PR，请求合并改动并评审）、`Issue`（问题追踪）、`Code Review`。`clone` 是下载仓库副本。GitHub 还提供 CI/CD（GitHub Actions）自动化测试构建。",
+      "track": "main",
+      "estimatedMinutes": 25,
+      "summary": "三种被反复验证的学习机制——间隔重复对抗遗忘、刻意练习突破瓶颈、费曼技巧检验是否真懂——以及把它们落到每天 25 分钟的具体做法。",
+      "intuition": "同样学 100 小时，有人能独立训练模型，有人还在抄代码，差别常常不在智商而在方法。人的记忆不是硬盘，更像会被不断覆盖的草稿纸：今天记住的东西明天就掉一截，这是正常的生理现象，不是你笨。对抗它有确定的办法——在快要忘的时候再看一眼（间隔重复）；把练习集中在刚好超出当前能力的那一点点上（刻意练习）；用「讲给别人听」暴露那些你以为懂、其实没懂的地方（费曼技巧）。方法不神秘，关键是能不能变成每天固定的动作。",
+      "formal": "① 间隔重复：遗忘近似指数衰减，第一次复习放在 1 天后，之后 3 天、7 天、21 天各一次；落到编程上就是错题隔天重做，而不是当天连做三遍。\n② 刻意练习：只在「稍微超出当前能力、且有即时反馈」的区间练习才有效；落到本站就是别反复看已经会的讲义，去做薄弱清单里正确率低于 70% 的题，做完立刻看解析。\n③ 费曼技巧：把概念讲给完全不懂的人听，一旦卡壳或只能堆术语，就说明这里有洞，回讲义补上再讲一遍。\n④ 番茄钟：25 分钟专注 + 5 分钟休息为一个循环，4 个循环后休息 15 到 30 分钟；它把「今天学两小时」换成「先做一个番茄钟」，降低启动成本——放弃大多发生在开始之前。",
       "formula": "",
-      "aiConnection": "开源模型、框架（transformers、PyTorch）都托管在 GitHub 上，工程师通过 GitHub 拉取代码、提 Issue、参与 PR。理解 GitHub 协作流程，是使用开源 AI 生态、复现代码和团队协作开发的基础。",
+      "aiConnection": "算法岗的日常本身就是一场长期刻意练习：读一篇论文、复现一个模块、调一组超参、看指标变化、修正假设，循环往复。能坚持下来的人靠的往往不是热情而是节奏——固定时段、固定产出、定期回顾。面试同理：能不能把梯度下降、注意力机制讲给一个外行听懂，直接反映你理解得多深；很多人背下了公式，却在被追问「为什么除以根号 d」时卡住，这正是费曼技巧要提前暴露的洞。学习方法决定了你能不能撑到拿到 offer 的那一天。",
       "codeExample": {
-        "lang": "bash",
-        "filename": "github.sh",
-        "code": "#!/bin/bash\n# 关联远程仓库\ngit remote add origin https://github.com/user/myproj.git\n\n# 首次推送并建立关联\ngit push -u origin main\n\n# 之后推送更简单\ngit push\n\n# 从远程拉取最新\ngit pull\n\n# 查看远程仓库\n git remote -v"
+        "lang": "text",
+        "filename": "weekly-rhythm.txt",
+        "code": "【固定时段】工作日 20:00-20:50，周六 10:00-10:50，周日 20:00-21:00 写总结\n\n【一个番茄钟（25 分钟）怎么过】\n00:00-02:00  打开学习站，回到上次的节点，扫一眼上次的笔记\n02:00-20:00  读讲义 + 跟着敲一遍代码示例（不要只读不敲）\n20:00-25:00  做本节 3 道题，答错的标记进错题本\n\n【每天 50 分钟 = 2 个番茄钟】\n番茄钟 1：新内容（讲义 + 代码）\n番茄钟 2：做本节题 + 订正昨天的错题\n\n【每周日 1 小时：总结笔记（费曼技巧）】\n1. 挑本周最有价值的一个概念，合上讲义\n2. 用 5 句话写下来：解决什么问题 / 怎么做的 / 一个具体数字 / 我踩过的坑 / 工作里用在哪\n3. 读给自己听：哪里卡住了？卡住的地方就是下周第一个要补的洞\n\n【间隔重复排期】学完当天 → 第 2 天重做错题 → 第 7 天回看笔记 → 第 21 天在练习页随机抽题\n\n【每周自检】\n本周番茄钟数：____ 个（目标 ≥ 12 个，即每周 6 小时）\n错题订正率：____ %（目标 100%）\n本周讲清楚的一个概念：____________________（讲不清就说明还没学会）"
       },
       "mistakes": [
-        "把 GitHub 与 Git 混为一谈，Git 是工具、GitHub 是托管平台",
-        "忘了先 git remote add 就 push，找不到远程地址",
-        "push 前未 pull，合并冲突",
-        "把敏感信息（API key、密码）提交到公开仓库"
+        "连续三小时突击一节内容，之后两周不碰（应改成固定时段 + 多次短时复习）",
+        "只重做已经会的题，正确率好看但没进步（应专攻薄弱清单里的知识点）",
+        "笔记抄讲义原文，复习时等于重读一遍（应用自己的话写，并带上具体数字）",
+        "一卡住就立刻向 AI 要答案（应先自己试 15 分钟，把卡点描述清楚再问）"
       ],
       "interviewPoints": [
-        "「Git 和 GitHub 有什么区别？」要答到本地版本控制工具与远程托管平台，说明没网也能 commit 但 push 必须连远程",
-        "「Pull Request 的流程是怎样的？」要答到开分支或 fork、提交后评审、CI 通过再合并，说明团队协作与开源贡献的标准路径",
-        "「哪些东西绝对不能提交到公开仓库？」要答到 API key、密码与数据隐私，说明 .env 与 .gitignore 的防护作用"
+        "「你怎么保证学的东西不白学？」要答到固定节奏、错题复盘，以及每节都有可检验的产出（脚本、笔记、复现结果）",
+        "「遇到不会的知识点你的学习流程是什么？」要答到先看官方文档与最小例子，再讲给别人或写下来检验，最后回到项目里用一次",
+        "「你怎么在忙碌中保持学习？」要答到把目标拆成 25 分钟能完成的最小单元，靠固定时段而不是靠意志力硬撑"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "Coursera · Learning How to Learn（学习之道）",
+          "url": "https://www.coursera.org/learn/learning-how-to-learn"
+        },
+        {
+          "title": "维基百科 · 间隔重复",
+          "url": "https://zh.wikipedia.org/wiki/%E9%97%B4%E9%9A%94%E9%87%8D%E5%A4%8D"
+        }
+      ],
       "quiz": [
         {
-          "id": "github-q1",
+          "id": "learning-methods-q1",
           "type": "choice",
-          "prompt": "首次把本地仓库关联并推送到远程常用哪条命令组合？",
+          "prompt": "按间隔重复的思路，今天做错的一道题，最合适的重做时间是？",
           "options": [
-            "git pull -u origin main",
-            "git init origin",
-            "git push -u origin main",
-            "git clone origin"
+            "今天睡前再连做三遍",
+            "第二天重做一次，之后第 7 天、第 21 天再各回看一次",
+            "等整个阶段学完再统一重做",
+            "考前一周集中刷一遍"
+          ],
+          "answerIndex": 1,
+          "explanation": "间隔重复的关键是「在快要忘的时候复习」：1 天、3 天、7 天、21 天的间隔最经济。当天连做三遍只是短期熟练，考前集中刷则会一次性堆太多。"
+        },
+        {
+          "id": "learning-methods-q2",
+          "type": "short",
+          "prompt": "什么是费曼技巧？为什么它能发现「以为自己懂了」的地方？",
+          "answer": "参考回答：费曼技巧是把一个概念用大白话讲给完全不懂的人听，或者完整写下来。讲的过程中一旦卡壳、只能靠堆术语、或逻辑接不上，就说明这块理解有洞。因为「看懂」只需要被动识别，而「讲清楚」要求你主动重建因果与细节，两者难度差很多，所以它能提前暴露问题，逼你回到讲义把洞补上。",
+          "keywords": [
+            "讲给别人听",
+            "卡壳",
+            "主动重建"
+          ],
+          "explanation": "答到「用大白话复述」与「讲不清就是没懂，因为输出比输入要求更高」这两点即可得分。"
+        },
+        {
+          "id": "learning-methods-q3",
+          "type": "code",
+          "prompt": "用终端建立一个学习日志：① 新建 ~/ai-lab/journal 目录；② 写入今天的记录，包含日期、番茄钟个数与一句总结；③ 再用追加的方式写入昨天补记的一条；④ 打印整个日志确认两条都在。写出命令。",
+          "starterCode": "#!/bin/bash\n# ① 建日志目录\n",
+          "solution": "#!/bin/bash\nmkdir -p ~/ai-lab/journal\nprintf '2026-10-11 番茄钟 2 个：搞懂了绝对路径与相对路径\\n' > ~/ai-lab/journal/log.txt\nprintf '2026-10-10 番茄钟 2 个：补记终端五条命令\\n' >> ~/ai-lab/journal/log.txt\ncat ~/ai-lab/journal/log.txt",
+          "checks": [
+            "mkdir -p",
+            "> ~/ai-lab/journal/log.txt",
+            ">>",
+            "cat"
+          ],
+          "explanation": "单箭头 > 覆盖写入，双箭头 >> 追加写入——日志这类需要累积的文件必须用追加，否则会把前面的记录冲掉。"
+        }
+      ]
+    },
+    {
+      "slug": "roadmap-to-ai-job",
+      "title": "从高中到 AI 算法岗：完整路线与时间规划",
+      "order": 6,
+      "module": "方法与路线",
+      "difficulty": "基础",
+      "track": "main",
+      "estimatedMinutes": 35,
+      "summary": "把七幕课程映射成一张以周为单位的时间表，给出每周 6 小时的基准进度、加速方案，以及判断自己是否真的在进步的可检验标准。",
+      "intuition": "「从高中到 AI 算法岗要多久」没有标准答案，但有可计算的下限：主线固定部分约 252 小时，按每周 6 小时算是 42 周，也就是十个月左右。这个数字不是用来吓人的，而是用来做取舍的——知道自己站在第几周、下一站是什么，你才不会在「我是不是学得太慢」的焦虑里空转。真正决定成败的是节奏能不能持续：每天 50 分钟坚持 42 周，胜过每天 5 小时坚持 10 天然后放弃。",
+      "formal": "规划的变量只有三个：每周可投入小时数 h、每一幕需要的周数 W、总时长 T = h × W。基准安排（每周 6 小时）：第一幕 2 周、第二幕 6 周、第三幕 8 周、第四幕 8 周、第五幕 6 周、第六幕 12 周，固定部分 2+6+8+8+6+12 = 42 周，42 × 6 = 252 小时；第七幕按需追加 8 到 12 周（48 到 72 小时），全程约 300 到 324 小时。\n换强度周数会变但顺序不变：每周 14 小时约 18 周，每周 21 小时约 12 周。顺序不可压缩：没有第四幕的求导基础，反向传播推不下去；没有第二幕的编程能力，看 Transformer 只能抄代码。\n每一幕都配一个可检验的验收动作：做不到就说明这一幕没过，应当补课而不是往前赶。",
+      "formula": "T = h \\times W, \\qquad T_{\\text{main}} = 6 \\times 42 = 252\\ \\text{h}, \\qquad T_{\\text{all}} = 252 + (48 \\sim 72) = 300 \\sim 324\\ \\text{h}",
+      "aiConnection": "这张表直接对应招聘节奏：算法岗校招提前批通常在毕业前一年的 6 到 8 月。如果打算本科毕业即就业，最晚大三下就要走完第五幕并有一个能跑通的深度学习项目，第六幕与第七幕放在大三暑假和大四上，同时准备简历与面试。转行的人时间线类似，只是把「学期」换成「月份」。面试官不会问你学了多久，他们问的是项目里数据多少条、模型多大、指标从多少提到多少——这些数字只有走完整条路线才拿得出来。",
+      "codeExample": {
+        "lang": "text",
+        "filename": "roadmap-plan.txt",
+        "code": "【基准进度：每周 6 小时 = 工作日每天 2 个番茄钟（50 分钟）× 5 + 周日 1 小时总结】\n\n幕      阶段范围                    周数      小时     学完的验收动作（做不到就是没过）\n第一幕  起步（1-3 阶段）              2        12      能在终端里建目录、跑命令，说清绝对/相对路径与乱码原因\n第二幕  编程入门（4-6 阶段）          6        36      不看资料写出 50 行 Python 脚本，用 Git 提交并回退一次改动\n第三幕  计算机科学基础（7-9 阶段）    8        48      手写二分查找与哈希表，解释 O(n log n) 是怎么推出来的\n第四幕  数学（10-12 阶段）            8        48      手推一次梯度下降更新，解释什么是梯度、特征值与概率分布\n第五幕  数据与经典机器学习（13-14）   6        36      清洗一份真实 CSV，用 sklearn 训练并用准确率/召回率解释结果\n第六幕  深度学习与大模型（15-19）    12        72      跑通一个 CIFAR-10 训练脚本，微调一个小模型并说清显存占用\n第七幕  算法岗进阶（20-22）        按需 8-12  48-72    精读并复现一篇论文的核心模块，做一次 LoRA 微调与显存核算\n\n固定部分合计：2+6+8+8+6+12 = 42 周；6 小时/周 × 42 周 = 252 小时\n含第七幕：42+8 = 50 周到 42+12 = 54 周；252+48 = 300 小时到 252+72 = 324 小时\n\n【加速方案】同样的内容，换投入强度（252 小时不变）\n每周 6 小时（每天 50 分钟）  → 252 ÷ 6  = 42 周 ≈ 10 个月\n每周 14 小时（每天 2 小时）  → 252 ÷ 14 = 18 周 ≈ 4 个月\n每周 21 小时（假期每天 3 小时）→ 252 ÷ 21 = 12 周 ≈ 3 个月\n\n【求职时间锚点（以本科毕业即就业为例）】\n大三上     走完第一至三幕（约 16 周）\n大三下     走完第四、五幕，做出第一个完整项目\n大三暑假   第六幕：跑通 CIFAR-10，微调一个小模型\n大四上     第七幕 + 投递：提前批 6-8 月，正式批 9-11 月\n\n【每周自检三问】\n1. 本周番茄钟够 12 个吗？（不够就先保节奏，别加内容）\n2. 我能不看资料把本周的代码重写一遍吗？\n3. 我能用 5 句话把这个概念讲给同学听吗？"
+      },
+      "mistakes": [
+        "只规划不记录，从没统计每周投入（应用番茄钟计数校准，目标 ≥ 12 个）",
+        "为赶进度跳过第四幕数学，学反向传播时卡住又回头补（顺序不能压缩）",
+        "把「看完讲义」当成学会（验收标准是能跑通脚本、能解释概念，不是看了多少分钟）",
+        "计划排满 7 天不留余地，第三周就放弃（每周留 1 天机动）"
+      ],
+      "interviewPoints": [
+        "「你最近在学什么，学到什么程度？」要用可检验产出回答：跑通过什么脚本、复现过哪个模块、指标从多少提到多少，而不是「在学深度学习」",
+        "「你基础薄弱，凭什么做算法？」要用路线与项目证明：数学补到什么程度、代码写到什么规模、复现过什么，把时间线说清楚",
+        "「你项目里的数据、模型、指标分别是什么？」要能立刻说出三个具体数字，并解释为什么选这个模型和这个指标"
+      ],
+      "resources": [
+        {
+          "title": "PyTorch 官方教程 · CIFAR-10 图像分类",
+          "url": "https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html"
+        },
+        {
+          "title": "Stanford CS231n · 视觉识别卷积网络课程",
+          "url": "https://cs231n.stanford.edu/"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "roadmap-to-ai-job-q1",
+          "type": "choice",
+          "prompt": "按本课程的基准安排（每周 6 小时），走完前六幕固定部分大约需要多少小时？",
+          "options": [
+            "约 42 小时",
+            "约 120 小时",
+            "约 252 小时",
+            "约 500 小时"
           ],
           "answerIndex": 2,
-          "explanation": "git push -u origin main 首次推送并建立 upstream 关联。"
+          "explanation": "各幕周数为 2+6+8+8+6+12 = 42 周，每周 6 小时，42 × 6 = 252 小时；再加上第七幕按需的 48 到 72 小时，全程约 300 到 324 小时。"
         },
         {
-          "id": "github-q2",
+          "id": "roadmap-to-ai-job-q2",
           "type": "short",
-          "prompt": "Pull Request（PR）在协作中的作用是什么？",
-          "answer": "PR 是提交分支改动请求合并到目标分支的机制，包含了变更内容、评审与讨论，团队成员可审查代码、提出修改意见，确认后再合并，保证代码质量与协作有序。",
+          "prompt": "如果每天只能投入 1 小时（每周约 7 小时），走完前六幕大约要多久？请写出算式，并说明为什么不能靠压缩顺序来加速。",
+          "answer": "参考回答：前六幕固定部分约 252 小时，252 ÷ 7 = 36 周，约 8 到 9 个月。不能压缩顺序，是因为后面的内容依赖前面的前置知识：没有第四幕的求导基础，反向传播推不下去；没有第二幕的编程能力，看 Transformer 只能抄代码；没有第五幕的数据处理，真实数据集连读都读不进来。顺序错了会反复回头补课，反而更慢。",
           "keywords": [
-            "pull request",
-            "合并",
-            "评审"
+            "252",
+            "36 周",
+            "前置知识"
           ],
-          "explanation": "PR 是请求合并的评审机制。"
+          "explanation": "关键是会算「总小时数 ÷ 每周小时数」，并说清依赖关系决定了顺序不可压缩，只能靠增加每周投入来缩短总时长。"
         },
         {
-          "id": "github-q3",
+          "id": "roadmap-to-ai-job-q3",
           "type": "code",
-          "prompt": "写出命令：关联远程仓库 origin 到指定 URL，并首次推送 main 分支。",
-          "starterCode": "#!/bin/bash\n",
-          "solution": "#!/bin/bash\ngit remote add origin https://github.com/user/myproj.git\ngit push -u origin main",
+          "prompt": "用终端建一份自己的计划：① 新建 ~/ai-lab/plan 目录；② 把七幕的周数写成七行文本存进 roadmap.txt；③ 用 shell 算术算出固定部分总周数（2+6+8+8+6+12）与对应的总小时数（每周 6 小时）并打印；④ 打印这份计划确认内容。写出命令。",
+          "starterCode": "#!/bin/bash\n# ① 建计划目录\n",
+          "solution": "#!/bin/bash\nmkdir -p ~/ai-lab/plan\ncat > ~/ai-lab/plan/roadmap.txt <<'EOF'\n第一幕 起步 2 周\n第二幕 编程入门 6 周\n第三幕 计算机科学基础 8 周\n第四幕 数学 8 周\n第五幕 数据与经典机器学习 6 周\n第六幕 深度学习与大模型 12 周\n第七幕 算法岗进阶 按需 8-12 周\nEOF\nweeks=$((2+6+8+8+6+12))\necho '固定部分周数:' $weeks\necho '总小时数:' $((weeks * 6))\ncat ~/ai-lab/plan/roadmap.txt",
           "checks": [
-            "remote add origin",
-            "push -u"
+            "mkdir -p",
+            "cat >",
+            "$((2+6+8+8+6+12))",
+            "$((weeks * 6))"
           ],
-          "explanation": "add remote 关联，push -u 首次推送。"
-        }
-      ]
-    },
-    {
-      "slug": "repository",
-      "title": "Repository 仓库",
-      "order": 6,
-      "module": "Git 与 GitHub",
-      "difficulty": "基础",
-      "estimatedMinutes": 21,
-      "summary": "仓库是 Git 管理项目版本与历史的目录，包含工作区、暂存区与 .git 元数据。",
-      "intuition": "仓库就像一个带'时光机'的项目文件夹。它不只是放着现在的文件，还装着这个项目从出生到现在每一次修改的历史。`.git` 这个隐藏文件夹就是'时光机本体'，里面记录了所有快照。有了它，你才能随时回到任何一版。",
-      "formal": "仓库（repository）是 Git 管理版本控制的项目目录。`git init` 会在项目根目录创建 `.git` 隐藏文件夹，其中存储所有提交对象、分支、标签与配置，是仓库的核心元数据。仓库的结构包含`工作区`（实际文件）、`暂存区`（index）与`.git`（历史对象数据库）。克隆远程仓库用 `git clone <url>` 会在本地生成一个包含完整历史的副本。`README.md`、`.gitignore`（忽略文件，如模型权重、缓存）是常见文件。仓库可用 `git remote` 关联远程，便于备份与协作。",
-      "formula": "",
-      "aiConnection": "AI 项目仓库通常用 `.gitignore` 忽略大型模型权重、数据集与缓存，避免仓库过大；用 README 说明复现步骤。理解仓库结构与忽略规则，才能做出干净、可复现、便于团队协作的 AI 项目仓库。",
-      "codeExample": {
-        "lang": "bash",
-        "filename": "repository.sh",
-        "code": "#!/bin/bash\n# 从远程克隆仓库\n# git clone https://github.com/user/myproj.git\n\n# 初始化本地仓库\nmkdir proj && cd proj\ngit init\n\n# 创建忽略文件\necho \"*.pyc\" > .gitignore\necho \"cache/\" >> .gitignore\n\n# 查看仓库状态与远程\ngit status\ngit remote -v"
-      },
-      "mistakes": [
-        "以为仓库就是普通文件夹，忽略 .git 元数据的作用",
-        "把大文件（模型、数据集）直接提交，导致仓库臃肿",
-        "忘配 .gitignore，把缓存、密钥误提交",
-        "克隆后修改但从不 push，远程不同步"
-      ],
-      "interviewPoints": [
-        "「.git 目录里存了什么？」要答到提交对象、分支指针与配置，说明删掉 .git 等于丢失全部历史",
-        "「.gitignore 该怎么写？」要答到忽略模型权重、数据集与缓存，说明已跟踪文件加进 ignore 后为何仍会出现在变更里",
-        "「仓库怎么保持干净可复现？」要答到 README 写清复现步骤、权重走外部存储，说明大文件提交导致仓库臃肿的后果"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "repository-q1",
-          "type": "choice",
-          "prompt": "Git 仓库的核心历史数据集存储在哪个目录？",
-          "options": [
-            "src",
-            ".git",
-            "README.md",
-            "log"
-          ],
-          "answerIndex": 1,
-          "explanation": ".git 隐藏文件夹存放提交对象、分支等所有版本元数据。"
-        },
-        {
-          "id": "repository-q2",
-          "type": "short",
-          "prompt": "`.gitignore` 文件的作用是什么？",
-          "answer": ".gitignore 列出不希望被 Git 跟踪的文件或目录模式（如缓存、密钥、大型数据文件），使这些文件不会被 git add 或提交，避免仓库臃肿与敏感信息泄露。",
-          "keywords": [
-            ".gitignore",
-            "忽略",
-            "缓存"
-          ],
-          "explanation": "忽略指定文件不被版本控制跟踪。"
-        },
-        {
-          "id": "repository-q3",
-          "type": "code",
-          "prompt": "写出命令：初始化一个仓库，并创建一个 .gitignore 忽略所有 .pyc 文件。",
-          "starterCode": "#!/bin/bash\n",
-          "solution": "#!/bin/bash\ngit init\necho \"*.pyc\" > .gitignore",
-          "checks": [
-            "git init",
-            "*.pyc"
-          ],
-          "explanation": "init 建仓库，写出忽略规则。"
-        }
-      ]
-    },
-    {
-      "slug": "branch",
-      "title": "Branch 分支",
-      "order": 7,
-      "module": "Git 与 GitHub",
-      "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "分支让开发者在不影响主线的并行开发，是功能开发与协作的核心机制。",
-      "intuition": "分支就像给你同一份文档开多个'平行宇宙'。你在主版本（比如 main）之外另起一条线（feature 分支），在那边大胆改动、试验，完全不影响主线的稳定。等改好了，再合并回主干。这让你可以安全地尝试新功能，而不会把正在工作的主线弄坏。",
-      "formal": "分支（branch）是独立的提交线，`main`（或 `master`）是默认主分支。`git branch` 查看分支、`git branch name` 创建分支、`git switch name`（或 `git checkout name`）切换、`git merge name` 把该分支合并到当前分支。`git switch -c name` 创建并切换。分支指针指向某次提交。合并方式有 `fast-forward` 与 `merge commit`。可能产生`冲突`，需手动解决后提交。删除分支用 `git branch -d name`。PR 通常基于分支请求合并。",
-      "formula": "",
-      "aiConnection": "AI 实验常开独立分支或使用不同分支保存不同配置的实验，便于对照与回滚。团队协作时，开发者在各自分支开发，通过 PR 评审合并，避免彼此干扰，是专业 AI 工程团队协作的标配。",
-      "codeExample": {
-        "lang": "bash",
-        "filename": "branch.sh",
-        "code": "#!/bin/bash\n# 查看当前分支\n git branch\n\n# 创建并切换到 feature 分支\ngit switch -c feature-add-data\n\n# 在此分支做修改并提交\n echo \"new feature\" >> feature.txt\ngit add feature.txt\ngit commit -m \"add feature\"\n\n# 切换回主分支并合并\ngit switch main\ngit merge feature-add-data\n\n# 删除已合并分支\ngit branch -d feature-add-data"
-      },
-      "mistakes": [
-        "在 main 上直接改而不是先开分支，破坏主线稳定",
-        "混淆 switch 于 branch，创建后忘了切换",
-        "没提交就切换分支，导致变更跟随切换",
-        "合并冲突不解决直接提交，造成仓库损坏"
-      ],
-      "interviewPoints": [
-        "「为什么开发新功能要开分支？」要答到隔离实验、不影响 main 的稳定，说明并行实验与快速回滚的好处",
-        "「merge 和 rebase 有什么区别？」要答到产生 merge commit 与重写提交历史，说明在公共分支上 rebase 的风险",
-        "「合并冲突怎么解决？」要答到冲突标记、手动取舍与重新提交，说明冲突时该保留哪一版实验配置的判断依据"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "branch-q1",
-          "type": "choice",
-          "prompt": "创建新分支并切换到它的命令是？",
-          "options": [
-            "git branch name",
-            "git switch -c name",
-            "git commit name",
-            "git merge name"
-          ],
-          "answerIndex": 1,
-          "explanation": "git switch -c（或 checkout -b）创建并切换到该分支。"
-        },
-        {
-          "id": "branch-q2",
-          "type": "short",
-          "prompt": "为什么开发新功能时建议在新分支上进行而不是直接在 main 上改？",
-          "answer": "新分支隔离了实验性改动，不影响 main 的稳定，开发过程中可随意修改、回滚；等验证通过再合并回 main，降低破坏主线的风险，也便于评审与多人并行开发。",
-          "keywords": [
-            "分支",
-            "隔离",
-            "main"
-          ],
-          "explanation": "分支隔离改动，保护主线稳定。"
-        },
-        {
-          "id": "branch-q3",
-          "type": "code",
-          "prompt": "写出命令：创建并切换到 dev 分支，然后把它合并回 main。",
-          "starterCode": "#!/bin/bash\n",
-          "solution": "#!/bin/bash\ngit switch -c dev\ngit switch main\ngit merge dev",
-          "checks": [
-            "switch -c dev",
-            "merge dev"
-          ],
-          "explanation": "创建切换分支，切回并合并。"
-        }
-      ]
-    },
-    {
-      "slug": "commit",
-      "title": "Commit 提交",
-      "order": 8,
-      "module": "Git 与 GitHub",
-      "difficulty": "基础",
-      "estimatedMinutes": 20,
-      "summary": "提交是给项目某时刻状态拍一次快照并写入历史，是 Git 回溯与协作的最小单位。",
-      "intuition": "提交就是'存档'。玩过游戏吧？你在关键节点存个档，之后无论出什么乱子都能读档回去。Git 的 commit 就是给项目存一个档：记录下这一刻所有文件的状态，并附上一句说明你改了什么。每次提交构成一条不断向前的时间线。",
-      "formal": "提交（commit）是 Git 版本历史的最小单元，记录某一时刻工作区的快照。`git commit -m \"message\"` 把暂存区的变更写入历史，每个提交包含唯一哈希值、作者、时间与提交信息。提交前先用 `git add` 暂存。`git commit -am \"msg\"` 可同时暂存已跟踪文件的修改并提交（不含新文件）。`git log` 查看提交历史，`git reset`/`git revert` 用于回退。良好的提交信息应简洁说明做了什么，便于后续回溯。提交是本地操作，需 `git push` 才同步远程。",
-      "formula": "",
-      "aiConnection": "在 AI 实验中，清晰、小巧的提交能帮你精确定位是哪次改动导致模型效果变化。把每次配置、代码调整都记录成提交，是复现实验、回溯问题、团队协作的核心习惯。",
-      "codeExample": {
-        "lang": "bash",
-        "filename": "commit.sh",
-        "code": "#!/bin/bash\n# 暂存并查看待提交变更\ngit add train.py\ngit status\n\n# 提交并写明信息\ngit commit -m \"train: 增加 learning rate scheduler\"\n\n# 查看提交历史\ngit log --oneline\n\n# 查看某次提交的改动\ngit show --stat HEAD"
-      },
-      "mistakes": [
-        "提交信息过于含糊（如 update），难以回溯",
-        "把无关的多个改动塞进一个提交，破坏可读性",
-        "忘记 git add，改动没被提交",
-        "以为 commit 会自动上传远程，还需 push"
-      ],
-      "interviewPoints": [
-        "「一次好的提交应该包含什么？」要答到单一职责、清晰信息与可回溯，说明含糊信息给定位指标变化带来的困难",
-        "「commit 和 push 有什么区别？」要答到本地写入历史与同步远程，说明没 push 就换机器为何找不到代码",
-        "「git reset 和 git revert 怎么选？」要答到改写历史与新增反向提交，说明已推送的提交为何应优先用 revert"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "commit-q1",
-          "type": "choice",
-          "prompt": "`git commit -am \"msg\"` 中 `-a` 的作用是？",
-          "options": [
-            "提交所有未跟踪的新文件",
-            "自动暂存已跟踪文件的修改并提交",
-            "强制推送",
-            "生成合并提交"
-          ],
-          "answerIndex": 1,
-          "explanation": "-a 自动暂存已跟踪文件的修改并提交，但不包含未跟踪的新文件。"
-        },
-        {
-          "id": "commit-q2",
-          "type": "short",
-          "prompt": "为什么提交信息要写得清晰、一个提交只做一件事？",
-          "answer": "清晰、单目标的提交让历史易于阅读与回溯，能精准定位某次改动，便于评审、回滚与协作，也方便后续分析是哪个改动导致了问题（如模型效果变化）。",
-          "keywords": [
-            "清晰",
-            "单目标",
-            "回溯"
-          ],
-          "explanation": "小而清晰的提交便于回溯与协作。"
-        },
-        {
-          "id": "commit-q3",
-          "type": "code",
-          "prompt": "写出命令：把一个文件 train.py 加入暂存并提交，信息为 'train: update model'。",
-          "starterCode": "#!/bin/bash\n",
-          "solution": "#!/bin/bash\ngit add train.py\ngit commit -m \"train: update model\"",
-          "checks": [
-            "git add",
-            "git commit -m"
-          ],
-          "explanation": "add 暂存后 commit 提交。"
+          "explanation": "heredoc 一次写入多行文本，$(( )) 做整数运算：2+6+8+8+6+12 得 42 周，再乘 6 得 252 小时——计划表用命令算出来，比手抄更不容易出错。"
         }
       ]
     }

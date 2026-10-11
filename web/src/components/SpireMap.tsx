@@ -15,6 +15,7 @@ export type MapNode = {
   sub?: string;
   status: 'not-started' | 'learning' | 'review' | 'mastered';
   href: string;
+  track?: 'main' | 'side';
   current?: boolean;
   synthetic?: boolean;
 };
@@ -153,6 +154,7 @@ export function buildStageMap(
       sub: `${lesson.module} · ${lesson.estimatedMinutes} 分钟`,
       status: statusOf(progress.get(key)),
       href: `/learn/${stage.stageSlug}/${lesson.slug}`,
+      track: lesson.track,
       current: key === currentKey,
     });
 
@@ -183,7 +185,7 @@ export function buildStageMap(
 
 /* ---------------------------------------------------------------- 组件 */
 
-function NodeView({ node, highlight }: { node: MapNode; highlight: boolean }) {
+function NodeView({ node, highlight, dim }: { node: MapNode; highlight: boolean; dim?: boolean }) {
   const style = KIND_STYLE[node.kind];
   const Icon = style.icon;
   const isBoss = node.kind === 'boss';
@@ -195,7 +197,9 @@ function NodeView({ node, highlight }: { node: MapNode; highlight: boolean }) {
     <Link
       to={node.href}
       title={`${node.label}${node.sub ? ` — ${node.sub}` : ''}`}
-      className="group absolute -translate-x-1/2 -translate-y-1/2 focus:outline-none"
+      className={`group absolute -translate-x-1/2 -translate-y-1/2 focus:outline-none transition-opacity ${
+        dim ? 'opacity-20' : 'opacity-100'
+      }`}
       style={{ left: node.x, top: node.y, width: size, height: size }}
     >
       <span
@@ -248,10 +252,12 @@ function StageMapView({
   map,
   accent,
   query,
+  trackFilter = 'all',
 }: {
   map: StageMap;
   accent: string;
   query: string;
+  trackFilter?: 'all' | 'main' | 'side';
 }) {
   const q = query.trim().toLowerCase();
 
@@ -301,6 +307,7 @@ function StageMapView({
             key={node.id}
             node={node}
             highlight={Boolean(q) && `${node.label} ${node.sub ?? ''}`.toLowerCase().includes(q)}
+            dim={trackFilter !== 'all' && Boolean(node.track) && node.track !== trackFilter}
           />
         ))}
       </div>
@@ -313,11 +320,13 @@ export function SpireStage({
   accent,
   query,
   stageProgress,
+  trackFilter = 'all',
 }: {
   map: StageMap;
   accent: string;
   query: string;
   stageProgress: { done: number; total: number; percent: number };
+  trackFilter?: 'all' | 'main' | 'side';
 }) {
   const { stage } = map;
   const minutes = stage.lessons.reduce((sum, l) => sum + (l.estimatedMinutes || 25), 0);
@@ -349,7 +358,7 @@ export function SpireStage({
         </div>
       </div>
 
-      <StageMapView map={map} accent={accent} query={query} />
+      <StageMapView map={map} accent={accent} query={query} trackFilter={trackFilter} />
     </section>
   );
 }

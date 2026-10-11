@@ -1,506 +1,574 @@
 {
   "stage": 6,
-  "stageSlug": "machine-learning",
-  "stageTitle": "机器学习",
-  "stageEmoji": "🤖",
-  "stageDesc": "回归、树模型、SVM、聚类与 PCA：经典机器学习算法全貌",
-  "category": "进阶",
+  "stageSlug": "linux-git",
+  "stageTitle": "Linux + Git",
+  "stageEmoji": "🐧",
+  "stageDesc": "终端、Shell 与 Git 工作流：算法工程师每天都在用的协作底座",
+  "act": 2,
+  "actName": "第二幕 · 编程入门",
+  "category": "基础",
   "lessons": [
     {
-      "slug": "linear-regression",
-      "title": "Linear Regression 线性回归",
+      "slug": "terminal",
+      "title": "Terminal 终端",
       "order": 1,
-      "module": "机器学习算法",
-      "difficulty": "进阶",
-      "estimatedMinutes": 23,
-      "summary": "线性回归用一条直线（超平面）拟合输入与输出的关系，是最基础的回归模型，常作预测模型与被解释的基线。",
-      "intuition": "想象在二维平面上一堆散点，你想画条直线来大致穿过它们，好根据 x 猜测 y。模型要学的就是直线的斜率（权重）和截距（偏置）。找到让预测值和实际值差距最小的那条线，就是线性回归。",
-      "formal": "模型为 $\\hat{y} = w_0 + w_1x_1 + \\dots + w_dx_d = \\mathbf{w}^T\\mathbf{x}$。用均方误差（MSE）衡量损失：$L = \\frac{1}{n}\\sum_i (\\hat{y}_i - y_i)^2$。可用最小二乘解析解 $\\mathbf{w}=(\\mathbf{X}^T\\mathbf{X})^{-1}\\mathbf{X}^T\\mathbf{y}$ 或梯度下降求最优权重。它假设特征与目标近似线性，简单可解释；当关系非线性时需特征变换或改用更复杂的模型。",
-      "formula": "\\hat{y} = \\mathbf{w}^T\\mathbf{x} + b, \\quad L = \\frac{1}{n}\\sum_{i=1}^{n}(\\hat{y}_i - y_i)^2, \\quad \\mathbf{w} = (\\mathbf{X}^T\\mathbf{X})^{-1}\\mathbf{X}^T\\mathbf{y}",
-      "aiConnection": "线性回归既是价格预测、趋势估计的常用工具，也是许多复杂模型（如神经网络线性层）的最小单元。理解它的损失与梯度，为理解更大模型的训练奠定基础，其系数也可用于解释各特征的贡献。",
+      "module": "Linux 基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 20,
+      "summary": "终端是用户通过文本命令与系统交互的入口，是服务器与开发环境的主要操作方式。",
+      "intuition": "图形界面是'点鼠标'，终端是'敲命令'。你在屏幕上输入一行文字，回车，系统就按你的文字去执行动作。对服务器、远程机器和 AI 训练来说，往往没有图形界面，一切都要靠终端完成。终端就像你和系统之间的一根电话线，你说一句，它回一句。",
+      "formal": "终端（Terminal）是命令行界面（CLI）的载体，用户输入文本命令，`shell` 解释并交给操作系统执行，结果以文本输出。常见的终端模拟器有 iTerm2、GNOME Terminal 等。`$` 提示符表示普通用户，`#` 表示 root。终端的核心是`命令 + 参数 + 选项`的结构。工作流包括查看当前目录（`pwd`）、切换目录（`cd`）、列出文件（`ls`）。在 AI/服务器场景，终端常通过 SSH 远程使用，或作为容器、GPU 集群的唯一交互入口。掌握终端是高效运维与开发的基础。",
+      "formula": "",
+      "aiConnection": "训练大模型几乎都在 Linux 服务器的终端里进行：激活环境、运行训练脚本、查看 GPU 占用、监控日志。终端是你与远程 GPU 集群对话的唯一窗口，熟练掌握 shell 命令是面向前沿 AI 开发的必备前提。",
       "codeExample": {
-        "lang": "python",
-        "filename": "linear_regression.py",
-        "code": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.linear_model import LinearRegression\n\n# 造一点带噪声的线性数据\nnp.random.seed(0)\nX = np.random.rand(50, 1) * 10\ny = 2 * X.ravel() + 3 + np.random.normal(0, 1, 50)\n\nmodel = LinearRegression()\nmodel.fit(X, y)\n\nprint('w =', round(model.coef_[0], 3))   # ≈ 2\nprint('b =', round(model.intercept_, 3)) # ≈ 3\nprint('R2 =', round(model.score(X, y), 3))\n\n# 预测并画图\npred = model.predict(X)\nplt.scatter(X, y)\nplt.plot(X, pred, color='red')\nplt.show()"
+        "lang": "bash",
+        "filename": "terminal.sh",
+        "code": "#!/bin/bash\n# 终端基本命令\npwd                      # 打印当前目录\nls -la                   # 列出所有文件（含隐藏）\ncd /tmp                  # 切换目录\necho \"你好，终端\"        # 打印文本\n# 查看当前用户与主机名\nwhoami\nhostname"
       },
       "mistakes": [
-        "用 linear 模型拟合明显非线性的数据而不做特征变换",
-        "忽略特征量纲差异，导致系数大小失真",
-        "把正则与无正则混用，未做训练/测试划分就评估",
-        "把相关性强当作因果关系"
+        "把终端和 shell 混为一谈，终端是界面、shell 是解释器",
+        "在 `#` root 提示符下随意执行危险命令",
+        "盲目运行不认识的命令，忽略其可能造成的破坏",
+        "误以为终端有图形界面，实际只能靠文本命令"
       ],
       "interviewPoints": [
-        "「线性回归为什么用均方误差而不是绝对值误差？」要答到高斯噪声假设下的极大似然、MSE 处处可导，以及它对异常值更敏感",
-        "「正规方程和梯度下降怎么选？」要答到正规方程要算 (XᵀX)⁻¹、复杂度约 O(n³) 且可能不可逆，大样本高维只能用梯度下降",
-        "「回归系数 w 该怎么解释？」要答到控制其他特征不变时 x_j 每增一单位 y 的平均变化，以及必须先标准化才能比较系数大小",
-        "「线性回归的假设被违反会怎样？」要答到非线性、异方差、多重共线会让系数不稳、检验失效，需要特征变换或改用 Ridge"
+        "「终端和 shell 有什么区别？」要答到终端是交互界面、shell 是命令解释器，说明 SSH 到 GPU 服务器后你在和谁对话",
+        "「为什么 AI 工程师必须会命令行？」要答到服务器无图形界面、批量运维与远程调试，说明查 GPU 和日志的常用操作",
+        "「$ 和 # 提示符代表什么？」要答到普通用户与 root 的权限差异，说明在 root 下误执行破坏性命令的风险"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "linear-regression-q1",
+          "id": "terminal-q1",
           "type": "choice",
-          "prompt": "线性回归常用的损失函数是？",
+          "prompt": "显示当前所在工作目录的命令是？",
           "options": [
-            "均方误差 MSE",
-            "交叉熵",
-            "准确率",
-            "F1-score"
+            "ls",
+            "pwd",
+            "cd",
+            "echo"
           ],
-          "answerIndex": 0,
-          "explanation": "连续值回归常用均方误差 MSE 来衡量预测与真实值的平方差均值。"
+          "answerIndex": 1,
+          "explanation": "pwd（print working directory）打印当前工作目录；ls 列文件、cd 切换、echo 打印文本。"
         },
         {
-          "id": "linear-regression-q2",
+          "id": "terminal-q2",
           "type": "short",
-          "prompt": "线性回归模型的系数 w 有什么含义？",
-          "answer": "参考回答：每个系数 w_j 表示当其它特征不变时，特征 x_j 每增加一个单位，预测目标 y 平均增加 w_j。它刻画了各特征对输出的贡献大小，因此线性回归具有较好的可解释性。",
+          "prompt": "终端和 shell 有什么区别？",
+          "answer": "终端（terminal）是用户输入命令的界面/程序；shell 是解释命令的程序，接收终端输入的命令并交给内核执行。终端负责显示与输入，shell 负责解析与执行。",
           "keywords": [
-            "权重",
-            "特征",
-            "解释"
+            "终端",
+            "shell",
+            "命令"
           ],
-          "explanation": "系数表示特征对目标的影响/贡献，衡量解释性。"
+          "explanation": "终端是界面，shell 是命令解释器。"
         },
         {
-          "id": "linear-regression-q3",
+          "id": "terminal-q3",
           "type": "code",
-          "prompt": "用 sklearn 的 LinearRegression 拟合 X、y 并打印 w 与 b。",
-          "starterCode": "import numpy as np\nfrom sklearn.linear_model import LinearRegression\n\nX = np.array([[1], [2], [3], [4]])\ny = np.array([3, 5, 7, 9])\n",
-          "solution": "import numpy as np\nfrom sklearn.linear_model import LinearRegression\n\nX = np.array([[1], [2], [3], [4]])\ny = np.array([3, 5, 7, 9])\n\nmodel = LinearRegression()\nmodel.fit(X, y)\nprint(model.coef_, model.intercept_)",
+          "prompt": "依次写出三条命令：打印当前目录、列出所有文件（含隐藏）、切换到 /tmp。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\npwd\nls -la\ncd /tmp",
           "checks": [
-            "fit",
-            "coef",
-            "intercept"
+            "pwd",
+            "ls -la",
+            "cd /tmp"
           ],
-          "explanation": "用 model.fit(X,y) 训练，读 model.coef_ 与 model.intercept_ 得到斜率与截距。"
+          "explanation": "三条基础命令分别查看目录、列出文件、切换目录。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "logistic-regression",
-      "title": "Logistic Regression 逻辑回归",
+      "slug": "shell",
+      "title": "Shell",
       "order": 2,
-      "module": "机器学习算法",
-      "difficulty": "进阶",
-      "estimatedMinutes": 23,
-      "summary": "逻辑回归用 sigmoid 函数把线性输出映射为概率，用于二分类，是分类问题的基础模型。",
-      "intuition": "名字虽叫回归，其实做的是分类。它把线性得分压缩到 0~1 之间，变成\"属于正类的概率\"，再跟 0.5 比较来决定类别。越接近 1 越可能是正类，越接近 0 越可能是负类。",
-      "formal": "先算线性得分 $z = \\mathbf{w}^T\\mathbf{x} + b$，再用 sigmoid 压缩：$\\hat{p} = \\sigma(z) = \\frac{1}{1+e^{-z}}$。损失用二分类交叉熵：$L = -\\frac{1}{n}\\sum_i [y_i\\log\\hat{p}_i + (1-y_i)\\log(1-\\hat{p}_i)]$。预测规则：$\\hat{p}\\geq 0.5 \\Rightarrow$ 正类。它输出的是概率而非硬标签，可微且易扩展为多分类（softmax），且系数同样具有可解释性。",
-      "formula": "\\hat{p} = \\sigma(z) = \\frac{1}{1+e^{-z}}, \\quad z = \\mathbf{w}^T\\mathbf{x}+b, \\quad L = -\\frac{1}{n}\\sum_i [y_i\\log\\hat{p}_i + (1-y_i)\\log(1-\\hat{p}_i)]",
-      "aiConnection": "逻辑回归是分类的基石，其 sigmoid + 交叉熵结构正是神经网络输出层与损失的核心组成。模型给出的概率可用于置信度判断与排序（如风险打分），也是许多大型分类模型的线性baseline。",
+      "module": "Linux 基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "Shell 是解释并执行命令的程序，支持变量、管道、重定向与脚本，是操作系统的命令语言。",
+      "intuition": "shell 就是那个'听懂人话'的翻译官。你在终端敲 `ls`，shell 把它翻译成系统能执行的请求，再把结果翻译回给你。它不只是逐个翻译命令，还能把多个命令串起来：用管道（|）把前一个的输出喂给后一个，用重定向把输出写进文件。写一个 shell 脚本，就像写一份'给系统的工作清单'，按顺序执行一串动作。",
+      "formal": "shell 是命令解释器。`bash`、`zsh` 是常用 shell。功能包括：`变量`（`name=value`，取用用 `$name`）、`管道`（`|` 把前一个命令的标准输出传给下一个）、`重定向`（`>` 覆盖写文件、`>>` 追加、`<` 读取）、`通配符`（`*`、`?`）、`命令替换`（`$(cmd)`）。环境变量如 `PATH`、`HOME` 由 shell 维护。shell 脚本以 `#!/bin/bash`（shebang）开头，用 `chmod +x` 赋予执行权限。`echo $?` 查看上一条命令退出码（0 表示成功）。",
+      "formula": "",
+      "aiConnection": "AI 工程里常用 shell 脚本封装训练流程：激活虚拟环境、设置环境变量、启动训练、处理输出日志。管道与重定向让你能批量处理文件、把训练日志写盘、用 grep 过滤错误信息，是自动化运维与实验脚本的核心。",
       "codeExample": {
-        "lang": "python",
-        "filename": "logistic_regression.py",
-        "code": "import numpy as np\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\n\n# 造二分类数据\nX, y = make_classification(n_samples=200, n_features=2, n_redundant=0, random_state=0)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\nmodel = LogisticRegression()\nmodel.fit(X_train, y_train)\n\n# 输出概率\nprob = model.predict_proba(X_test)[:5]\nprint('前 5 个样本的正类概率:')\nprint(np.round(prob[:, 1], 3))\n\nprint('准确率 =', round(model.score(X_test, y_test), 3))\nprint('系数 =', np.round(model.coef_[0], 3))"
+        "lang": "bash",
+        "filename": "shell.sh",
+        "code": "#!/bin/bash\n# 变量\nname=\"AI\"\necho \"你好, $name\"\n\n# 命令替换\nnow=$(date)\necho \"当前时间: $now\"\n\n# 管道：把 ls 结果过滤\nls -la / | head -n 3\n\n# 重定向：写文件\necho \"写入的内容\" > output.txt\necho \"追加内容\" >> output.txt\ncat output.txt\n\n# 查看退出码\necho \"退出码: $?\""
       },
       "mistakes": [
-        "把逻辑回归当回归用，直接拿概率当连续值而不做阈值判断",
-        "误以为用 MSE 训练分类模型合适（应为交叉熵）",
-        "把输入特征未标准化就训练，导致梯度下降收敛不稳定",
-        "混淆概率值与硬类标签的用途"
+        "赋值时有空格 `name = a` 会报错，应为 `name=a`",
+        "取变量忘加 $，如 echo name 只打印字面 name",
+        "混淆 `>`（覆盖）与 `>>`（追加）",
+        "脚本未加执行权限或 shebang 导致无法运行"
       ],
       "interviewPoints": [
-        "「逻辑回归为什么用交叉熵而不用 MSE？」要答到交叉熵等价于伯努利极大似然，且 MSE 配 sigmoid 会梯度消失、收敛极慢",
-        "「sigmoid 的导数是什么？为什么会梯度消失？」要答到 σ'=σ(1-σ) 最大仅 0.25，多层连乘指数衰减，深层网络因此难训",
-        "「分类阈值一定是 0.5 吗？」要答到不一定，应按业务代价调阈值，不平衡或高召回场景要结合 PR 曲线选点而非看准确率",
-        "「逻辑回归和神经网络输出层是什么关系？」要答到它就是一个没有隐藏层的单层网络，sigmoid 加交叉熵正是二分类输出头的原型"
+        "「管道和重定向有什么区别？」要答到进程间数据流与文件读写，说明用 grep 过滤训练日志、用 >> 追加日志的写法",
+        "「> 和 >> 有什么区别？」要答到覆盖与追加，说明误用 > 清空日志的事故以及 nohup 重定向的实践",
+        "「shell 脚本怎么封装训练流程？」要答到 shebang、chmod +x、环境变量与 set -e，说明退出码 $? 在自动化里的作用"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "logistic-regression-q1",
+          "id": "shell-q1",
           "type": "choice",
-          "prompt": "逻辑回归输出层常用的激活函数是？",
+          "prompt": "把上一条命令的标准输出写入文件的符号是？",
           "options": [
-            "sigmoid",
-            "ReLU",
-            "tanh",
-            "identity"
+            "|",
+            ">>",
+            ">",
+            "<"
           ],
-          "answerIndex": 0,
-          "explanation": "逻辑回归用 sigmoid 把线性得分映射到 (0,1) 表示正类概率。"
+          "answerIndex": 2,
+          "explanation": "`>` 把输出重定向并覆盖写入文件；`>>` 追加；`|` 管道传给下一条命令。"
         },
         {
-          "id": "logistic-regression-q2",
+          "id": "shell-q2",
           "type": "short",
-          "prompt": "为什么逻辑回归用交叉熵而不用均方误差做损失？",
-          "answer": "参考回答：因为交叉熵更适合概率输出的分类任务，其梯度更平稳、收敛更快；而 MSE 在 sigmoid 两侧梯度接近 0，收敛慢且容易陷入局部差解。交叉熵对应最大似然，与概率建模一致。",
+          "prompt": "管道 `|` 的作用是什么？",
+          "answer": "管道把前一条命令的标准输出作为后一条命令的标准输入，实现命令串联处理，如 `ls -la | grep .txt` 先列出文件再过滤出 txt 文件，无需中间文件。",
           "keywords": [
-            "交叉熵",
-            "概率",
-            "收敛"
+            "管道",
+            "输出",
+            "grep"
           ],
-          "explanation": "交叉熵与概率建模一致、梯度更稳；MSE 在此易梯度消失、收敛慢。"
+          "explanation": "管道用于串接命令，传递输出作为输入。"
         },
         {
-          "id": "logistic-regression-q3",
+          "id": "shell-q3",
           "type": "code",
-          "prompt": "用 sklearn 的 LogisticRegression 在 X、y 上训练，打印预测概率。",
-          "starterCode": "from sklearn.linear_model import LogisticRegression\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n",
-          "solution": "from sklearn.linear_model import LogisticRegression\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n\nmodel = LogisticRegression()\nmodel.fit(X, y)\nprint(model.predict_proba(X))",
+          "prompt": "写一段 shell：定义变量 name 为 AI，然后把它输出到文件 greeting.txt。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\nname=\"AI\"\necho \"$name\" > greeting.txt",
           "checks": [
-            "fit",
-            "predict_proba"
+            "name=\"AI\"",
+            "> greeting"
           ],
-          "explanation": "用 model.fit 训练，predict_proba(X) 返回各类别的概率。"
+          "explanation": "赋值变量并用重定向写文件。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "decision-tree",
-      "title": "Decision Tree 决策树",
+      "slug": "command",
+      "title": "Command 常用命令",
       "order": 3,
-      "module": "机器学习算法",
-      "difficulty": "进阶",
-      "estimatedMinutes": 24,
-      "summary": "决策树通过一系列\"是/否\"判断把数据划分到叶子类别，规则直观、可解释，既能分类也能回归。",
-      "intuition": "决策树就像一场\"20 个问题\"游戏：从根节点开始，不断问\"这个特征大于某个值吗？\"，按答案走向不同分支，最后落到一个叶子，给出预测。树上每条路径都是一条可读的 if-else 规则。",
-      "formal": "树的构建通过递归选择最佳划分特征与阈值来最大化信息增益（或最小化不纯度）。分类常用基尼不纯度 $G = 1 - \\sum_k p_k^2$ 或熵 $H = -\\sum_k p_k\\log p_k$；回归用均方误差。信息增益是划分前后不纯度的下降：$\\text{IG} = H_{\\text{parent}} - \\sum_j \\frac{n_j}{n} H_j$。为防止过拟合需限制深度、最小样本数或做剪枝。",
-      "formula": "H(S) = -\\sum_{k} p_k \\log p_k, \\quad \\text{IG} = H_{\\text{parent}} - \\sum_j \\frac{|S_j|}{|S|} H(S_j), \\quad \\text{深度/剪枝可约束模型复杂度",
-      "aiConnection": "决策树因可解释性强，常用于风控、医疗等需要解释的场景；它也是随机森林、梯度提升等强大集成模型的基础组件。通过特征重要性我们还能看出哪些特征在判断中起关键作用。",
+      "module": "Linux 基础",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "Linux 常用命令覆盖文件、目录、进程、查看与权限管理，是日常操作的必备集合。",
+      "intuition": "Linux 命令就像工具箱里的各种工具：有的管文件（ls、cp、mv、rm），有的管目录（mkdir、cd），有的看进程（ps、top），有的查内容（cat、grep）。你不必一次记住所有，但掌握最常用的十几个，就足以在大多数场景下高效工作。",
+      "formal": "常用 Linux 命令分组：`文件与目录`：`ls` 列出、`cd` 切换、`pwd` 当前位置、`mkdir` 建目录、`cp` 复制、`mv` 移动/重命名、`rm` 删除、`cat` 查看、`find` 查找；`查看与过滤`：`grep` 按模式搜索、`head/tail` 看头尾、`wc` 计数；`权限`：`chmod` 改权限、`chown` 改拥有者；`进程`：`ps` 查看进程、`top` 动态监控、`kill` 结束；`系统`：`df` 磁盘、`free` 内存。命令常用组合，如 `grep -rn \"keyword\" dir` 递归搜索。注意 `rm`、`mv` 等有破坏性，需谨慎。",
+      "formula": "",
+      "aiConnection": "AI 开发常要批量处理数据集、查日志、杀进程（如显存占用卡死的训练）等，都靠这套命令。尤其 `grep` 过滤日志、`nvidia-smi` 查看 GPU、`df` 看磁盘是否装满，是训练与排障的高频操作。",
       "codeExample": {
-        "lang": "python",
-        "filename": "decision_tree.py",
-        "code": "from sklearn.tree import DecisionTreeClassifier, plot_tree\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nimport matplotlib.pyplot as plt\n\n# 用鸢尾花数据集\nX, y = load_iris(return_X_y=True)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 限制深度防止过拟合\nclf = DecisionTreeClassifier(max_depth=3, random_state=0)\nclf.fit(X_train, y_train)\n\nprint('准确率 =', round(clf.score(X_test, y_test), 3))\n\n# 特征重要性\nnames = ['sepal_len', 'sepal_wid', 'petal_len', 'petal_wid']\nprint('特征重要性:')\nfor n, imp in zip(names, clf.feature_importances_):\n    print(n, round(imp, 3))\n\n# 可视化树\nplt.figure(figsize=(10, 5))\nplot_tree(clf, feature_names=names, filled=True)\nplt.show()"
+        "lang": "bash",
+        "filename": "command.sh",
+        "code": "#!/bin/bash\n# 创建目录与文件\nmkdir -p data\ncd data\n\n# 创建与查看文件\nprintf \"apple\\nbanana\\napple\\n\" > fruits.txt\ncat fruits.txt\n\n# 过滤与统计\ngrep \"apple\" fruits.txt\nwc -l fruits.txt\n\n# 复制与移动\ncp fruits.txt fruits_backup.txt\nmv fruits_backup.txt renamed.txt\n\n# 查看进程与磁盘\nps aux | head -n 3\ndf -h | head -n 3"
       },
       "mistakes": [
-        "不限制深度让树无限生长，导致严重过拟合",
-        "忽略类别不平衡，导致叶子偏向多数类",
-        "把数值特征直接用于切分而不考虑过拟合风险",
-        "只用准确率评估，忽视类别分布与召回"
+        "用 rm -rf 不注意路径导致误删重要文件",
+        "混淆 cp 与 mv，mv 会移动/重命名",
+        "忘了 chmod 加执行权限导致脚本无法运行",
+        "混淆 `grep`（过滤内容）与 `find`（按路径查找）"
       ],
       "interviewPoints": [
-        "「信息增益、增益率、基尼不纯度怎么选？」要答到 ID3 的增益偏向多取值特征、C4.5 用增益率校正、CART 用基尼且更快",
-        "「决策树为什么容易过拟合？」要答到不加约束时它能切分到每个叶子都纯，把噪声和个别样本也记住，导致方差极大",
-        "「预剪枝和后剪枝的区别？」要答到预剪枝边建树边限制深度与最小样本数、快但可能欠拟合；后剪枝先长满再回剪、更准但更贵",
-        "「特征重要性怎么算？有什么坑？」要答到按各节点不纯度下降加权求和，坑是它偏向高基数特征，相关特征还会互相分摊"
+        "「怎么在日志里快速定位错误？」要答到 grep -rn、tail -f 与管道组合，说明训练崩溃时查 traceback 的常用套路",
+        "「cp、mv、rm 有哪些坑？」要答到移动即重命名、删除不可恢复，说明 rm -rf 配合通配符误删数据的风险",
+        "「怎么排查 GPU 和磁盘问题？」要答到 nvidia-smi 看显存占用、df -h 看磁盘写满，说明 OOM 与磁盘满导致训练中断的区别"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "decision-tree-q1",
+          "id": "command-q1",
           "type": "choice",
-          "prompt": "决策树选择划分特征时常用什么准则？",
+          "prompt": "在文件中按关键字搜索的行命令是？",
           "options": [
-            "信息增益/基尼不纯度",
-            "均方误差",
-            "准确率",
-            "余弦相似度"
+            "find",
+            "grep",
+            "ls",
+            "ps"
           ],
-          "answerIndex": 0,
-          "explanation": "分类树用信息增益或基尼不纯度衡量划分好坏；回归才用均方误差。"
+          "answerIndex": 1,
+          "explanation": "grep 用于在文件内容中按模式搜索；find 按路径/属性找文件。"
         },
         {
-          "id": "decision-tree-q2",
+          "id": "command-q2",
           "type": "short",
-          "prompt": "为什么深度过大的决策树容易过拟合？如何缓解？",
-          "answer": "参考回答：因为树过深会对训练数据的噪声和细节过度拟合，泛化变差。可限制 max_depth、min_samples_leaf 等超参，或做剪枝（预剪枝/后剪枝），并用验证集调节复杂度。",
+          "prompt": "`cp` 与 `mv` 有什么区别？",
+          "answer": "cp 复制文件到新位置，原文件保留；mv 移动或重命名，原路径上的文件消失。mv 同时具备重命名功能（目标路径为同目录新名）。",
           "keywords": [
-            "过拟合",
-            "深度",
-            "剪枝"
+            "cp",
+            "mv",
+            "重命名"
           ],
-          "explanation": "过深树拟合噪声导致过拟合，用限制深度/剪枝缓解。"
+          "explanation": "cp 复制保留原文件，mv 移动/重命名。"
         },
         {
-          "id": "decision-tree-q3",
+          "id": "command-q3",
           "type": "code",
-          "prompt": "用 sklearn 的 DecisionTreeClassifier(max_depth=3) 拟合 X、y 并打印准确率。",
-          "starterCode": "from sklearn.tree import DecisionTreeClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2], [4, 3]]\ny = [0, 0, 1, 1, 1]\n",
-          "solution": "from sklearn.tree import DecisionTreeClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2], [4, 3]]\ny = [0, 0, 1, 1, 1]\n\nclf = DecisionTreeClassifier(max_depth=3)\nclf.fit(X, y)\nprint(clf.score(X, y))",
+          "prompt": "写出连续命令：创建目录 data，进入后创建一个文件 info.txt，再用 grep 搜索它。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\nmkdir data\ncd data\necho \"hello world\" > info.txt\ngrep \"hello\" info.txt",
           "checks": [
-            "DecisionTreeClassifier",
-            "fit",
-            "score"
+            "mkdir",
+            "grep"
           ],
-          "explanation": "创建 max_depth=3 的决策树，fit 训练后用 score 返回准确率。"
+          "explanation": "建目录、写文件、grep 搜索。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "random-forest",
-      "title": "Random Forest 随机森林",
+      "slug": "git",
+      "title": "Git",
       "order": 4,
-      "module": "机器学习算法",
-      "difficulty": "进阶",
-      "estimatedMinutes": 24,
-      "summary": "随机森林通过训练多棵彼此略有差异的决策树并集成投票，显著提升泛化能力与鲁棒性。",
-      "intuition": "一棵树容易\"一根筋\"，对噪声敏感。随机森林训练很多棵树，每棵只看数据的一部分、特征的一部分，结果各不相同；预测时把所有树的答案汇总投票。少数几棵树的错误会被多数正确树淹没，整体比单棵树更稳、更准。",
-      "formal": "随机森林是 bagging（自助聚合）的一种：每次从数据中有放回采样得到子集，并对每个划分节点随机选取特征子集，训练多棵独立决策树。分类用多数投票，回归用平均。因为引入了\"样本抽样 + 特征子集随机\"两种随机性，降低了单棵树的方差，从而减少过拟合、提高稳定性。它也可输出特征重要性。",
-      "formula": "\\hat{y}_{RF} = \\begin{cases} \\text{mode}\\{\\hat{y}_t\\}, & \\text{分类} \\\\ \\frac{1}{T}\\sum_t \\hat{y}_t, & \\text{回归} \\end{cases}, \\quad \\text{每棵树用有放回采样 + 特征子集}",
-      "aiConnection": "随机森林是表格数据的常用强基线，兼顾准确率与可解释（特征重要性）。与深度学习相比，它训练快、超参少、对量纲不敏感，适合结构化特征；它也是理解\"集成如何提升性能\"的典型例子，与 LLM 中的 ensemble 思路相通。",
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "Git 是分布式版本控制系统，记录文件的每次变更，支持多分支、协作与回滚。",
+      "intuition": "Git 就像给代码拍'时光机快照'。每次你提交（commit），Git 就帮整个项目拍一张完整的照片，并存起来。以后无论改了多少、想回哪一步，都能一键跳回任意快照。而且这照片不是存在某台电脑上，而是你本地就有一份完整的历史，所以叫'分布式'——所有人都有完整版本库。",
+      "formal": "Git 是分布式版本控制系统（DVCS）。核心概念：`working directory`（工作区，当前修改）、`staging area`（暂存区，`git add` 后的变更）、`repository`（仓库，`git commit` 后的历史）。`git init` 初始化仓库。基本流程：`git add` 暂存变更，`git commit -m \"msg\"` 提交本地历史，`git status` 查看状态，`git log` 查看提交历史，`git diff` 查看差异。`git clone` 克隆远程仓库，`git pull` 拉取，`git push` 推送。分支用 `git branch`、`git checkout`/`git switch` 切换。Git 记录的是每次提交的完整快照与父子关系，因而支持灵活回滚。",
+      "formula": "",
+      "aiConnection": "AI 项目的代码、模型配置、实验脚本都靠 Git 管理版本，便于复现与回滚。训练代码任何改动都提交 Git，能清楚追踪实验变更，也方便与团队协作和回溯导致结果变化的原因。",
       "codeExample": {
-        "lang": "python",
-        "filename": "random_forest.py",
-        "code": "from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\n\n# 造数据\nX, y = make_classification(n_samples=500, n_features=5, n_informative=3, random_state=0)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 构建随机森林\nrf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=0)\nrf.fit(X_train, y_train)\n\nprint('准确率 =', round(rf.score(X_test, y_test), 3))\n\n# 特征重要性\nprint('特征重要性:')\nprint([round(v, 3) for v in rf.feature_importances_])\n\n# 单棵树与森林对比（可选）\nfrom sklearn.tree import DecisionTreeClassifier\nsingle = DecisionTreeClassifier(max_depth=5, random_state=0).fit(X_train, y_train)\nprint('单树准确率 =', round(single.score(X_test, y_test), 3))"
+        "lang": "bash",
+        "filename": "git.sh",
+        "code": "#!/bin/bash\n# 初始化仓库\nmkdir myproj && cd myproj\ngit init\n\n# 配置（首次）\ngit config user.name \"你的名字\"\ngit config user.email \"you@example.com\"\n\n# 添加并提交\necho \"hello\" > README.md\ngit add README.md\ngit commit -m \"初始化项目\"\n\n# 查看状态与历史\ngit status\ngit log"
       },
       "mistakes": [
-        "把样本抽样和特征子集随机性漏掉，退化为多棵完全一样的树",
-        "n_estimators 定得过大导致训练慢而收益有限",
-        "只调树深度却不看特征重要性等整体效果",
-        "忽视可复现性，不设 random_state"
+        "直接用 git commit 而忘记 git add，导致变更未被提交",
+        "混淆 git push（推送）与 git pull（拉取）方向",
+        "在提交信息里写不清楚，难以回溯变更意图",
+        "以为 commit 会自动同步到远程，必须显式 push"
       ],
       "interviewPoints": [
-        "「随机森林的两种随机性是什么？」要答到行方向 bootstrap 有放回采样、列方向每个节点随机抽特征子集，缺一个就退化成相同的树",
-        "「为什么 bagging 能降低方差？」要答到对近似独立的树取平均时方差按 1/T 下降、偏差基本不变，所以关键在让基模型彼此不同",
-        "「OOB 估计有什么用？」要答到每棵树约有 36.8% 的样本没被抽中，可直接当验证集估计泛化误差，省下一次数据划分",
-        "「随机森林和 GBDT 的本质区别？」要答到 RF 并行、靠 bagging 降方差；GBDT 串行拟合残差降偏差，通常更准但更易过拟合"
+        "「Git 为什么叫分布式版本控制？」要答到本地有完整历史、离线也能提交，说明远程仓库只是协作节点而非唯一真相",
+        "「工作区、暂存区、仓库三者的关系？」要答到 add 与 commit 分阶段的意义，说明暂存区为何能支持精细提交",
+        "「实验代码怎么用 Git 管理？」要答到每改配置就提交、用分支隔离实验，说明如何回溯是哪次改动影响了指标"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "random-forest-q1",
+          "id": "git-q1",
           "type": "choice",
-          "prompt": "随机森林用于分类时，最终预测通常如何得出？",
+          "prompt": "把暂存区的变更记录到本地历史的命令是？",
           "options": [
-            "多数投票",
-            "概率平均",
-            "加权最小二乘",
-            "单一最优树的结果"
+            "git add",
+            "git commit",
+            "git push",
+            "git stage"
           ],
-          "answerIndex": 0,
-          "explanation": "随机森林分类用所有树的类别做多数投票；回归才用平均值。"
+          "answerIndex": 1,
+          "explanation": "git commit 把暂存区变更提交为一次历史记录；git add 只是暂存。"
         },
         {
-          "id": "random-forest-q2",
+          "id": "git-q2",
           "type": "short",
-          "prompt": "随机森林相比单棵决策树为什么更不易过拟合？",
-          "answer": "参考回答：因为它在训练时引入样本有放回抽样与特征子集随机化两种随机性，让多棵树彼此差异、各自只见数据一角，平均/投票后抵消掉单棵树的方差与个别过拟合，从而提升泛化、降低过拟合。",
+          "prompt": "工作区、暂存区、仓库三者有什么区别？",
+          "answer": "工作区是你正在编辑的实际文件；暂存区是 git add 后准备提交的变更集合；仓库是 git commit 后保存的版本历史。变更从工作区→暂存区→仓库逐步推进。",
           "keywords": [
-            "随机",
-            "抽样",
-            "方差"
+            "工作区",
+            "暂存区",
+            "提交"
           ],
-          "explanation": "双重随机性让树彼此不同，集成后降低方差与过拟合。"
+          "explanation": "文件变更经 add 暂存再到 commit 进仓库。"
         },
         {
-          "id": "random-forest-q3",
+          "id": "git-q3",
           "type": "code",
-          "prompt": "用 sklearn 的 RandomForestClassifier(n_estimators=10) 拟合 X、y 并打印准确率。",
-          "starterCode": "from sklearn.ensemble import RandomForestClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n",
-          "solution": "from sklearn.ensemble import RandomForestClassifier\n\nX = [[0, 0], [1, 1], [2, 1], [3, 2]]\ny = [0, 0, 1, 1]\n\nrf = RandomForestClassifier(n_estimators=10)\nrf.fit(X, y)\nprint(rf.score(X, y))",
+          "prompt": "写出命令：初始化一个 Git 仓库，然后创建一个 README.md 并完成首次提交。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit init\necho \"hello\" > README.md\ngit add README.md\ngit commit -m \"first commit\"",
           "checks": [
-            "RandomForestClassifier",
-            "n_estimators",
-            "fit"
+            "git init",
+            "git add",
+            "git commit"
           ],
-          "explanation": "用 n_estimators=10 创建森林，fit 训练后用 score 求准确率。"
+          "explanation": "init、add、commit 三步完成首次提交。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "svm",
-      "title": "SVM",
+      "slug": "github",
+      "title": "GitHub",
       "order": 5,
-      "module": "机器学习算法",
-      "difficulty": "进阶",
-      "estimatedMinutes": 23,
-      "summary": "支持向量机（SVM）寻找能最大化类别间隔的分离超平面，擅长高维与小样本分类，可配合核方法处理非线性。",
-      "intuition": "想象两类点中间有一道分界线。可能存在很多条都能分开两类点的线，但 SVM 偏要选那条离两类点都最远的\"最中间\"的线，因为这样对噪声的容忍最大、泛化最好。决定这条线的，就是贴着边界的少数几个\"支持向量\"。",
-      "formal": "线性可分时，SVM 寻找满足 $y_i(\\mathbf{w}^T\\mathbf{x}_i + b) \\geq 1$ 且最大化间隔 $\\frac{2}{\\|\\mathbf{w}\\|}$ 的超平面，等价于最小化 $\\frac{1}{2}\\|\\mathbf{w}\\|^2$。对不可分情形引入软间隔与惩罚参数 $C$。通过核技巧（如 RBF 核 $K(\\mathbf{x},\\mathbf{y})=e^{-\\gamma\\|\\mathbf{x}-\\mathbf{y}\\|^2}$）把数据映射到高维实现非线性分类，而无需显式计算映射。",
-      "formula": "\\min_{\\mathbf{w}, b} \\frac{1}{2}\\|\\mathbf{w}\\|^2 \\quad \\text{s.t. } y_i(\\mathbf{w}^T\\mathbf{x}_i+b)\\geq 1, \\quad K(\\mathbf{x},\\mathbf{y}) = e^{-\\gamma\\|\\mathbf{x}-\\mathbf{y}\\|^2}",
-      "aiConnection": "SVM 的\"最大化间隔\"思想与核技巧，是机器学习中把数据升到更高维再线性划分的经典思路，也被借鉴进一些嵌入/相似度模型。理解支持向量与损失（hinge loss），能帮助你理解鲁棒分类与边界设计。",
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "GitHub 是基于 Git 的远程代码托管平台，支持协作、Issue、Pull Request 与 CI/CD。",
+      "intuition": "Git 是把代码历史存在你本地，而 GitHub 是把你的仓库搬到云端，让全世界或团队都能看到、协作。就像你有了一台时光机（Git），而 GitHub 是大家共享的那间'时光机博物馆'——你把快照放上去，别人可以看、可以提意见、可以一起改。",
+      "formal": "GitHub 是托管的远程 Git 仓库平台。`remote` 是远程仓库别名（通常为 `origin`）。基本协作流程：`git remote add origin <url>` 关联远程；`git push -u origin main` 首次推送；`git pull` 拉取更新。协作机制包括 `fork`（复制仓库）、`branch`（分支开发）、`Pull Request`（PR，请求合并改动并评审）、`Issue`（问题追踪）、`Code Review`。`clone` 是下载仓库副本。GitHub 还提供 CI/CD（GitHub Actions）自动化测试构建。",
+      "formula": "",
+      "aiConnection": "开源模型、框架（transformers、PyTorch）都托管在 GitHub 上，工程师通过 GitHub 拉取代码、提 Issue、参与 PR。理解 GitHub 协作流程，是使用开源 AI 生态、复现代码和团队协作开发的基础。",
       "codeExample": {
-        "lang": "python",
-        "filename": "svm.py",
-        "code": "from sklearn.svm import SVC\nfrom sklearn.datasets import make_blobs\nfrom sklearn.model_selection import train_test_split\n\n# 生成两类稍微重叠的数据\nX, y = make_blobs(n_samples=200, centers=2, cluster_std=1.5, random_state=0)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)\n\n# 用 RBF 核处理非线性\nsvm = SVC(kernel='rbf', C=1.0, gamma='scale')\nsvm.fit(X_train, y_train)\n\nprint('准确率 =', round(svm.score(X_test, y_test), 3))\n\n# 支持向量的数量\nprint('支持向量数 =', len(svm.support_vectors_))\n\n# 线性核的决策函数\nlinear = SVC(kernel='linear').fit(X_train, y_train)\nprint('线性核准确率 =', round(linear.score(X_test, y_test), 3))"
+        "lang": "bash",
+        "filename": "github.sh",
+        "code": "#!/bin/bash\n# 关联远程仓库\ngit remote add origin https://github.com/user/myproj.git\n\n# 首次推送并建立关联\ngit push -u origin main\n\n# 之后推送更简单\ngit push\n\n# 从远程拉取最新\ngit pull\n\n# 查看远程仓库\n git remote -v"
       },
       "mistakes": [
-        "不对特征做标准化，导致间隔与核函数受量纲影响",
-        "误以为线性核可处理任意非线性数据",
-        "把 C 与 gamma 大小对过拟合/欠拟合的影响搞反",
-        "把支持向量误认为是全部训练样本"
+        "把 GitHub 与 Git 混为一谈，Git 是工具、GitHub 是托管平台",
+        "忘了先 git remote add 就 push，找不到远程地址",
+        "push 前未 pull，合并冲突",
+        "把敏感信息（API key、密码）提交到公开仓库"
       ],
       "interviewPoints": [
-        "「SVM 为什么最大化间隔，而不是随便找条线分开？」要答到间隔越大对扰动的容忍度越高，结构风险最小化给出的泛化上界更紧",
-        "「支持向量是什么？预测只依赖它们吗？」要答到只有落在间隔边界上或违反间隔的样本 α>0，决策函数只是它们的核函数加权和",
-        "「核技巧为什么不需要显式升维？」要答到对偶形式只用到样本间内积，核函数直接给出高维内积，避免构造无穷维映射的代价",
-        "「C 和 gamma 调大调小分别会怎样？」要答到 C 越大越不容忍错分、易过拟合；gamma 越大核越窄、边界越碎、同样易过拟合"
+        "「Git 和 GitHub 有什么区别？」要答到本地版本控制工具与远程托管平台，说明没网也能 commit 但 push 必须连远程",
+        "「Pull Request 的流程是怎样的？」要答到开分支或 fork、提交后评审、CI 通过再合并，说明团队协作与开源贡献的标准路径",
+        "「哪些东西绝对不能提交到公开仓库？」要答到 API key、密码与数据隐私，说明 .env 与 .gitignore 的防护作用"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "svm-q1",
+          "id": "github-q1",
           "type": "choice",
-          "prompt": "SVM 选择分离超平面的原则是？",
+          "prompt": "首次把本地仓库关联并推送到远程常用哪条命令组合？",
           "options": [
-            "最大化类别间隔",
-            "最小化训练误差",
-            "最小化特征数",
-            "最大化训练样本数"
+            "git pull -u origin main",
+            "git init origin",
+            "git push -u origin main",
+            "git clone origin"
           ],
-          "answerIndex": 0,
-          "explanation": "SVM 目标是找到能最大化两类之间间隔的超平面，以获得更好的泛化。"
+          "answerIndex": 2,
+          "explanation": "git push -u origin main 首次推送并建立 upstream 关联。"
         },
         {
-          "id": "svm-q2",
+          "id": "github-q2",
           "type": "short",
-          "prompt": "SVM 中核技巧的作用是什么？",
-          "answer": "参考回答：核技巧通过一个核函数隐式地把样本映射到高维特征空间，让原本线性不可分的数据在高维变得线性可分，同时避免了显式计算高维映射，从而高效实现非线性分类。",
+          "prompt": "Pull Request（PR）在协作中的作用是什么？",
+          "answer": "PR 是提交分支改动请求合并到目标分支的机制，包含了变更内容、评审与讨论，团队成员可审查代码、提出修改意见，确认后再合并，保证代码质量与协作有序。",
           "keywords": [
-            "高维",
-            "核",
-            "线性"
+            "pull request",
+            "合并",
+            "评审"
           ],
-          "explanation": "核技巧隐式升维使数据线性可分，无需显式映射，支持非线性分类。"
+          "explanation": "PR 是请求合并的评审机制。"
         },
         {
-          "id": "svm-q3",
+          "id": "github-q3",
           "type": "code",
-          "prompt": "用 sklearn 的 SVC(kernel='linear') 拟合 X、y 并打印准确率。",
-          "starterCode": "from sklearn.svm import SVC\n\nX = [[0, 0], [1, 1], [2, 0], [3, 1]]\ny = [0, 0, 1, 1]\n",
-          "solution": "from sklearn.svm import SVC\n\nX = [[0, 0], [1, 1], [2, 0], [3, 1]]\ny = [0, 0, 1, 1]\n\nsvm = SVC(kernel='linear')\nsvm.fit(X, y)\nprint(svm.score(X, y))",
+          "prompt": "写出命令：关联远程仓库 origin 到指定 URL，并首次推送 main 分支。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit remote add origin https://github.com/user/myproj.git\ngit push -u origin main",
           "checks": [
-            "SVC",
-            "kernel='linear'",
-            "fit"
+            "remote add origin",
+            "push -u"
           ],
-          "explanation": "创建线性核 SVC，fit 训练后用 .score() 返回准确率。"
+          "explanation": "add remote 关联，push -u 首次推送。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "clustering",
-      "title": "Clustering 聚类",
+      "slug": "repository",
+      "title": "Repository 仓库",
       "order": 6,
-      "module": "机器学习算法",
-      "difficulty": "进阶",
-      "estimatedMinutes": 24,
-      "summary": "聚类是无监督学习，在没有标签的情况下把相似样本自动归成若干组，最常用的是 K-Means。",
-      "intuition": "给你一堆没有标签的点，让你凭直觉把它们分成几堆，让\"每堆内部尽量近、堆与堆尽量远\"。K-Means 就这样：先随便放几个中心点，把每个点分给最近的中心，再移动中心到堆的平均位置，重复直到稳定。",
-      "formal": "K-Means 目标是最小化簇内平方和：$\\sum_{k=1}^{K}\\sum_{\\mathbf{x}\\in C_k}\\|\\mathbf{x}-\\boldsymbol{\\mu}_k\\|^2$。算法交替进行：分配步把每个样本分到最近的中心，更新步把 $\\boldsymbol{\\mu}_k$ 设为簇内均值，迭代至收敛。需预先指定 $K$（可用肘部法/轮廓系数选择），对初始中心和特征尺度敏感。",
-      "formula": "J = \\sum_{k=1}^{K}\\sum_{\\mathbf{x}\\in C_k}\\|\\mathbf{x}-\\boldsymbol{\\mu}_k\\|^2, \\quad \\boldsymbol{\\mu}_k = \\frac{1}{|C_k|}\\sum_{\\mathbf{x}\\in C_k}\\mathbf{x}",
-      "aiConnection": "聚类常用于无标签场景：用户分群、文档主题发现、异常检测、向量检索的粗聚类。在 RAG 中，对大量 embedding 做聚类能帮助组织语料或加速检索，是理解无监督表示学习的一把钥匙。",
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 21,
+      "summary": "仓库是 Git 管理项目版本与历史的目录，包含工作区、暂存区与 .git 元数据。",
+      "intuition": "仓库就像一个带'时光机'的项目文件夹。它不只是放着现在的文件，还装着这个项目从出生到现在每一次修改的历史。`.git` 这个隐藏文件夹就是'时光机本体'，里面记录了所有快照。有了它，你才能随时回到任何一版。",
+      "formal": "仓库（repository）是 Git 管理版本控制的项目目录。`git init` 会在项目根目录创建 `.git` 隐藏文件夹，其中存储所有提交对象、分支、标签与配置，是仓库的核心元数据。仓库的结构包含`工作区`（实际文件）、`暂存区`（index）与`.git`（历史对象数据库）。克隆远程仓库用 `git clone <url>` 会在本地生成一个包含完整历史的副本。`README.md`、`.gitignore`（忽略文件，如模型权重、缓存）是常见文件。仓库可用 `git remote` 关联远程，便于备份与协作。",
+      "formula": "",
+      "aiConnection": "AI 项目仓库通常用 `.gitignore` 忽略大型模型权重、数据集与缓存，避免仓库过大；用 README 说明复现步骤。理解仓库结构与忽略规则，才能做出干净、可复现、便于团队协作的 AI 项目仓库。",
       "codeExample": {
-        "lang": "python",
-        "filename": "clustering.py",
-        "code": "from sklearn.cluster import KMeans\nfrom sklearn.datasets import make_blobs\nimport matplotlib.pyplot as plt\n\n# 造三个簇的数据\nX, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.8, random_state=0)\n\n# K-Means 聚成 3 类\nkmeans = KMeans(n_clusters=3, n_init=10, random_state=0)\nlabels = kmeans.fit_predict(X)\n\n# 查看各簇中心\nprint('簇中心:')\nprint(kmeans.cluster_centers_)\nprint('簇标签样例:', labels[:10])\n\n# 肘部法思路：观察不同 K 的 inertia\ninertias = []\nfor k in range(1, 6):\n    inertias.append(KMeans(n_clusters=k, n_init=10, random_state=0).fit(X).inertia_)\nprint('不同 K 的 inertia =', [round(v, 1) for v in inertias])\n\n# 可视化\nplt.scatter(X[:, 0], X[:, 1], c=labels, cmap='viridis')\nplt.show()"
+        "lang": "bash",
+        "filename": "repository.sh",
+        "code": "#!/bin/bash\n# 从远程克隆仓库\n# git clone https://github.com/user/myproj.git\n\n# 初始化本地仓库\nmkdir proj && cd proj\ngit init\n\n# 创建忽略文件\necho \"*.pyc\" > .gitignore\necho \"cache/\" >> .gitignore\n\n# 查看仓库状态与远程\ngit status\ngit remote -v"
       },
       "mistakes": [
-        "不标准化特征就让距离主导，导致聚类偏向量纲大的维度",
-        "把 K-Means 的聚类中心当成真实类别标签使用",
-        "不评估 K 的取值，直接拍脑袋定簇数",
-        "把聚类当作有监督分类，混淆无监督与有监督"
+        "以为仓库就是普通文件夹，忽略 .git 元数据的作用",
+        "把大文件（模型、数据集）直接提交，导致仓库臃肿",
+        "忘配 .gitignore，把缓存、密钥误提交",
+        "克隆后修改但从不 push，远程不同步"
       ],
       "interviewPoints": [
-        "「K-Means 的目标函数是什么？为什么一定收敛？」要答到最小化簇内平方和，分配步与更新步都单调降低 J，故收敛到局部最优",
-        "「K-Means 有哪些明显缺点？」要答到需要预先指定 K、对初始中心敏感、隐含假设簇是球形且方差相近，并对量纲和异常值敏感",
-        "「怎么选 K？肘部法和轮廓系数有何区别？」要答到肘部法看 inertia 拐点、较主观；轮廓系数衡量簇内紧与簇间离、更客观",
-        "「K-Means 和 KNN 的区别是什么？」要答到前者是无监督聚类、后者是有监督分类，名字相似但输入、目标与训练方式完全不同"
+        "「.git 目录里存了什么？」要答到提交对象、分支指针与配置，说明删掉 .git 等于丢失全部历史",
+        "「.gitignore 该怎么写？」要答到忽略模型权重、数据集与缓存，说明已跟踪文件加进 ignore 后为何仍会出现在变更里",
+        "「仓库怎么保持干净可复现？」要答到 README 写清复现步骤、权重走外部存储，说明大文件提交导致仓库臃肿的后果"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "clustering-q1",
+          "id": "repository-q1",
           "type": "choice",
-          "prompt": "K-Means 聚类属于哪类学习？",
+          "prompt": "Git 仓库的核心历史数据集存储在哪个目录？",
           "options": [
-            "无监督学习",
-            "监督学习",
-            "半监督学习",
-            "强化学习"
+            "src",
+            ".git",
+            "README.md",
+            "log"
           ],
-          "answerIndex": 0,
-          "explanation": "聚类在无标签数据上进行，是无监督学习。"
+          "answerIndex": 1,
+          "explanation": ".git 隐藏文件夹存放提交对象、分支等所有版本元数据。"
         },
         {
-          "id": "clustering-q2",
+          "id": "repository-q2",
           "type": "short",
-          "prompt": "K-Means 算法中的\"更新步\"做了什么？",
-          "answer": "参考回答：在把每个样本分配到最近的中心后，把每个簇的中心点重新设置为该簇所有样本的均值，使中心逐步向簇内质心靠拢，反复迭代直到基本不变或达到迭代上限。",
+          "prompt": "`.gitignore` 文件的作用是什么？",
+          "answer": ".gitignore 列出不希望被 Git 跟踪的文件或目录模式（如缓存、密钥、大型数据文件），使这些文件不会被 git add 或提交，避免仓库臃肿与敏感信息泄露。",
           "keywords": [
-            "均值",
-            "中心",
-            "迭代"
+            ".gitignore",
+            "忽略",
+            "缓存"
           ],
-          "explanation": "更新步把簇中心改为该簇样本的均值，迭代优化簇内距离。"
+          "explanation": "忽略指定文件不被版本控制跟踪。"
         },
         {
-          "id": "clustering-q3",
+          "id": "repository-q3",
           "type": "code",
-          "prompt": "用 sklearn 的 KMeans(n_clusters=2) 对 X 聚类并打印簇标签。",
-          "starterCode": "from sklearn.cluster import KMeans\n\nX = [[1, 1], [1.2, 1.1], [8, 8], [8.2, 7.9]]\n",
-          "solution": "from sklearn.cluster import KMeans\n\nX = [[1, 1], [1.2, 1.1], [8, 8], [8.2, 7.9]]\n\nkmeans = KMeans(n_clusters=2, n_init=10)\nlabels = kmeans.fit_predict(X)\nprint(labels)",
+          "prompt": "写出命令：初始化一个仓库，并创建一个 .gitignore 忽略所有 .pyc 文件。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit init\necho \"*.pyc\" > .gitignore",
           "checks": [
-            "KMeans",
-            "fit_predict",
-            "n_clusters=2"
+            "git init",
+            "*.pyc"
           ],
-          "explanation": "用 KMeans(n_clusters=2, n_init=10) 建模型，fit_predict(X) 返回簇标签。"
+          "explanation": "init 建仓库，写出忽略规则。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "pca",
-      "title": "PCA 主成分分析",
+      "slug": "branch",
+      "title": "Branch 分支",
       "order": 7,
-      "module": "机器学习算法",
-      "difficulty": "进阶",
-      "estimatedMinutes": 24,
-      "summary": "主成分分析（PCA）通过线性降维把高维数据投影到方差最大的几个方向上，用于压缩与去噪。",
-      "intuition": "想象一张非常扁的云朵，真正重要的信息只沿着少数几个方向扩散。PCA 就找到这些\"信息最多的方向\"（主成分），把数据投影上去，用尽量少的维度保留尽量多的变化。它既压缩体积，又尽量不丢信息。",
-      "formal": "PCA 对数据中心化后的协方差矩阵做特征分解，取特征值最大的 $d$ 个特征向量作为主成分投影方向。降维后数据为 $\\mathbf{Z} = \\mathbf{X}\\mathbf{W}$，其中 $\\mathbf{W}$ 的列是前 $d$ 个主成分。可保留的方差比例约为 $\\frac{\\sum_{i=1}^{d}\\lambda_i}{\\sum_{i=1}^{n}\\lambda_i}$，据此选择主成分个数。选择主成分数可通过解释方差比（explained variance ratio）判断。",
-      "formula": "\\text{协方差矩阵 } \\mathbf{C} = \\frac{1}{n}\\mathbf{X}^T\\mathbf{X}, \\quad \\mathbf{Z} = \\mathbf{X}\\mathbf{W}, \\quad \\text{保留方差比} = \\frac{\\sum_{i=1}^{d}\\lambda_i}{\\sum_{i=1}^{n}\\lambda_i}",
-      "aiConnection": "PCA 常用于高维特征降维、去相关与可视化（把高维 embedding 降到 2D 展示），也是大模型分析词向量空间、数据预处理的常见步骤。理解它帮你判断\"到底多少维够用\"。",
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "分支让开发者在不影响主线的并行开发，是功能开发与协作的核心机制。",
+      "intuition": "分支就像给你同一份文档开多个'平行宇宙'。你在主版本（比如 main）之外另起一条线（feature 分支），在那边大胆改动、试验，完全不影响主线的稳定。等改好了，再合并回主干。这让你可以安全地尝试新功能，而不会把正在工作的主线弄坏。",
+      "formal": "分支（branch）是独立的提交线，`main`（或 `master`）是默认主分支。`git branch` 查看分支、`git branch name` 创建分支、`git switch name`（或 `git checkout name`）切换、`git merge name` 把该分支合并到当前分支。`git switch -c name` 创建并切换。分支指针指向某次提交。合并方式有 `fast-forward` 与 `merge commit`。可能产生`冲突`，需手动解决后提交。删除分支用 `git branch -d name`。PR 通常基于分支请求合并。",
+      "formula": "",
+      "aiConnection": "AI 实验常开独立分支或使用不同分支保存不同配置的实验，便于对照与回滚。团队协作时，开发者在各自分支开发，通过 PR 评审合并，避免彼此干扰，是专业 AI 工程团队协作的标配。",
       "codeExample": {
-        "lang": "python",
-        "filename": "pca.py",
-        "code": "from sklearn.decomposition import PCA\nfrom sklearn.datasets import load_iris\nfrom sklearn.preprocessing import StandardScaler\nimport numpy as np\n\n# 加载 4 维数据\nX, _ = load_iris(return_X_y=True)\n\n# 标准化\nX_scaled = StandardScaler().fit_transform(X)\n\n# 降到 2 维\npca = PCA(n_components=2)\nX_pca = pca.fit_transform(X_scaled)\n\nprint('原始维度:', X.shape[1])\nprint('降维后维度:', X_pca.shape[1])\nprint('explained variance ratio:')\nprint(np.round(pca.explained_variance_ratio_, 3))\nprint('累计解释方差:', round(pca.explained_variance_ratio_.sum(), 3))\n\n# 看保留几维能达到 95% 方差\npca2 = PCA(n_components=0.95)\npca2.fit(X_scaled)\nprint('达到95%方差所需维数:', pca2.n_components_)"
+        "lang": "bash",
+        "filename": "branch.sh",
+        "code": "#!/bin/bash\n# 查看当前分支\n git branch\n\n# 创建并切换到 feature 分支\ngit switch -c feature-add-data\n\n# 在此分支做修改并提交\n echo \"new feature\" >> feature.txt\ngit add feature.txt\ngit commit -m \"add feature\"\n\n# 切换回主分支并合并\ngit switch main\ngit merge feature-add-data\n\n# 删除已合并分支\ngit branch -d feature-add-data"
       },
       "mistakes": [
-        "PCA 前不做标准化，让量纲大的特征主导主成分",
-        "把 PCA 降到 2 维就当成最好的可视化，忽视保留方差比例",
-        "误以为 PCA 是无监督且线性，无法处理高度非线性结构",
-        "混淆降维后的主成分轴与原始特征的可解释性"
+        "在 main 上直接改而不是先开分支，破坏主线稳定",
+        "混淆 switch 于 branch，创建后忘了切换",
+        "没提交就切换分支，导致变更跟随切换",
+        "合并冲突不解决直接提交，造成仓库损坏"
       ],
       "interviewPoints": [
-        "「PCA 为什么等价于协方差矩阵的特征分解？」要答到最大化投影方差等价于最大化 wᵀΣw，在 ‖w‖=1 约束下解正是 Σ 的最大特征向量",
-        "「PCA 之前为什么必须标准化？」要答到它完全基于方差，量纲大的特征会主导主成分方向，标准化后各特征才被公平对待",
-        "「PCA 和 SVD 是什么关系？」要答到对中心化矩阵直接做 SVD 就能得到主成分方向与奇异值，数值上比显式特征分解更稳定",
-        "「PCA 的局限是什么？」要答到它是无监督线性方法，可能丢掉最关键的判别方向；非线性结构需 kernel PCA 或 UMAP"
+        "「为什么开发新功能要开分支？」要答到隔离实验、不影响 main 的稳定，说明并行实验与快速回滚的好处",
+        "「merge 和 rebase 有什么区别？」要答到产生 merge commit 与重写提交历史，说明在公共分支上 rebase 的风险",
+        "「合并冲突怎么解决？」要答到冲突标记、手动取舍与重新提交，说明冲突时该保留哪一版实验配置的判断依据"
       ],
       "resources": [],
       "quiz": [
         {
-          "id": "pca-q1",
+          "id": "branch-q1",
           "type": "choice",
-          "prompt": "PCA 降维时保留的主成分方向是？",
+          "prompt": "创建新分支并切换到它的命令是？",
           "options": [
-            "数据方差最大的方向",
-            "数据均值最大的方向",
-            "类别标签的方向",
-            "随机方向"
+            "git branch name",
+            "git switch -c name",
+            "git commit name",
+            "git merge name"
           ],
-          "answerIndex": 0,
-          "explanation": "PCA 取协方差矩阵特征值最大的特征向量作为主成分，即方差最大的方向。"
+          "answerIndex": 1,
+          "explanation": "git switch -c（或 checkout -b）创建并切换到该分支。"
         },
         {
-          "id": "pca-q2",
+          "id": "branch-q2",
           "type": "short",
-          "prompt": "为什么 PCA 前通常要先对特征做标准化？",
-          "answer": "参考回答：因为 PCA 基于方差，若某个变量量纲（范围）很大，它会主导方差从而主导主成分方向。标准化让各特征均值为 0、方差为 1，避免量纲差异干扰，使主成分真正反映数据的内部结构。",
+          "prompt": "为什么开发新功能时建议在新分支上进行而不是直接在 main 上改？",
+          "answer": "新分支隔离了实验性改动，不影响 main 的稳定，开发过程中可随意修改、回滚；等验证通过再合并回 main，降低破坏主线的风险，也便于评审与多人并行开发。",
           "keywords": [
-            "标准化",
-            "方差",
-            "量纲"
+            "分支",
+            "隔离",
+            "main"
           ],
-          "explanation": "标准化消除量纲影响，避免大范围特征主导 PCA 的方差。"
+          "explanation": "分支隔离改动，保护主线稳定。"
         },
         {
-          "id": "pca-q3",
+          "id": "branch-q3",
           "type": "code",
-          "prompt": "用 sklearn 的 PCA(n_components=2) 对 X 降维并打印降维后的形状。",
-          "starterCode": "from sklearn.decomposition import PCA\n\nX = [[1, 2, 3], [2, 3, 4], [3, 4, 5]]\n",
-          "solution": "from sklearn.decomposition import PCA\n\nX = [[1, 2, 3], [2, 3, 4], [3, 4, 5]]\n\npca = PCA(n_components=2)\nX_pca = pca.fit_transform(X)\nprint(X_pca.shape)",
+          "prompt": "写出命令：创建并切换到 dev 分支，然后把它合并回 main。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit switch -c dev\ngit switch main\ngit merge dev",
           "checks": [
-            "PCA",
-            "fit_transform",
-            "shape"
+            "switch -c dev",
+            "merge dev"
           ],
-          "explanation": "用 PCA(n_components=2) 建模型，fit_transform(X) 得降维结果，.shape 查看维度。"
+          "explanation": "创建切换分支，切回并合并。"
         }
-      ]
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "commit",
+      "title": "Commit 提交",
+      "order": 8,
+      "module": "Git 与 GitHub",
+      "difficulty": "基础",
+      "estimatedMinutes": 20,
+      "summary": "提交是给项目某时刻状态拍一次快照并写入历史，是 Git 回溯与协作的最小单位。",
+      "intuition": "提交就是'存档'。玩过游戏吧？你在关键节点存个档，之后无论出什么乱子都能读档回去。Git 的 commit 就是给项目存一个档：记录下这一刻所有文件的状态，并附上一句说明你改了什么。每次提交构成一条不断向前的时间线。",
+      "formal": "提交（commit）是 Git 版本历史的最小单元，记录某一时刻工作区的快照。`git commit -m \"message\"` 把暂存区的变更写入历史，每个提交包含唯一哈希值、作者、时间与提交信息。提交前先用 `git add` 暂存。`git commit -am \"msg\"` 可同时暂存已跟踪文件的修改并提交（不含新文件）。`git log` 查看提交历史，`git reset`/`git revert` 用于回退。良好的提交信息应简洁说明做了什么，便于后续回溯。提交是本地操作，需 `git push` 才同步远程。",
+      "formula": "",
+      "aiConnection": "在 AI 实验中，清晰、小巧的提交能帮你精确定位是哪次改动导致模型效果变化。把每次配置、代码调整都记录成提交，是复现实验、回溯问题、团队协作的核心习惯。",
+      "codeExample": {
+        "lang": "bash",
+        "filename": "commit.sh",
+        "code": "#!/bin/bash\n# 暂存并查看待提交变更\ngit add train.py\ngit status\n\n# 提交并写明信息\ngit commit -m \"train: 增加 learning rate scheduler\"\n\n# 查看提交历史\ngit log --oneline\n\n# 查看某次提交的改动\ngit show --stat HEAD"
+      },
+      "mistakes": [
+        "提交信息过于含糊（如 update），难以回溯",
+        "把无关的多个改动塞进一个提交，破坏可读性",
+        "忘记 git add，改动没被提交",
+        "以为 commit 会自动上传远程，还需 push"
+      ],
+      "interviewPoints": [
+        "「一次好的提交应该包含什么？」要答到单一职责、清晰信息与可回溯，说明含糊信息给定位指标变化带来的困难",
+        "「commit 和 push 有什么区别？」要答到本地写入历史与同步远程，说明没 push 就换机器为何找不到代码",
+        "「git reset 和 git revert 怎么选？」要答到改写历史与新增反向提交，说明已推送的提交为何应优先用 revert"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "commit-q1",
+          "type": "choice",
+          "prompt": "`git commit -am \"msg\"` 中 `-a` 的作用是？",
+          "options": [
+            "提交所有未跟踪的新文件",
+            "自动暂存已跟踪文件的修改并提交",
+            "强制推送",
+            "生成合并提交"
+          ],
+          "answerIndex": 1,
+          "explanation": "-a 自动暂存已跟踪文件的修改并提交，但不包含未跟踪的新文件。"
+        },
+        {
+          "id": "commit-q2",
+          "type": "short",
+          "prompt": "为什么提交信息要写得清晰、一个提交只做一件事？",
+          "answer": "清晰、单目标的提交让历史易于阅读与回溯，能精准定位某次改动，便于评审、回滚与协作，也方便后续分析是哪个改动导致了问题（如模型效果变化）。",
+          "keywords": [
+            "清晰",
+            "单目标",
+            "回溯"
+          ],
+          "explanation": "小而清晰的提交便于回溯与协作。"
+        },
+        {
+          "id": "commit-q3",
+          "type": "code",
+          "prompt": "写出命令：把一个文件 train.py 加入暂存并提交，信息为 'train: update model'。",
+          "starterCode": "#!/bin/bash\n",
+          "solution": "#!/bin/bash\ngit add train.py\ngit commit -m \"train: update model\"",
+          "checks": [
+            "git add",
+            "git commit -m"
+          ],
+          "explanation": "add 暂存后 commit 提交。"
+        }
+      ],
+      "track": "main"
     }
   ]
 }

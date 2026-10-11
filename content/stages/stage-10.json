@@ -1,496 +1,415 @@
 {
   "stage": 10,
-  "stageSlug": "agent",
-  "stageTitle": "AI Agent",
-  "stageEmoji": "🕊️",
-  "stageDesc": "Tool Calling、Agent Loop、Memory 与多智能体：让模型自己干活",
-  "category": "进阶",
+  "stageSlug": "math-bridge",
+  "stageTitle": "数学衔接：从高中到大学",
+  "stageEmoji": "🔢",
+  "stageDesc": "把高中数学接上 AI：函数、求和符号、极限直觉、集合与映射、符号速查",
+  "act": 4,
+  "actName": "第四幕 · 数学",
+  "category": "基础",
   "lessons": [
     {
-      "slug": "tool-calling",
-      "title": "Tool Calling 工具调用",
+      "slug": "function-and-graph",
+      "title": "函数与图像：AI 里的「模型」就是函数",
       "order": 1,
-      "module": "Agent 基础",
-      "difficulty": "进阶",
-      "estimatedMinutes": 27,
-      "summary": "工具调用让模型在生成文本的同时输出对某个函数的调用请求，从而赋予它执行外部动作的能力。",
-      "intuition": "模型本身只能吐文字，不能亲身去查询天气或操作数据库。工具调用就像给了模型一张'工具清单'：模型读完你的话，判断需要用什么工具，然后输出一个结构化请求（'我要调用 get_weather，参数是北京'）。程序在后台真正执行这个函数，把结果再回给模型，模型据此继续往下说。",
-      "formal": "工具调用把函数描述（函数名、功能说明、参数 JSON Schema）随请求一起发到模型。模型在合适的时机输出 tool_call（包含函数名与参数对象）。宿主应用据此调用真实函数并把结果作为 tool 角色的消息回传，模型再基于结果生成最终回答。如此循环，模型就具备了调用外部能力的能力。",
-      "formula": "",
-      "aiConnection": "工具调用是 Agent 迈向'能做事'的关键：模型不再只回答问题，而是能按需调用检索、查询、计算等真实工具，这正是 RAG 与 Agent 执行层的实现基础。清晰、准确的工具描述，直接决定了模型能否正确选择并传参。",
+      "module": "从高中到大学",
+      "difficulty": "基础",
+      "track": "main",
+      "estimatedMinutes": 30,
+      "summary": "函数就是「给一个输入、必给一个输出」的确定对应；机器学习模型是带很多参数的函数，损失函数衡量输出差多远，图像帮你看懂它的单调、凹凸与极值。",
+      "intuition": "高中学过 f(x) = 2x + 1：给 x 一个值，就必然得到一个确定的 y。函数的全部本质就是这个「确定对应」。AI 里说的「模型」其实就是这种对应关系，只是规模变了：输入从单个数字变成一个向量（一张 224×224 的彩色图片有 15 万个像素值），输出从一个数字变成「猫 0.9、狗 0.1」这样的概率。所谓训练模型，是在一大堆形状不同的候选函数里，挑出对当前数据最合适的那一个。图像则是函数的体检报告：单调上升还是下降、往上弯还是往下弯、最低点在哪里，一眼就能看出来——而这些恰好就是调参时最需要知道的信息。",
+      "formal": "函数 f: X → Y 给集合 X 中每个元素 x 指定唯一的 y = f(x)。高中熟悉的三类函数是理解 AI 的骨架：一次函数 $f(x) = kx + b$ 就是线性模型（线性回归、单层全连接）；二次函数 $f(x) = ax^2 + bx + c$ 的图像是抛物线，a > 0 时开口向上、存在唯一最小值，这正是「平方损失有唯一最优解」的几何来源；指数函数 e^x 与对数函数 ln x 互为反函数，sigmoid、softmax、交叉熵都由它们构成。把参数写成向量 θ，模型就是一族函数 {f_θ}，训练就是解优化问题 min_θ L(θ)。两个边界要记住：函数要求「每个输入都有输出、且输出唯一」，所以一个 x 对应多个 y 的关系不是函数；模型能表达的对应关系受结构限制，线性模型永远学不会异或。",
+      "formula": "f(x) = kx + b, \\qquad f(x) = ax^2 + bx + c, \\qquad \\hat{y} = f_\\theta(x), \\qquad L(\\theta) = \\frac{1}{n} \\sum_{i=1}^{n} \\bigl(f_\\theta(x_i) - y_i\\bigr)^2",
+      "aiConnection": "模型就是函数 f_θ，推理就是用训练好的 θ 计算 f_θ(x)，训练就是找让 L(θ) 最小的 θ——这句话是整个深度学习的骨架。工作中你每天都在和函数图像打交道：损失曲线平滑下降说明学习率合适，上下震荡说明学习率偏大，几乎水平说明偏小或梯度消失；sigmoid 的图像告诉你它把任意实数压进 0 到 1，所以能当概率用；交叉熵在预测错的时候很陡，所以梯度大、学得快。会看图像判断函数行为，比盲试超参数快得多。",
       "codeExample": {
         "lang": "python",
-        "filename": "tool_call.py",
-        "code": "from openai import OpenAI\nimport json\n\nclient = OpenAI(api_key=\"key\")\n\n# 定义一个工具并给出其 JSON Schema 描述\ntools = [\n    {\n        \"type\": \"function\",\n        \"function\": {\n            \"name\": \"get_weather\",\n            \"description\": \"查询某个城市的天气\",\n            \"parameters\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"city\": {\"type\": \"string\", \"description\": \"城市名\"}\n                },\n                \"required\": [\"city\"],\n            },\n        },\n    }\n]\n\nresp = client.chat.completions.create(\n    model=\"gpt-4o-mini\",\n    messages=[{\"role\": \"user\", \"content\": \"北京今天天气怎么样？\"}],\n    tools=tools,\n    tool_choice=\"auto\",\n)\n\n# 模型可能请求调用工具\nif resp.choices[0].message.tool_calls:\n    call = resp.choices[0].message.tool_calls[0]\n    print(\"调用函数:\", call.function.name)\n    print(\"参数:\", call.function.arguments)\n    # 宿主在此执行真实函数并回传结果"
+        "filename": "model_is_function.py",
+        "code": "import math\n\n# 1) 函数 = 确定对应：一次函数就是最简单的模型\ndef linear(x, k=2.0, b=1.0):\n    return k * x + b\n\nfor x in [-2.0, -1.0, 0.0, 1.0, 2.0]:\n    print(f'x={x:>5}  f(x)={linear(x):>6.1f}')\n\n# 2) 损失函数：衡量模型输出离真实答案有多远\ndef mse(k, xs, ys):\n    total = 0.0\n    for x, y in zip(xs, ys):\n        total += (linear(x, k, 0.0) - y) ** 2\n    return total / len(xs)\n\nxs = [1.0, 2.0, 3.0]\nys = [3.0, 5.0, 7.0]        # 真实规律是 y = 2x + 1，这里先固定 b = 0\nfor k in [0.0, 1.0, 2.0, 3.0]:\n    print(f'k={k}  loss={mse(k, xs, ys):.2f}')   # k = 2 时损失最小\n\n# 3) 看形状：sigmoid 把任意实数压到 (0, 1)\ndef sigmoid(z):\n    return 1 / (1 + math.exp(-z))\n\nfor z in [-4.0, -2.0, 0.0, 2.0, 4.0]:\n    print(f'z={z:>5}  sigmoid={sigmoid(z):.4f}')"
       },
       "mistakes": [
-        "工具描述写得模糊，导致模型选错工具或传错参数",
-        "忽略了 tool_choice 与 tools 参数，模型不知道可用工具",
-        "不处理模型未调用工具的默认情况，逻辑直接崩溃",
-        "把工具返回结果格式不规范，模型无法理解"
+        "把函数当成要背的公式，说不清一个模型的输入和输出分别是什么",
+        "觉得模型很神秘，其实它就是带参数的函数，训练只是在调这些参数",
+        "只看损失数值不看损失曲线，学习率已经震荡了还在继续往大调",
+        "把 sigmoid 的输出当成任意实数，忘了它永远落在 0 到 1 之间"
       ],
       "interviewPoints": [
-        "「工具调用是怎么实现的？」要答到把函数名、说明与参数 JSON Schema 随请求发给模型，模型输出 tool_call，宿主执行后以 tool 角色回传再生成",
-        "「模型为什么选错工具？」要答到描述模糊、多个工具职责重叠、参数 schema 不清晰，以及工具数量过多导致选择困难",
-        "「工具描述怎么写才准？」要答到名字动词化、说明写清何时用与何时不用、参数给出类型与枚举、附少量示例，避免自然语言歧义",
-        "「tool_choice 有哪些用法？」要答到 auto 让模型自选、none 禁用工具、也可强制指定某个函数，常用于路由或先探测模型是否真需要工具"
+        "「什么是机器学习模型？」要答到「带参数的函数 f_θ」：模型结构决定函数族，训练是在函数族里按损失最小选参数，推理是代入 x 求值，而不是机器自己悟出规律",
+        "「为什么损失函数要连续可导？」要答到要靠导数与梯度找极小值，MSE 和交叉熵都可导，0-1 损失（错误率）不可导，所以只能当评估指标而不能直接优化",
+        "「怎么判断学习率合不合适？」要答到看损失曲线：平滑下降合适、上下震荡或发散的偏大、几乎不降的偏小，并提到 warmup 与学习率衰减"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "可汗学院：代数（函数与图像，中文）",
+          "url": "https://zh.khanacademy.org/math/algebra"
+        },
+        {
+          "title": "维基百科：函数",
+          "url": "https://zh.wikipedia.org/wiki/函数"
+        }
+      ],
       "quiz": [
         {
-          "id": "tool-calling-q1",
+          "id": "function-and-graph-q1",
           "type": "choice",
-          "prompt": "工具调用（tool calling）让模型具备了哪类新能力？",
+          "prompt": "在机器学习里，「训练模型」本质上是在做什么？",
           "options": [
-            "生成更长的文本",
-            "在执行外部函数后依托真实结果继续生成",
-            "提高模型参数",
-            "自动微调模型"
+            "在候选函数族中寻找让损失函数最小的参数",
+            "让计算机自己总结出规律并写成文字说明",
+            "把训练数据整理干净后存进数据库",
+            "提高 CPU 和 GPU 的运算速度"
           ],
-          "answerIndex": 1,
-          "explanation": "工具调用允许模型输出对某个外部函数的调用请求，宿主执行函数并回传结果，模型据此继续生成，从而能执行真实外部动作。"
+          "answerIndex": 0,
+          "explanation": "训练就是解优化问题 min_θ L(θ)：模型结构定下函数族，训练只负责找参数。B 说的是机器自己写规则，不是训练；C 属于数据工程；D 属于硬件加速，都不会改变模型参数。"
         },
         {
-          "id": "tool-calling-q2",
+          "id": "function-and-graph-q2",
           "type": "short",
-          "prompt": "一个完整的工具调用流程大致是怎样的？",
-          "answer": "参考回答：先把工具的函数名、说明和参数 schema 传给模型；模型判断需要时输出 tool_call（含函数名与参数）；宿主执行真实函数，并把返回结果作为 tool 角色消息回传给模型；模型再基于该结果生成最终回答。",
+          "prompt": "为什么说「模型就是一个函数」？它和高中学的 f(x) = kx + b 有什么不同？",
+          "answer": "参考回答：模型做的事是给定输入 x 后确定地给出输出 y，这正是函数的定义。区别在规模：f(x)=kx+b 只有 k、b 两个参数，神经网络的参数可以有上亿个；输入从单个数字变成向量或矩阵，输出常常是各个类别的概率。训练就是不断调整这些参数，让输出尽量接近真实答案。",
           "keywords": [
-            "schema",
-            "tool_call",
-            "回传"
+            "确定对应",
+            "参数",
+            "输入输出",
+            "训练调参"
           ],
-          "explanation": "流程为：传工具描述、模型输出 tool_call、宿主执行并回传结果、模型据此生成回答。"
+          "explanation": "得分点是「确定对应」加上「参数规模与输入输出形态的差别」，只答「模型很复杂」不得分。"
         },
         {
-          "id": "tool-calling-q3",
+          "id": "function-and-graph-q3",
           "type": "code",
-          "prompt": "补全一个 get_weather 工具的 JSON Schema 描述对象（含 name、description、parameters，city 为必填字符串）。",
-          "starterCode": "tools = [\n    {\n        \"type\": \"function\",\n        \"function\": {\n            \"name\": \"get_weather\",\n            \"description\": \"查询天气\",\n            \"parameters\": {\n                \"type\": \"object\",\n                \"properties\": {},\n                \"required\": []\n            }\n        }\n    }\n]\n",
-          "solution": "tools = [\n    {\n        \"type\": \"function\",\n        \"function\": {\n            \"name\": \"get_weather\",\n            \"description\": \"查询某城市天气\",\n            \"parameters\": {\n                \"type\": \"object\",\n                \"properties\": {\"city\": {\"type\": \"string\"}},\n                \"required\": [\"city\"]\n            }\n        }\n    }\n]\n",
+          "prompt": "实现两个函数：linear(x, k, b) 返回 k*x+b；mse(k, xs, ys) 在 b 固定为 0 时返回预测值与真实值平方误差的平均值。对 xs=[1,2,3]、ys=[3,5,7] 打印 k=2 时的 mse，结果应为 1.0。",
+          "starterCode": "def linear(x, k, b):\n    pass\n\ndef mse(k, xs, ys):\n    pass\n\nxs = [1.0, 2.0, 3.0]\nys = [3.0, 5.0, 7.0]\nprint(mse(2.0, xs, ys))\n",
+          "solution": "def linear(x, k, b):\n    return k * x + b\n\ndef mse(k, xs, ys):\n    total = 0.0\n    for x, y in zip(xs, ys):\n        total += (linear(x, k, 0.0) - y) ** 2\n    return total / len(xs)\n\nxs = [1.0, 2.0, 3.0]\nys = [3.0, 5.0, 7.0]\nprint(mse(2.0, xs, ys))   # 1.0",
           "checks": [
-            "\\\"city\\\"",
-            "\\\"required\\\""
-          ],
-          "explanation": "在 properties 声明 city 字符串参数，required 里列上 city。"
+            "def linear",
+            "def mse",
+            "zip",
+            "len(xs)"
+          ]
         }
       ]
     },
     {
-      "slug": "function-calling",
-      "title": "Function Calling 函数调用",
+      "slug": "sigma-and-sequences",
+      "title": "求和符号 Σ 与数列：公式里的循环",
       "order": 2,
-      "module": "Agent 基础",
-      "difficulty": "进阶",
-      "estimatedMinutes": 27,
-      "summary": "函数调用是工具调用的核心实现，把模型的选择封装成可被宿主可靠执行的结构化函数调用请求。",
-      "intuition": "函数调用是工具调用背后的'执行契约'。模型不直接写代码跑，而是输出一个明确的'我要调用某函数、带上这些参数'的结构化请求，由宿主程序负责真正执行并严格回传结果。这样就把模型的'想'和宿主的'做'分离开，既安全又可控。",
-      "formal": "在 OpenAI 等 API 中，tools 参数里定义 function 类型工具，模型在需调用时返回 message.tool_calls，其中含 function.name 与 function.arguments（JSON 字符串）。典型循环为：发消息+tools → 模型返回 tool_calls → 宿主执行并追加 tool 消息 → 再次请求模型 → 得到最终文本。可通过 tool_choice 强制或禁用，也可并行返回多个 tool_call。",
-      "formula": "",
-      "aiConnection": "函数调用是 Agent 执行步骤的标准化载体：RAG 的检索、Agent 的查询、代码执行、API 调用都能封装成函数让模型触发。实现健壮的函数调用循环（正确处理 multi-tool、解析 arguments、错误回传）是构建可靠 Agent 的核心工程。",
+      "module": "从高中到大学",
+      "difficulty": "基础",
+      "track": "main",
+      "estimatedMinutes": 30,
+      "summary": "Σ 只是「把一串数加起来」的缩写：下标、上下标、通项三部分恰好对应 Python 循环的三要素；数列与递推把重复计算写成公式，神经网络的加权求和、期望和损失全是 Σ。",
+      "intuition": "高中算等差数列时你写过 1 + 2 + 3 + … + 100，那一串省略号的意思就是「一直加到 100」。数学家用 Σ 把省略号压成一行：Σ 的下面是 i = 1，上面是 100，右边是 i，念作「sigma，i 从 1 到 100」，含义是让 i 依次取 1、2、…、100，把每一项加起来。你写 Python 时敲的 s = 0 然后 for i in range(1, 101): s += i，和它做的是同一件事，只是一个用符号写、一个用代码写。看论文遇到 Σ 不要慌，先找三样东西：谁在变（下标）、从哪到哪（上下标）、每一项长什么样（通项）。找到这三样，公式就变成了一段能读懂的循环。",
+      "formal": "定义 $\\sum_{i=m}^{n} a_i = a_m + a_{m+1} + \\cdots + a_n$，其中 i 是哑变量（换成 j、k 结果不变），a_i 是通项。常用性质三条：常数求和 $\\sum_{i=1}^{n} c = nc$；线性性 $\\sum_{i=1}^{n}(c\\,a_i + d\\,b_i) = c\\sum a_i + d\\sum b_i$；双重求和 $\\sum_i \\sum_j a_{ij}$ 等于把矩阵所有元素加起来，求和次序可以交换。数列 {a_n} 用通项或递推定义：等差 a_{n+1} = a_n + d、等比 a_{n+1} = r a_n，递推在代码里就是循环中保存的上一轮变量。两个边界条件：n < m 时按空和约定为 0；数学公式的下标习惯从 1 开始，而 Python 的 range 从 0 开始且右端取不到，写代码时差一位是最常见的错误。",
+      "formula": "\\sum_{i=1}^{n} a_i = a_1 + a_2 + \\cdots + a_n, \\qquad \\sum_{i=1}^{n} c = nc, \\qquad \\sum_{i=1}^{n}\\bigl(c\\,a_i + d\\,b_i\\bigr) = c\\sum_{i=1}^{n} a_i + d\\sum_{i=1}^{n} b_i",
+      "aiConnection": "神经网络的每一个神经元都在做 Σ：z_j = Σ_i w_ji x_i + b_j，一层 4096 维的隐藏层就是对 4096 项做加权求和，写成矩阵就是一次 np.dot，GPU 上一秒能完成上万亿次乘加。损失函数也是 Σ：均方误差把 n 个样本的误差加起来除以 n。期望还是 Σ：E[X] = Σ p_i x_i，mini-batch 训练就是拿一批样本的平均去估计整个数据分布的期望；注意力里 softmax 的分母同样是 Σ。把 Σ 读成 for 循环或 np.sum，论文里的公式立刻能翻译成代码。",
       "codeExample": {
         "lang": "python",
-        "filename": "function_call_loop.py",
-        "code": "from openai import OpenAI\nimport json\n\nclient = OpenAI(api_key=\"key\")\ntools = [\n    {\"type\": \"function\", \"function\": {\n        \"name\": \"add\",\n        \"description\": \"两数相加\",\n        \"parameters\": {\"type\": \"object\",\n            \"properties\": {\"a\": {\"type\": \"number\"}, \"b\": {\"type\": \"number\"}},\n            \"required\": [\"a\", \"b\"]},\n    }}\n]\n\nmessages = [{\"role\": \"user\", \"content\": \"2 + 3 等于几？\"}]\nresp = client.chat.completions.create(model=\"gpt-4o-mini\", messages=messages, tools=tools)\n\n# 解析模型返回的工具调用并执行真实函数\nif resp.choices[0].message.tool_calls:\n    for call in resp.choices[0].message.tool_calls:\n        args = json.loads(call.function.arguments)\n        result = args[\"a\"] + args[\"b\"]   # 执行真实逻辑\n        messages.append(call.message)\n        messages.append({\"role\": \"tool\", \"tool_call_id\": call.id,\n                         \"content\": str(result)})\n    # 再次调用让模型基于工具结果生成最终答案\n    final = client.chat.completions.create(model=\"gpt-4o-mini\", messages=messages)\n    print(final.choices[0].message.content)"
+        "filename": "sigma_loop.py",
+        "code": "# Σ 就是 for 循环：下标 i 从 1 到 100，通项 a_i = i\ntotal = 0\nfor i in range(1, 101):\n    total += i\nprint('1 + 2 + ... + 100 =', total)\n\n# 通项不是 i 本身时：Σ i^2，i 从 1 到 5\nsquares = 0\nfor i in range(1, 6):\n    squares += i ** 2\nprint('Σ i^2 (i=1..5) =', squares)\n\n# 递推：等比数列 a_{n+1} = 2 * a_n\na = 1\nseq = []\nfor n in range(6):\n    seq.append(a)\n    a = 2 * a\nprint('等比数列:', seq)\n\n# 双重求和 = 把矩阵所有元素加起来\nW = [[1, 2, 3], [4, 5, 6]]\ns = 0\nfor row in W:\n    for w in row:\n        s += w\nprint('Σ Σ w_ij =', s)"
       },
       "mistakes": [
-        "未能正确处理 tool_calls，把调用结果当作普通文本反而报错",
-        "不把 tool 角色消息回传，模型不知道工具执行结果",
-        "多工具并行时未匹配 tool_call_id，导致结果错乱"
+        "把 Σ 当成一个要相乘的系数，写出 Σ × n 这种式子",
+        "公式下标从 1 开始，代码却写成 range(n)，整体差了一位",
+        "忘记 Σ 里的常数要加 n 次，把 Σ c 当成只加一次",
+        "把 Σ_i Σ_j a_ij 当成两个求和结果相乘，实际是先内层后外层的累加"
       ],
       "interviewPoints": [
-        "「多轮函数调用循环怎么走？」要答到带 tools 发请求、收 tool_calls、执行后按 id 回传 tool 消息、再次请求，直到不再出现 tool_calls",
-        "「并行 tool_calls 要注意什么？」要答到一次可能返回多个调用、必须按 id 一一对应回传，顺序错乱会让模型把结果张冠李戴",
-        "「arguments 解析失败怎么办？」要答到模型可能输出非法 JSON 或漏必填参数，要校验并回传结构化错误让它自我修正，而不是直接抛异常",
-        "「函数调用比让模型直接输出文本好在哪？」要答到结构化输出由模型侧保证格式、无需正则猜解析、可校验可并行，是 Agent 可靠执行的前提"
+        "「Σ w_i x_i 用代码怎么写最快？」要答到 np.dot(w, x) 或矩阵乘法，并说明 Python 显式循环慢在解释器开销、GPU 上必须写成矩阵乘才能并行",
+        "「为什么神经元用加权求和而不是连乘？」要答到线性叠加可导且能用矩阵乘法批量并行，而连乘 ∏ 会随层数指数爆炸或下溢",
+        "「期望和算术平均是什么关系？」要答到等概率时 E[X] = Σ x_i / n 退化为算术平均，训练时用 mini-batch 的平均估计真实期望"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "维基百科：求和符号",
+          "url": "https://zh.wikipedia.org/wiki/求和符号"
+        },
+        {
+          "title": "维基百科：等差数列",
+          "url": "https://zh.wikipedia.org/wiki/等差数列"
+        }
+      ],
       "quiz": [
         {
-          "id": "function-calling-q1",
+          "id": "sigma-and-sequences-q1",
           "type": "choice",
-          "prompt": "函数调用循环中，模型得到工具执行结果后靠什么知道结果？",
+          "prompt": "Σ 从 i = 1 到 4，通项是 2i，这个求和的值是多少？",
           "options": [
-            "重新训练",
-            "把工具结果作为 tool 角色消息回传",
-            "读取模型内部缓存",
-            "修改模型参数"
+            "8",
+            "20",
+            "24",
+            "10"
           ],
           "answerIndex": 1,
-          "explanation": "宿主执行函数后，须把结果作为 role=tool 的消息、携带对应 tool_call_id 回传给模型，模型才能基于真实结果继续生成。"
+          "explanation": "依次取 i = 1, 2, 3, 4，通项 2i 得到 2, 4, 6, 8，相加是 20。A 是 2×4（把 Σ 当成乘法），C 是 4 的阶乘，D 是 1+2+3+4（漏了系数 2）。"
         },
         {
-          "id": "function-calling-q2",
+          "id": "sigma-and-sequences-q2",
           "type": "short",
-          "prompt": "为什么要把工具执行结果回传给模型？",
-          "answer": "参考回答：因为模型本身不执行真实函数，结果只存在于宿主程序里。只有把结果以 tool 角色消息回传给模型，它才能看到真实输出并据此计算或补充最终回答，从而形成'请求-执行-回传-生成'的闭环。",
+          "prompt": "把 Σ（i 从 1 到 n）(3i + 1) 用文字讲清楚，并说明它对应的 Python 循环怎么写。",
+          "answer": "参考回答：它表示让 i 从 1 取到 n，每一项是 3i+1，再把这些项全部加起来，展开是 (3+1)+(6+1)+…+(3n+1)。代码写法是先令 s = 0，再写 for i in range(1, n + 1): s += 3 * i + 1。注意 range 右端要写 n+1 才能取到 n；数学下标从 1 开始、Python 从 0 开始，差一位很常见。",
           "keywords": [
-            "工具",
-            "回传",
-            "tool"
+            "通项",
+            "for 循环",
+            "range(1, n + 1)",
+            "累加"
           ],
-          "explanation": "回传工具结果让模型看到实际执行输出，才能进行后续推理与最终作答。"
+          "explanation": "要点是「谁在变、从哪到哪、通项是什么」三要素齐全，并写出正确的 range 边界。"
         },
         {
-          "id": "function-calling-q3",
+          "id": "sigma-and-sequences-q3",
           "type": "code",
-          "prompt": "实现一个 add 工具的调用结果处理：解析 arguments 得到 a、b 并返回它们的和。",
-          "starterCode": "import json\n\n\ndef execute_add(arguments):\n    pass\n",
-          "solution": "import json\n\n\ndef execute_add(arguments):\n    args = json.loads(arguments)\n    return args[\"a\"] + args[\"b\"]\n",
+          "prompt": "用循环计算 Σ（i 从 1 到 100）i 与 Σ（i 从 1 到 5）i 的平方，并打印两个结果（应分别为 5050 和 55）。",
+          "starterCode": "total = 0\n# TODO: 累加 1 到 100\nprint(total)\n\nsquares = 0\n# TODO: 累加 i 的平方，i 从 1 到 5\nprint(squares)\n",
+          "solution": "total = 0\nfor i in range(1, 101):\n    total += i\nprint(total)\n\nsquares = 0\nfor i in range(1, 6):\n    squares += i ** 2\nprint(squares)",
           "checks": [
-            "json.loads",
-            "args"
-          ],
-          "explanation": "解析 arguments JSON 得到 a、b 并求和。"
+            "range(1, 101)",
+            "range(1, 6)",
+            "** 2",
+            "print"
+          ]
         }
       ]
     },
     {
-      "slug": "agent-loop",
-      "title": "Agent Loop 智能体循环",
+      "slug": "limit-intuition",
+      "title": "极限的直觉：从「无限接近」到导数",
       "order": 3,
-      "module": "Agent 基础",
-      "difficulty": "进阶",
-      "estimatedMinutes": 27,
-      "summary": "Agent 循环是'感知-思考-行动-观察'不断往复的闭环，让智能体能自主完成多步任务。",
-      "intuition": "一个 Agent 就像一个会自己安排步骤的人：先读懂任务（感知），想想该怎么做（思考），调用工具或做些动作（行动），看看结果怎么样（观察），然后决定下一步。这个循环不断重复，直到任务完成或达到最大步数。它不是一次问答，而是一连串有目的、可自我纠偏的步骤。",
-      "formal": "Agent 循环通常包含：目标（goal）、上下文（context）、推理（reasoning，决定下一步）、行动（action，如调用工具）、观察（observation，工具/环境反馈）。每一步把新观测追加进上下文，再次交给模型推理，直到满足终止条件（任务完成、达到 max_turns、工具报错等）。循环的核心是维护好上下文与状态，避免无限循环与超步。",
-      "formula": "\\text{state}_{t+1} = \\text{update}(\\text{state}_t, \\text{action}_t, \\text{observation}_t)",
-      "aiConnection": "大多数 Agent 框架（如 LangChain、AutoGen、OpenAI Agent）底层都是一个 agent loop：模型推理→调用工具→得到观测→继续推理。可靠地实现循环需要处理终止条件、错误恢复、上下文管理与最大步数，这些决定 Agent 的自主性与稳定性。",
+      "module": "从高中到大学",
+      "difficulty": "基础",
+      "track": "main",
+      "estimatedMinutes": 35,
+      "summary": "极限说的是「无限接近但不必到达」；把平均变化率的间隔缩到无限小就得到瞬时变化率，也就是导数，而导数为 0 的点正是极值所在。",
+      "intuition": "高中物理算平均速度用的是路程差除以时间差。想知道「某一瞬间」的速度，两个时刻的间隔就要取到无限小——这不是除以 0，而是让 Δt 无限接近 0，看这个商稳定在哪个数上，那个数就是极限。有了这个思想，导数就顺理成章：在函数图像上取两个点连成一条割线，让第二个点沿着曲线滑向第一个点，割线会逐渐转成切线，切线的斜率就是那一点的导数。损失函数的图像像一条山谷，谷底切线水平、导数为 0，于是「找最优参数」就变成了「找导数为 0 的地方」。你不需要背 ε-δ 定义，抓住「越来越近」这个画面就够了。",
+      "formal": "极限 $\\lim_{x \\to a} f(x) = L$ 表示 x 无限接近 a（可以不等于 a）时 f(x) 任意接近 L；函数在 a 点有没有定义、取值是多少，都不影响极限。导数定义为平均变化率的极限：$f'(x) = \\lim_{\\Delta x \\to 0} \\frac{f(x+\\Delta x) - f(x)}{\\Delta x}$，几何意义是曲线在该点的切线斜率，物理意义是瞬时变化率。计算规则只需记四条：常数 (c)' = 0；幂函数 (x^n)' = n·x^(n−1)；数乘 (cf)' = c·f'；和差 (f ± g)' = f' ± g'。极值的必要条件是一阶导数为 0（驻点），再用二阶导数判断：f''(x*) > 0 为极小，f''(x*) < 0 为极大。两个边界：可导一定连续，连续不一定可导（例如 |x| 在 0 点）；导数为 0 只是极值的必要条件，也可能是鞍点。",
+      "formula": "f'(x) = \\lim_{\\Delta x \\to 0} \\frac{f(x + \\Delta x) - f(x)}{\\Delta x}, \\qquad (x^n)' = n x^{n-1}, \\qquad (c)' = 0, \\qquad (f \\pm g)' = f' \\pm g'",
+      "aiConnection": "训练模型就是最小化损失 L(θ)，而「往哪个方向调参数」完全由导数决定：一维时 θ ← θ − η·L'(θ)，多维时把每个参数的偏导打包成梯度 ∇_θ L，这就是梯度下降，也是反向传播要算的东西。学习率 η 直接和导数配合：太大就会一步跨过谷底、来回震荡甚至发散，太小则收敛慢、容易卡在平坦区。想知道自己写的梯度对不对，就用差分算数值梯度再和解析梯度对比（梯度检验）。所以说，导数是「参数该怎么调」的唯一信息来源。",
       "codeExample": {
         "lang": "python",
-        "filename": "agent_loop.py",
-        "code": "from openai import OpenAI\n\nclient = OpenAI(api_key=\"key\")\n\ntools = [{\"type\": \"function\", \"function\": {\n    \"name\": \"add\", \"description\": \"两数相加\",\n    \"parameters\": {\"type\": \"object\",\n        \"properties\": {\"a\": {\"type\": \"number\"}, \"b\": {\"type\": \"number\"}},\n        \"required\": [\"a\", \"b\"]},\n}}]\n\ndef agent_loop(user_goal, max_turns=5):\n    messages = [{\"role\": \"user\", \"content\": user_goal}]\n    for turn in range(max_turns):\n        resp = client.chat.completions.create(\n            model=\"gpt-4o-mini\", messages=messages, tools=tools)\n        msg = resp.choices[0].message\n        # 工具调用则执行并回传，否则认为任务完成\n        if msg.tool_calls:\n            for call in msg.tool_calls:\n                import json\n                a, b = json.loads(call.function.arguments)[\"a\"], \\\n                       json.loads(call.function.arguments)[\"b\"]\n                messages.append(call.message)\n                messages.append({\"role\": \"tool\", \"tool_call_id\": call.id,\n                                 \"content\": str(a + b)})\n        else:\n            return msg.content   # 无工具调用即完成任务\n    return \"达到最大步数\"\n\nprint(agent_loop(\"计算 (2 + 3) 的结果，不需要额外解释。\"))"
+        "filename": "derivative_and_descent.py",
+        "code": "def f(x):\n    return x ** 2 - 4 * x + 1\n\ndef numeric_derivative(f, x, h=1e-5):\n    # 中心差分：用两点的割线斜率近似切线斜率\n    return (f(x + h) - f(x - h)) / (2 * h)\n\n# 验证公式：(x^2 - 4x + 1)' = 2x - 4\nfor x in [-1.0, 0.0, 1.0, 2.0, 3.0]:\n    approx = numeric_derivative(f, x)\n    exact = 2 * x - 4\n    print(f'x={x:>5}  差分={approx:>8.5f}  公式={exact:>6.1f}')\n\n# 梯度下降：沿导数反方向走，导数为 0 时停下\ntheta = 0.0\nlr = 0.1\nfor step in range(50):\n    grad = numeric_derivative(f, theta)\n    theta = theta - lr * grad\nprint(f'最终 theta = {theta:.4f}（真实最小值点在 x = 2）')\nprint(f'最小损失 f(theta) = {f(theta):.4f}（f(2) = -3）')"
       },
       "mistakes": [
-        "没有设置最大步数，导致循环无限进行",
-        "不处理工具报错或无效结果，Agent 卡死或反复重试同一动作",
-        "忽视上下文累积，长任务下历史过长超限或丢失关键信息",
-        "把循环当一次问答，缺失观测回传机制"
+        "把极限当成直接代入求值，遇到 0/0 就以为没意义，其实要看趋近过程",
+        "认为导数为 0 的点一定是极小值，忘了也可能是极大值或鞍点",
+        "差分近似导数时 h 取 1e-2 误差太大、取 1e-12 又被浮点误差吃掉，常用 1e-5",
+        "以为学习率越大收敛越快，结果损失来回震荡甚至变成 nan"
       ],
       "interviewPoints": [
-        "「Agent Loop 由哪几步组成？」要答到感知-思考-行动-观察的闭环，每步把观测追加进上下文再推理，直到满足终止条件",
-        "「怎么防止死循环？」要答到 max_turns 上限、重复动作检测、超时与 token 预算，以及工具报错时的退避与降级策略",
-        "「循环里的上下文怎么管？」要答到历史随步数线性增长会超出窗口，需要摘要压缩、只保留关键观测、把长结果落盘只回传摘要",
-        "「Agent 和 workflow 的边界在哪？」要答到看步骤是否预先确定：流程固定时 workflow 更稳更省，路径开放才交给 Agent 自主规划"
+        "「导数为 0 的点一定是极小值吗？」要答到这只是必要条件，还需二阶导或邻域判断；深度学习损失面上有大量鞍点，所以用随机初始化、动量、Adam 来逃离",
+        "「怎么验证自己写的梯度是对的？」要答到梯度检验：用 (f(x+h) − f(x−h)) / 2h 算数值梯度，与解析梯度比较相对误差，一般应小于 1e-6 量级",
+        "「学习率过大和过小分别会发生什么？」要答到过大震荡或发散、过小收敛慢且易停在平坦区，实践中配合 warmup、余弦衰减和 Adam 的自适应步长"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "维基百科：极限 (数学)",
+          "url": "https://zh.wikipedia.org/wiki/极限_(数学)"
+        },
+        {
+          "title": "维基百科：导数",
+          "url": "https://zh.wikipedia.org/wiki/导数"
+        }
+      ],
       "quiz": [
         {
-          "id": "agent-loop-q1",
+          "id": "limit-intuition-q1",
           "type": "choice",
-          "prompt": "Agent 循环的正确顺序是？",
+          "prompt": "关于极限与导数，下列说法正确的是？",
           "options": [
-            "观察-行动-思考-感知",
-            "感知-思考-行动-观察",
-            "行动-观察-思考-感知",
-            "思考-观察-行动-感知"
+            "导数就是曲线在该点切线的斜率，也就是瞬时变化率",
+            "导数为 0 的点一定是函数的最小值点",
+            "极限 lim (x 趋于 a) f(x) 一定等于 f(a)",
+            "学习率越大，梯度下降收敛得越快"
           ],
-          "answerIndex": 1,
-          "explanation": "典型 Agent 循环是：感知任务、思考决策、执行行动、观察反馈，再据此进入下一步，不断往复直至结束。"
+          "answerIndex": 0,
+          "explanation": "A 正确。B 错在导数为 0 只是极值的必要条件，可能是极大值或鞍点；C 错在极限与 f(a) 是否有定义、取值多少无关；D 错在学习率过大会震荡甚至发散。"
         },
         {
-          "id": "agent-loop-q2",
+          "id": "limit-intuition-q2",
           "type": "short",
-          "prompt": "为什么 Agent 循环需要设置最大步数限制？",
-          "answer": "参考回答：因为模型有可能反复调用工具而不收敛、陷入无效循环，浪费 token 与时间。设置 max_turns 上限能强制终止，避免死循环与成本失控，同时可在超限时返回部分结果或提示失败。",
+          "prompt": "用自己的话说清楚：为什么「导数为 0」可以帮助我们找到损失函数的最小值？",
+          "answer": "参考回答：函数图像上某点导数为 0，说明那一点的切线是水平的，函数在该点附近不再上升也不再下降，因此它是候选的极值点。像平方损失这类向下凸的函数，导数为 0 的地方就是全局最小值，于是找最优参数就变成解方程 L'(θ)=0，或者沿着负梯度方向一步步走到导数为 0 的位置。",
           "keywords": [
-            "最大步数",
-            "终止",
-            "死循环"
+            "切线水平",
+            "极值点",
+            "负梯度",
+            "最小值"
           ],
-          "explanation": "最大步数防止无限循环与成本失控，提供强制终止条件。"
+          "explanation": "得分点是「切线水平 = 变化率为 0 = 极值候选」以及「沿负梯度方向走到该点」。"
         },
         {
-          "id": "agent-loop-q3",
+          "id": "limit-intuition-q3",
           "type": "code",
-          "prompt": "实现一个 run_agent(goal, max_turns)：循环中若模型无 tool_calls 则返回 content，否则继续；超过 max_turns 返回提示。",
-          "starterCode": "def run_agent(goal, max_turns=5):\n    messages = [{\"role\": \"user\", \"content\": goal}]\n    for turn in range(max_turns):\n        # 假设调用 get_response(messages) 返回消息对象\n        msg = get_response(messages)\n        if not msg.tool_calls:\n            return msg.content\n    return \"达到最大步数\"\n",
-          "solution": "def run_agent(goal, max_turns=5):\n    messages = [{\"role\": \"user\", \"content\": goal}]\n    for turn in range(max_turns):\n        msg = get_response(messages)\n        if not msg.tool_calls:\n            return msg.content\n        # 执行工具并把观测回传，继续循环\n        # messages.append(...)\n    return \"达到最大步数\"\n",
+          "prompt": "用中心差分近似导数：实现 numeric_derivative(f, x, h=1e-5) 返回 (f(x+h) - f(x-h)) / (2h)，对 f(x) = x**3 在 x = 2 处打印近似值（应约为 12.0），并打印精确值 3 * x**2。",
+          "starterCode": "def numeric_derivative(f, x, h=1e-5):\n    pass\n\ndef f(x):\n    return x ** 3\n\nprint(numeric_derivative(f, 2.0))\nprint(3 * 2.0 ** 2)\n",
+          "solution": "def numeric_derivative(f, x, h=1e-5):\n    return (f(x + h) - f(x - h)) / (2 * h)\n\ndef f(x):\n    return x ** 3\n\nprint(round(numeric_derivative(f, 2.0), 6))\nprint(3 * 2.0 ** 2)",
           "checks": [
-            "for turn in range(max_turns)",
-            "msg.content"
-          ],
-          "explanation": "对 turn 循环，无工具调用即返回 content；否则继续循环直至上限。"
+            "f(x + h)",
+            "f(x - h)",
+            "2 * h",
+            "print"
+          ]
         }
       ]
     },
     {
-      "slug": "memory",
-      "title": "Memory 记忆",
+      "slug": "sets-and-mapping",
+      "title": "集合与映射：数据、标签与向量空间",
       "order": 4,
-      "module": "Agent 进阶",
-      "difficulty": "进阶",
-      "estimatedMinutes": 25,
-      "summary": "记忆让 Agent 能在多轮与长任务中保留、组织并调用历史信息，是自主性的重要前提。",
-      "intuition": "没有记忆的 Agent 每次对话都像失忆症患者，得重新交代一切。记忆分为两类：短期记忆如同对话里的'即时上下文'，记住这几天聊了什么；长期记忆则像写进笔记本的重要事实，跨会话甚至跨项目都能长久记住，并在需要时被检索出来。正是这两层记忆让 Agent 显得'了解你'。",
-      "formal": "短期记忆主要由上下文窗口承载，受 token 上限约束，超限需截断或摘要；长期记忆通常持久化到外部存储，可分为记忆库（如向量数据库）用于语义检索、以及结构化存储（如数据库/文件）用于精确事实。记忆机制包括写入（决定什么值得记）、组织（embedding/index）、检索（何时取哪些）、更新与遗忘（修正过时或错误记忆）。",
-      "formula": "\\text{retrieved} = \\text{top-k}\\;\\text{}(\\text{query}; \\text{memory\\_store})",
-      "aiConnection": "记忆是 Agent 从一次性助手走向长期伙伴的关键。RAG 本质上就是为对话注入'检索到的长期记忆'。多轮 Agent 要记住用户的偏好、历史选择与任务上下文，往往需要把短期对话与长期记忆库结合起来，并通过摘要压缩短期信息、检索关键长期事实。",
+      "module": "从高中到大学",
+      "difficulty": "基础",
+      "track": "main",
+      "estimatedMinutes": 35,
+      "summary": "集合是「不重复的一堆东西」，笛卡尔积把两个集合组合成有序对，映射规定从一个集合到另一个集合的对应；数据集就是向量的集合，标签就是样本到类别的映射。",
+      "intuition": "高中集合那套 {1, 2, 3}、属于、包含于并没有白学，它是描述数据集最省事的语言：一个数据集就是把很多个样本向量装进一个集合，词表是 token 的集合，ℝ 的 n 次方是所有 n 维向量的集合。笛卡尔积你也见过——把「行」和「列」两两组合，就得到一张表的所有格子，矩阵的形状 m×n 正是两个集合笛卡尔积的大小。分类任务的标签，本质上是一条从「样本」到「类别」的映射规则；模型学到的不是「记住每张图」，而是这条映射本身。点积则回答另一个问题：两个向量到底有多像。",
+      "formal": "集合由元素组成，记 a ∈ A；若 B 的每个元素都在 A 中则 B ⊆ A；并集 A ∪ B、交集 A ∩ B、差集 A \\ B 是数据筛选与过滤的常用运算。笛卡尔积 $A \\times B = \\{(a, b) \\mid a \\in A,\\ b \\in B\\}$，元素个数 |A × B| = |A|·|B|，所以 m 行 n 列的表有 mn 个格子。映射 f: A → B 给每个 a ∈ A 指定唯一的 f(a)：不同输入得到不同输出叫单射，B 中每个元素都被取到叫满射，二者兼备叫双射（可逆）。n 维实向量空间 ℝ^n 是所有 n 维实向量的集合，对加法与数乘封闭。点积 $\\mathbf{a} \\cdot \\mathbf{b} = \\sum_i a_i b_i = \\|\\mathbf{a}\\|\\|\\mathbf{b}\\|\\cos\\theta$，几何上是 a 在 b 方向上的投影长度乘 b 的长度，而 cos θ 只比较方向、不受长度影响。",
+      "formula": "\\mathbf{a} \\cdot \\mathbf{b} = \\sum_{i=1}^{n} a_i b_i = \\|\\mathbf{a}\\| \\, \\|\\mathbf{b}\\| \\cos\\theta, \\qquad \\cos\\theta = \\frac{\\mathbf{a} \\cdot \\mathbf{b}}{\\|\\mathbf{a}\\| \\, \\|\\mathbf{b}\\|}, \\qquad |A \\times B| = |A| \\cdot |B|",
+      "aiConnection": "数据集写成 {(x_i, y_i)} 就是集合加映射：x_i 在向量空间里，y_i 在标签集合里。embedding 把 token 映射到 ℝ^d，检索时用余弦相似度 cos θ 比较方向；推荐和搜索每天做的就是集合交并差（召回集合 ∩ 过滤集合 − 已读集合）。分类头是一条从 ℝ^d 到 {1, …, K} 的映射，多标签分类则把输出换成 {0,1}^K 的向量。理解「映射」这个词，你就能分清：模型学的是规则，数据只是这条规则的证据。",
       "codeExample": {
         "lang": "python",
-        "filename": "memory.py",
-        "code": "import numpy as np\n\nclass SimpleMemory:\n    def __init__(self):\n        self.items = []   # (向量, 文本)\n\n    def add(self, text, vec):\n        self.items.append((vec, text))\n\n    def search(self, q_vec, top_k=2):\n        def cosine(a, b):\n            return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n        scored = sorted(self.items, key=lambda x: cosine(q_vec, x[0]), reverse=True)\n        return [t for _, t in scored[:top_k]]\n\n    def recent_context(self, n=3):\n        # 返回最近 n 条作为短期记忆\n        return [t for _, t in self.items[-n:]]\n\n# 示意：加入记忆并检索\nmem = SimpleMemory()\nmem.add(\"用户喜欢用 Python\", np.array([0.9, 0.2]))\nmem.add(\"用户偏好简洁回答\", np.array([0.3, 0.9]))\nprint(\"最近记忆:\", mem.recent_context(2))\nprint(\"相关检索:\", mem.search(np.array([0.8, 0.3]), top_k=1))"
+        "filename": "sets_and_cosine.py",
+        "code": "from itertools import product\nimport math\n\n# 1) 集合运算：召回、过滤、去重都是这么做的\nrecall = {'u1', 'u2', 'u3', 'u4'}\nblocked = {'u2', 'u3', 'u5'}\nprint('交集  ', recall & blocked)\nprint('并集  ', recall | blocked)\nprint('差集  ', recall - blocked)\n\n# 2) 笛卡尔积：行 × 列 = 一张表的所有格子\nrows = ['r1', 'r2']\ncols = ['c1', 'c2', 'c3']\ncells = list(product(rows, cols))\nprint('笛卡尔积大小', len(cells), '= 2 × 3')\n\n# 3) 点积与夹角余弦：衡量两个向量有多像\na = [1.0, 2.0, 3.0]\nb = [2.0, 4.0, 6.0]        # 与 a 同方向、长度不同\ndot = 0.0\nfor x, y in zip(a, b):     # 点积 = Σ a_i * b_i\n    dot += x * y\nna = math.sqrt(sum(x * x for x in a))\nnb = math.sqrt(sum(y * y for y in b))\ncos = dot / (na * nb)\nprint(f'a · b = {dot}   cos = {cos:.4f}   夹角 = {math.degrees(math.acos(cos)):.1f} 度')"
       },
       "mistakes": [
-        "把全部历史无脑塞进上下文，超限或成本失控",
-        "长期记忆不做质量过滤，存入大量无关或错误信息",
-        "不处理记忆更新与遗忘，过时记忆持续误导 Agent"
+        "把集合当列表用，忽略元素不重复、无序，还想按下标取元素",
+        "混淆「属于」与「包含于」：元素属于集合，集合包含于集合",
+        "算余弦相似度时忘记除以两个向量的范数，直接把点积当相似度",
+        "把单射、满射说成数据的性质，它们其实是映射（函数）本身的性质"
       ],
       "interviewPoints": [
-        "「短期记忆和长期记忆怎么分工？」要答到短期靠上下文窗口承载、受 token 限制，长期持久化到向量库或数据库、跨会话检索回填",
-        "「什么信息值得写入长期记忆？」要答到稳定偏好与事实、任务结论，而不是全部对话；写入前要抽取与去重，否则噪声会污染后续检索",
-        "「记忆冲突或过期怎么办？」要答到需要更新与遗忘机制、时间戳与来源标记，冲突时以新事实为准，并定期清理失效记忆",
-        "「为什么不全塞进上下文？」要答到成本与窗口上限、长上下文里有效注意力会衰减，检索式记忆更省 token 也更可控"
+        "「余弦相似度和欧氏距离分别在什么场景用？」要答到余弦只看方向、对长度不敏感，适合文本 embedding（长文本词频高）；欧氏距离看绝对位置，适合数值特征或图像检索，并说明先归一化再算点积等价于余弦",
+        "「embedding 的维度 d 怎么选？」要答到 d 决定表示容量：太小欠拟合、区分度不足，太大显存和算力开销大且容易过拟合，常见 128 / 256 / 768 / 4096，最终用检索或下游指标评估",
+        "「多标签分类和单标签分类在映射上差在哪？」要答到输出从「K 选 1」变成 {0,1}^K 的向量，损失从 softmax 交叉熵换成每个类别独立的 BCE"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "3Blue1Brown《线性代数的本质》官方双语合集（向量与点积的可视化）",
+          "url": "https://www.bilibili.com/video/BV1ys411472E"
+        },
+        {
+          "title": "维基百科：集合 (数学)",
+          "url": "https://zh.wikipedia.org/wiki/集合_(数学)"
+        }
+      ],
       "quiz": [
         {
-          "id": "memory-q1",
+          "id": "sets-and-mapping-q1",
           "type": "choice",
-          "prompt": "短期记忆与长期记忆的主要区别是？",
+          "prompt": "关于点积 a · b = ‖a‖‖b‖cos θ，下列说法正确的是？",
           "options": [
-            "无区别，二者相同",
-            "短期记忆依赖上下文窗口，长期记忆持续到外部存储可跨会话",
-            "长期记忆不占用任何存储",
-            "短期记忆比长期记忆更持久"
+            "它衡量两个向量的方向相似度，同时受两个向量长度影响",
+            "它一定是一个向量，方向与 a 相同",
+            "只要两个向量垂直，点积就等于 1",
+            "它只和两个向量的长度有关，与夹角无关"
           ],
-          "answerIndex": 1,
-          "explanation": "短期记忆由上下文窗口承载、受 token 限制；长期记忆持久化到外部存储，可跨会话且可被检索。"
+          "answerIndex": 0,
+          "explanation": "点积是标量，等于两个范数与 cos θ 的乘积，所以长度和夹角都影响它；垂直时 cos θ = 0，点积为 0 而不是 1。B、C、D 都错。"
         },
         {
-          "id": "memory-q2",
+          "id": "sets-and-mapping-q2",
           "type": "short",
-          "prompt": "当对话历史超出上下文窗口时，通常会怎么做？",
-          "answer": "参考回答：常见做法是把较早的对话做摘要压缩，只保留关键结论作为短期记忆；或用滑动窗口只保留最近若干轮；也可以把重要事实抽取出来写入长期记忆库，需要时再检索回填，从而在有限的上下文中维持关键信息。",
+          "prompt": "为什么说「数据集是向量的集合，标签是样本到类别的映射」？这样描述有什么好处？",
+          "answer": "参考回答：每个样本有多个特征，可以按固定顺序打包成一个向量，所有样本就构成一个向量集合；标签规定每个样本属于哪个类别，是一条从样本空间到类别集合的映射，模型要学的正是这条映射而不是记住每个样本。好处是能用集合运算做数据筛选与召回，用向量运算批量处理样本，也方便分析映射是否单射、是否可逆。",
           "keywords": [
-            "摘要",
-            "截断",
-            "长期记忆"
+            "向量集合",
+            "映射",
+            "批量运算",
+            "学规则"
           ],
-          "explanation": "超限时常用摘要压缩、滑动窗口截断、或把重要事实写入长期记忆库并检索回填来管理。"
+          "explanation": "要点是「样本 = 向量、标签 = 映射」，以及由此带来的批量计算与泛化视角。"
         },
         {
-          "id": "memory-q3",
+          "id": "sets-and-mapping-q3",
           "type": "code",
-          "prompt": "实现一个 add 方法把 (vec, text) 加入 items，和一个 recent_context(n) 返回最近 n 条文本。",
-          "starterCode": "class SimpleMemory:\n    def __init__(self):\n        self.items = []\n\n    def add(self, vec, text):\n        pass\n\n    def recent_context(self, n):\n        pass\n",
-          "solution": "class SimpleMemory:\n    def __init__(self):\n        self.items = []\n\n    def add(self, vec, text):\n        self.items.append((vec, text))\n\n    def recent_context(self, n):\n        return [t for _, t in self.items[-n:]]\n",
+          "prompt": "给定 a=[1,2,3]、b=[2,4,6]，用循环计算点积与夹角余弦并打印（点积为 28，余弦为 1.0）。",
+          "starterCode": "import math\n\na = [1.0, 2.0, 3.0]\nb = [2.0, 4.0, 6.0]\n\ndot = 0.0\n# TODO: 累加点积\nna = 0.0\nnb = 0.0\n# TODO: 计算两个向量的范数\nprint(dot, dot / (na * nb))\n",
+          "solution": "import math\n\na = [1.0, 2.0, 3.0]\nb = [2.0, 4.0, 6.0]\n\ndot = 0.0\nfor x, y in zip(a, b):\n    dot += x * y\n\nna = math.sqrt(sum(x * x for x in a))\nnb = math.sqrt(sum(y * y for y in b))\nprint(dot, dot / (na * nb))",
           "checks": [
-            "append",
-            "[-n:]"
-          ],
-          "explanation": "add 用 append 存 (vec,text)，recent_context 取最后 n 条文本。"
+            "zip(a, b)",
+            "dot +=",
+            "math.sqrt",
+            "dot / (na * nb)"
+          ]
         }
       ]
     },
     {
-      "slug": "workflow",
-      "title": "Workflow 工作流",
+      "slug": "math-notation-cheatsheet",
+      "title": "数学符号速查表",
       "order": 5,
-      "module": "Agent 进阶",
-      "difficulty": "进阶",
-      "estimatedMinutes": 24,
-      "summary": "工作流把复杂任务拆成确定的步骤序列，用编排控制流程、分支与并行，让结果稳定可复现。",
-      "intuition": "完全自由发挥的 Agent 有时会'跑偏'。工作流则像给任务画了一张明确的流程图：第一步做什么、判断后走哪个分支、哪些步骤能并行、最后如何汇总。预设好这些步骤，Agent 就沿着轨道稳定执行，既能保证质量又不会乱来，适合工序明确的场景。",
-      "formal": "工作流编排把任务建模为有向图，节点是操作（LLM 调用、工具、检索、判断），边表示依赖与流向。可包含串行、并行（并行执行多个节点）、分支（基于条件的路由）、循环与聚合汇总。相比完全由模型自由规划（autonomous），确定性的工作流可预测、可测试、结果一致，也便于审计与错误定位；代价是灵活性较低。",
-      "formula": "x_{n+1} = step_n(x_n)",
-      "aiConnection": "在 LLM 应用里，工作流常用来固定'工序'：先检索文档、再总结、再判定是否补检索、最后生成。RAG 管线、Agent 编排框架（如 LangGraph、n8n）都支持把模型调用与工具组合成工作流。当任务规则明确、需要稳定输出时，用工作流比完全自主更可靠。",
+      "module": "从高中到大学",
+      "difficulty": "基础",
+      "track": "main",
+      "estimatedMinutes": 25,
+      "summary": "把 AI 论文与课程里最高频的数学符号集中成一张对照表：每个符号给出念法、含义、AI 中的常见用法，以及它对应你高中学过的什么。",
+      "intuition": "读论文卡住，多数时候不是数学难，而是符号不认识——就像看代码时不知道 != 是什么意思。这一节是一张随时可以回来查的对照表：Σ 念 sigma，就是求和；∂ 念 partial，是「只看一个变量、把其他当常数」的导数；∇ 念 nabla，是把所有偏导打包成的向量；∈ 念「属于」，就是你高中集合里的那个符号；‖x‖ 是向量的长度。建议先把表格扫一遍混个脸熟，再回头重读第 2、3、4 节的公式，你会发现大部分式子已经能像读代码一样读下来了。",
+      "formal": "符号按功能分七类。求和与求积：Σ、∏。微积分：∂（偏导）、∇（梯度）、d（全微分）。集合与空间：∈、⊆、∪、∩、∅、ℝ^n。范数与相似度：‖x‖（默认 L2 范数）、cos θ、⟨x, y⟩（内积，与点积同义）。优化：min、max、argmin、argmax（返回使目标最优的自变量，不是最优值本身）。概率：∼（服从某分布）、∝（正比于）、𝔼（期望）、𝕍（方差）、p(x | y)（条件概率）。线性代数：⊗（克罗内克积）、⊙（逐元素乘）。超参数的常见约定：θ 多为模型参数，λ 多为正则化强度，η 多为学习率，α 多为步长、温度或加权系数——这些只是习惯，论文里必须以它自己的定义为准。",
+      "formula": "\\nabla_\\theta L(\\theta) = \\left[ \\frac{\\partial L}{\\partial \\theta_1}, \\frac{\\partial L}{\\partial \\theta_2}, \\dots, \\frac{\\partial L}{\\partial \\theta_n} \\right]^\\top, \\qquad \\theta \\leftarrow \\theta - \\eta \\, \\nabla_\\theta L(\\theta)",
+      "aiConnection": "速查表是读论文的「键盘映射」：看到 ∇_θ L 就知道是「损失对所有参数的梯度」，看到 𝔼 下标 x ∼ D 就知道是「在整个数据集上取平均」，看到 argmax 就知道是「取分数最高的那一类」，看到 ‖x‖ 就知道是范数、常出现在正则项里（L2 正则就是 λ‖θ‖²）。把这些符号读顺，你就能直接读懂论文里的算法框 Algorithm 1，并把它翻译成 PyTorch 的几行代码——这是算法岗每天都要用的阅读能力。",
       "codeExample": {
         "lang": "python",
-        "filename": "workflow.py",
-        "code": "class Workflow:\n    def __init__(self):\n        self.steps = []   # 依次执行的步骤\n\n    def add(self, name, fn):\n        self.steps.append((name, fn))\n        return self\n\n    def run(self, x):\n        state = x\n        for name, fn in self.steps:\n            state = fn(state)\n            print(f\"执行步骤 [{name}]\", state)\n        return state\n\n# 定义几个简单步骤\ndef step1(x):\n    return x + 1\n\ndef step2(x):\n    return x * 2\n\ndef step3(x):\n    return f\"结果: {x}\"\n\nwf = Workflow()\nwf.add(\"加1\", step1).add(\"翻倍\", step2).add(\"格式化\", step3)\nprint(wf.run(3))   # 输出 结果: 8"
+        "filename": "notation_cheatsheet.py",
+        "code": "import math\n\n# AI 论文里最高频的符号，先混个脸熟\nSYMBOLS = {\n    'Σ': '求和，等于一个 for 循环累加',\n    '∏': '求积，等于连乘',\n    '∂': '偏导，只看一个变量、其余当常数',\n    '∇': '梯度，把所有偏导打包成向量',\n    '∈': '属于，元素在集合里',\n    '⊆': '子集，集合包含于集合',\n    'ℝⁿ': 'n 维实向量空间',\n    '‖x‖': '范数，向量的长度',\n    'argmax': '让目标最大的那个自变量',\n    '𝔼': '期望，按概率加权平均',\n    '∝': '正比于',\n}\n\n# argmax：返回下标，而不是最大值本身\ndef argmax(xs):\n    return max(range(len(xs)), key=lambda i: xs[i])\n\nlogits = [0.2, 2.5, 1.1]\ntotal = sum(math.exp(z) for z in logits)\nprobs = [math.exp(z) / total for z in logits]   # softmax = 每个 exp 除以 Σ exp\nprint('argmax ->', argmax(logits), ' 概率 ->', [round(p, 3) for p in probs])\nprint('期望 E[x] =', round(sum(p * i for i, p in enumerate(probs)), 3))\nprint('范数 =', round(math.sqrt(sum(z * z for z in logits)), 4))\nfor k, v in SYMBOLS.items():\n    print(f'{k:>6}  {v}')"
       },
       "mistakes": [
-        "把一切都做成固定工作流，导致灵活场景僵硬、无法应变",
-        "缺少错误处理或分支，遇到异常直接中断整个流程",
-        "忽视步骤间的状态传递，导致流程结果错乱",
-        "不加并行与聚合，长的串行链效率低下"
+        "把 ∏ 当成 Σ 用，明明是连乘却写成了连加",
+        "把 ∂ 和 d 混为一谈，多变量函数不说明对谁求导",
+        "以为 argmax 返回最大值，其实它返回取到最大值的自变量",
+        "把 θ、λ、η、α 当成固定含义，不看论文自己的符号定义"
       ],
       "interviewPoints": [
-        "「什么时候用 workflow 而不是自主 Agent？」要答到流程明确、要求结果稳定可复现可审计时用 workflow；步骤开放需临场决策才用 Agent",
-        "「工作流怎么建模？」要答到把任务建成有向图，节点是 LLM 调用、工具、检索与判断，边表示依赖，支持串行、并行、分支与聚合",
-        "「工作流里怎么做错误处理？」要答到每步超时与重试、失败分支与降级、幂等设计，以及状态持久化带来的断点续跑",
-        "「加并行节点会带来什么新问题？」要答到状态合并与竞态、下游节点的等待与依赖、成本峰值，需要聚合节点与并发上限来兜住"
+        "「∇_θ L 里的 θ 是什么？为什么梯度和参数形状一样？」要答到 θ 是所有可训练参数拼成的向量，每个参数对应一个偏导，所以梯度与参数同维度，才能逐元素执行 θ ← θ − η∇θL",
+        "「𝔼 下标 x ∼ p(x) 的期望在代码里怎么估？」要答到蒙特卡洛采样求平均，mini-batch 就是用一批样本的均值估计整个数据分布的期望，批越小方差越大",
+        "「argmax 不可导，为什么分类模型还能训练？」要答到训练时用可导的 softmax 加交叉熵提供梯度，argmax 只在推理阶段用来取类别，或用 Gumbel-softmax 这类可微松弛"
       ],
-      "resources": [],
-      "quiz": [
+      "resources": [
         {
-          "id": "workflow-q1",
-          "type": "choice",
-          "prompt": "确定性的工作流相比完全自主 Agent 的主要优势是？",
-          "options": [
-            "更灵活、能随机应变",
-            "结果稳定、可预测、可审计",
-            "不需要任何模型调用",
-            "一定更聪明"
-          ],
-          "answerIndex": 1,
-          "explanation": "固定工作流把任务分解成确定步骤，结果稳定可复现、便于测试审计；代价是灵活性较低。"
+          "title": "维基百科：数学符号表",
+          "url": "https://zh.wikipedia.org/wiki/数学符号表"
         },
         {
-          "id": "workflow-q2",
-          "type": "short",
-          "prompt": "什么时候适合用工作流而不是让 Agent 完全自主？",
-          "answer": "参考回答：当任务流程明确、步骤固定、对结果一致性要求高，或需要可追溯、可审计、便于定位错误时，适合用预定义的确定性工作流。若任务开放、步骤不固定、需要临场决策，则更适合让 Agent 自主规划。",
-          "keywords": [
-            "流程明确",
-            "稳定",
-            "可审计"
-          ],
-          "explanation": "流程明确、需要稳定一致输出与可追溯的场景适合工作流；开放任务更宜自主 Agent。"
-        },
-        {
-          "id": "workflow-q3",
-          "type": "code",
-          "prompt": "实现 Workflow 类的 add 方法，把 (name, fn) 加入 self.steps。",
-          "starterCode": "class Workflow:\n    def __init__(self):\n        self.steps = []\n\n    def add(self, name, fn):\n        pass\n",
-          "solution": "class Workflow:\n    def __init__(self):\n        self.steps = []\n\n    def add(self, name, fn):\n        self.steps.append((name, fn))\n        return self\n",
-          "checks": [
-            "append",
-            "return self"
-          ],
-          "explanation": "把 (name, fn) 加入 steps，并返回 self 以支持链式调用。"
+          "title": "维基百科：希腊字母（θ λ η α 的读法）",
+          "url": "https://zh.wikipedia.org/wiki/希腊字母"
         }
-      ]
-    },
-    {
-      "slug": "multi-agent",
-      "title": "Multi-Agent 多智能体",
-      "order": 6,
-      "module": "Agent 进阶",
-      "difficulty": "进阶",
-      "estimatedMinutes": 24,
-      "summary": "多智能体系统让多个各有专长的 Agent 分工协作或相互质疑，共同完成更复杂的任务。",
-      "intuition": "一个全能 Agent 常常顾此失彼。多智能体就像一支有分工的团队：有人负责写代码，有人负责评审，有人负责搜索资料，还有人负责把关质量。他们通过消息协作，有的串行接力，有的并行分工，有的则互相争辩、交叉检验，从而把大任务拆开、各展所长，整体比单个 Agent 更强也更稳。",
-      "formal": "多智能体系统包含若干角色（role）不同的 Agent，各配自己的 prompt、工具与模型。常见拓扑：层级式（主管协调若干子 Agent）、流水线式（串行传递任务）、以及多 Agent 评审/辩论（互相检查、修正）。智能体之间通过消息传递共享任务与结果，需要一个协调者与终止条件，并控制消息量与上下文，防止冗余与失控。",
-      "formula": "",
-      "aiConnection": "大型任务往往由一个主管 Agent 协调多个专业子 Agent（如研究员、写手、代码审查员）并行或串行完成。评审与辩论能提升输出质量但会显著增加 token 成本与复杂度。多智能体框架（如 AutoGen、MetaGPT）把这种协作变成可编排的系统，是复杂 Agent 应用的高阶形态。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "multi_agent.py",
-        "code": "class Agent:\n    def __init__(self, name, role):\n        self.name = name\n        self.role = role\n\n    def run(self, task):\n        # 模拟各 Agent 的处理\n        return f\"[{self.name}·{self.role}] 处理了: {task}\"\n\n# 简单的主管-工作者流水线\nboss = Agent(\"主管\", \"协调\")\nresearcher = Agent(\"研究员\", \"搜索与分析\")\nwriter = Agent(\"写手\", \"撰写\")\nreviewer = Agent(\"审查员\", \"质量把关\")\n\ntask = \"写一篇关于 Agent 的简短介绍\"\n# 串行接力：研究员 -> 写手 -> 审查员\nnotes = researcher.run(task)\ndraft = writer.run(notes)\nreview = reviewer.run(draft)\nprint(notes)\nprint(draft)\nprint(review)\nprint(boss.run(\"汇总最终结果\"))"
-      },
-      "mistakes": [
-        "没有定义清晰的角色与协作协议，Agent 之间职责混乱",
-        "消息传递无上限，涌现大量冗余上下文与 token 消耗",
-        "缺少协调者与终止条件，系统无休止协作不收敛",
-        "忽略错误传播，一个子 Agent 失败便拖垮整个流程"
       ],
-      "interviewPoints": [
-        "「多智能体一定比单 Agent 好吗？」要答到分工能拆复杂任务并互相检查，但 token 成本与延迟成倍上升，任务简单时反而更差",
-        "「常见协作拓扑有哪些？」要答到层级式主管协调、流水线接力、评审或辩论式互检，以及并行分工后聚合，各自适合不同任务形态",
-        "「多智能体怎么防止失控？」要答到明确角色与协作协议、消息与轮次上限、协调者的终止条件、失败隔离以避免错误传播",
-        "「辩论式评审真能提升质量吗？」要答到它能暴露单模型盲点，但需要客观裁判或测试做验收，否则容易互相附和或陷入无休止争论"
-      ],
-      "resources": [],
       "quiz": [
         {
-          "id": "multi-agent-q1",
+          "id": "math-notation-cheatsheet-q1",
           "type": "choice",
-          "prompt": "多智能体系统的核心价值是？",
+          "prompt": "符号 argmax 作用在 f(x) 上的含义是？",
           "options": [
-            "让单个模型参数更大",
-            "多个角色分工协作，把复杂任务拆解并行/分派处理",
-            "替代所有工具调用",
-            "减少模型调用次数"
+            "使 f(x) 取得最大值的那个 x",
+            "f(x) 的最大值本身",
+            "f(x) 在区间上的平均值",
+            "f(x) 对 x 的导数"
           ],
-          "answerIndex": 1,
-          "explanation": "多智能体把复杂任务交给多个各司其职的 Agent 分工协作（并行或串行），各展所长、相互检查，从而处理单个 Agent 难以完成的复杂任务。"
+          "answerIndex": 0,
+          "explanation": "argmax 返回的是自变量，也就是取到最优值的那个 x；max 才返回最优值本身。argmin 同理返回使目标最小的自变量。"
         },
         {
-          "id": "multi-agent-q2",
+          "id": "math-notation-cheatsheet-q2",
           "type": "short",
-          "prompt": "多智能体协作主要有哪些常见拓扑？",
-          "answer": "参考回答：常见拓扑包括：层级式（一个主管协调若干子 Agent）、流水线/接力式（任务在多个 Agent 间串行传递）、以及多 Agent 评审或辩论（相互检查、修正，增强质量）。可用并行分工与聚合汇总，但都需协调与终止条件。",
+          "prompt": "解释 ∇_θ L(θ) 和 θ ← θ − η ∇_θ L(θ) 这两行符号分别是什么意思。",
+          "answer": "参考回答：∇_θ L(θ) 是损失函数对参数向量 θ 的梯度，每个分量是 L 对某个参数的偏导，整体指向损失上升最快的方向。θ ← θ − η∇_θ L(θ) 表示沿梯度反方向走一小步来更新参数，η 是学习率即步长。反复执行这一步，损失会逐渐下降，这就是梯度下降，也是神经网络训练的核心循环。",
           "keywords": [
-            "层级",
-            "流水线",
-            "评审"
+            "梯度",
+            "偏导",
+            "学习率",
+            "负梯度更新"
           ],
-          "explanation": "常见拓扑有层级协调、流水线接力、多 Agent 评审/辩论等，可并行或串行协作。"
+          "explanation": "要点是把 ∇ 解释成偏导打包成的向量，并说清「负梯度方向就是下降方向」。"
         },
         {
-          "id": "multi-agent-q3",
+          "id": "math-notation-cheatsheet-q3",
           "type": "code",
-          "prompt": "定义 Agent 类，含 __init__(name, role) 与一个返回处理描述字符串的 run(task) 方法。",
-          "starterCode": "class Agent:\n    def __init__(self, name, role):\n        pass\n\n    def run(self, task):\n        pass\n",
-          "solution": "class Agent:\n    def __init__(self, name, role):\n        self.name = name\n        self.role = role\n\n    def run(self, task):\n        return f\"[{self.name}·{self.role}] 处理了: {task}\"\n",
+          "prompt": "给定 logits = [0.2, 2.5, 1.1]，实现 argmax(xs) 返回最大值的下标，再用 softmax 公式算出概率分布并打印下标与概率（argmax 应为 1）。",
+          "starterCode": "import math\n\nlogits = [0.2, 2.5, 1.1]\n\ndef argmax(xs):\n    pass\n\nprobs = []\n# TODO: 用 softmax 计算 probs\nprint(argmax(logits))\nprint([round(p, 3) for p in probs])\n",
+          "solution": "import math\n\nlogits = [0.2, 2.5, 1.1]\n\ndef argmax(xs):\n    return max(range(len(xs)), key=lambda i: xs[i])\n\ntotal = sum(math.exp(z) for z in logits)\nprobs = [math.exp(z) / total for z in logits]\nprint(argmax(logits))\nprint([round(p, 3) for p in probs])",
           "checks": [
-            "self.name",
-            "self.role"
-          ],
-          "explanation": "保存 name 与 role，run 返回带角色的处理描述。"
-        }
-      ]
-    },
-    {
-      "slug": "coding-agent",
-      "title": "Coding Agent 编程智能体",
-      "order": 7,
-      "module": "Agent 进阶",
-      "difficulty": "进阶",
-      "estimatedMinutes": 23,
-      "summary": "编程智能体以写代码为目标，能读文件、改代码、运行测试，并在反馈中迭代直至通过。",
-      "intuition": "编程智能体像一个能自己动手写代码、跑测试、看报错再改的程序员助手。它不只是生成一段代码交给你，而是能浏览你的项目结构、读懂现有文件、按需求修改代码，然后运行测试或命令看结果，根据报错或失败再调整，如此反复迭代直到功能正确或无法再改进。",
-      "formal": "编程 Agent 通常具备文件系统与命令执行两类工具：读/写/搜索文件、运行测试与代码。循环为：理解任务 → 定位并修改相关文件 → 运行验证（测试/lint/命令）→ 观察结果 → 继续修正，直到通过或达到上限。要求工具调用的文件路径、补丁与执行安全，且需防止无休止循环、误改无关文件，并尽量通过测试做客观验收。",
-      "formula": "\\text{verify}(\\text{iterate})",
-      "aiConnection": "从 GitHub Copilot 到 Cursor、Claude Code 与各类自动修复 Agent，编程 Agent 已成为开发者日常。它把大模型的代码生成能力与真实的项目上下文、工具（读文件、跑测试）结合，形成能真正交付代码的 Agent。可靠性取决于上下文理解、工具设计、终止条件与对测试的依赖。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "coding_agent.py",
-        "code": "IMPORTANT = \"\"\"\n一个极简的编程 Agent 示例：\n定义一个 run_tests(code) 模拟运行测试并返回是否有 bug。\n\"\"\"\n\ndef add(a, b):\n    return a + b   # 目标：返回两数之和\n\ndef run_tests(fn):\n    # 模拟测试：检查函数正确性\n    return fn(2, 3) == 5 and fn(-1, 1) == 0\n\n# 模拟'编写-测试-修正'循环\ncode = \"\"\"def add(a, b):\\n    return a + b\\n\"\"\"  # 候选实现\nfn = add\npassed = run_tests(fn)\nfor attempt in range(3):\n    if passed:\n        print(\"测试通过\")\n        break\n    print(f\"第 {attempt} 次尝试，发现 bug，修正代码...\")\n    # 此处可由模型修正代码，重新定义 fn\n    passed = run_tests(fn)\nelse:\n    print(\"达到尝试上限\")"
-      },
-      "mistakes": [
-        "只生成代码却不运行测试，无法确认正确性",
-        "无终止条件，反复修正同一错误直到大量消耗 token",
-        "误改无关文件或破坏已有功能，缺少回归检测",
-        "把代码执行环境权限开得过大，带来安全风险"
-      ],
-      "interviewPoints": [
-        "「编程 Agent 和代码补全的本质区别？」要答到前者有文件系统与命令工具，能读改真实项目、跑测试看报错再迭代，而不是一次生成",
-        "「怎么保证它改的代码是对的？」要答到以测试、lint 与构建做客观验收，先复现再修并跑回归防止破坏已有功能，不能只看模型自述",
-        "「它为什么会反复修同一个 bug？」要答到缺少新信息、报错未被正确理解、上下文丢失，需要限制重试次数并在失败时换策略或求助",
-        "「给它多大权限才安全？」要答到最小权限与沙箱、危险命令需人工确认、写操作可回滚，防止误删文件或执行破坏性命令"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "coding-agent-q1",
-          "type": "choice",
-          "prompt": "编程智能体相比单纯生成代码模型的关键区别是？",
-          "options": [
-            "能生成更多注释",
-            "能读改文件、运行测试并根据结果迭代修正",
-            "不需要上下文理解",
-            "只在离线运行"
-          ],
-          "answerIndex": 1,
-          "explanation": "编程 Agent 结合文件系统与命令工具，能读改真实项目、运行测试/lint，并根据反馈迭代修正，而不只是静默地吐代码。"
-        },
-        {
-          "id": "coding-agent-q2",
-          "type": "short",
-          "prompt": "为什么编程 Agent 需要运行测试来验收？",
-          "answer": "参考回答：因为仅凭模型生成的代码无法确认其正确性，必须以客观的测试用例（断言、lint、构建）验证功能是否达成需求。运行测试能暴露真实 bug，为下一轮修正提供明确反馈，并形成'修改-验证'的闭环，避免盲目猜改。",
-          "keywords": [
-            "验证",
-            "回归",
-            "测试"
-          ],
-          "explanation": "运行测试提供客观通过/失败反馈，让 Agent 在真实结果上迭代，可靠的验收闭环正是编码 Agent 的根基。"
-        },
-        {
-          "id": "coding-agent-q3",
-          "type": "code",
-          "prompt": "实现函数 fix_and_verify(fn, tests, attempts)：反复用 tests 验证 fn，通过则返回 True，失败可继续直至尝试上限。",
-          "starterCode": "def fix_and_verify(fn, tests, attempts=3):\n    pass\n",
-          "solution": "def fix_and_verify(fn, tests, attempts=3):\n    for _ in range(attempts):\n        if tests(fn):\n            return True\n        # 此处可交由模型修正 fn\n    return False\n",
-          "checks": [
-            "for _ in range(attempts)",
-            "tests(fn)"
-          ],
-          "explanation": "在 attempts 次内反复运行测试，通过即返回 True，全部失败则返回 False。"
+            "def argmax",
+            "max(range(len(xs))",
+            "math.exp",
+            "sum("
+          ]
         }
       ]
     }

@@ -9,6 +9,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { StudyPlanCard } from '../components/StudyPlanCard';
 import { Card, EmptyState, PageHeader, ProgressBar, StatTile, formatDuration } from '../components/ui';
 import { LESSON_ORDER, STAGES, STATUS_LABEL, TOTALS } from '../lib/content';
 import { useStore } from '../lib/store';
@@ -16,13 +17,21 @@ import { useStore } from '../lib/store';
 export function Dashboard() {
   const { stats, progress, weakLessons, wrongQuestions, bookmarks } = useStore();
 
-  const nextLesson = LESSON_ORDER.find(({ stage, lesson }) => {
-    const status = progress.get(`${stage.stageSlug}/${lesson.slug}`)?.status;
-    return status !== 'mastered';
-  });
+  const nextLesson =
+    LESSON_ORDER.find(({ stage, lesson }) => {
+      const status = progress.get(`${stage.stageSlug}/${lesson.slug}`)?.status;
+      return lesson.track === 'main' && status !== 'mastered';
+    }) ??
+    LESSON_ORDER.find(({ stage, lesson }) => progress.get(`${stage.stageSlug}/${lesson.slug}`)?.status !== 'mastered');
   const continueLesson =
     LESSON_ORDER.find(({ stage, lesson }) => progress.get(`${stage.stageSlug}/${lesson.slug}`)?.status === 'learning') ??
     nextLesson;
+
+  const mainRefs = LESSON_ORDER.filter((r) => r.lesson.track === 'main');
+  const mainDone = mainRefs.filter(
+    ({ stage, lesson }) => progress.get(`${stage.stageSlug}/${lesson.slug}`)?.status === 'mastered',
+  ).length;
+  const mainPercent = TOTALS.main ? Math.round((mainDone / TOTALS.main) * 100) : 0;
 
   const reviewDue = LESSON_ORDER.filter(
     ({ stage, lesson }) => progress.get(`${stage.stageSlug}/${lesson.slug}`)?.status === 'review',
@@ -33,9 +42,7 @@ export function Dashboard() {
       <PageHeader
         eyebrow="总览"
         title="今天学哪一节？"
-        description={`共 ${TOTALS.stages} 个阶段、${TOTALS.lessons} 个知识点、${TOTALS.quizzes} 道练习题，预计 ${Math.round(
-          TOTALS.minutes / 60,
-        )} 小时走完一轮。全部数据只存在你本机的 data/learning.db。`}
+        description={`从零基础起步的 ${TOTALS.acts} 幕 ${TOTALS.stages} 个阶段、${TOTALS.lessons} 个知识点：主线 ${TOTALS.main} 节先把地基打完，支线 ${TOTALS.side} 节面向算法岗深化。全部数据只存在你本机的 data/learning.db。`}
         actions={
           continueLesson ? (
             <Link
@@ -51,10 +58,18 @@ export function Dashboard() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatTile label="总进度" value={`${stats.overallPercent}%`} tone="brand" hint={`${stats.mastered} 节已掌握`} />
-        <StatTile label="学习中" value={stats.learning} hint="含待复习" />
+        <StatTile
+          label="主线进度"
+          value={`${mainPercent}%`}
+          hint={`${mainDone}/${TOTALS.main} 节`}
+        />
         <StatTile label="累计时长" value={formatDuration(stats.totalSeconds)} hint={`今日 ${formatDuration(stats.todaySeconds)}`} />
         <StatTile label="连续学习" value={`${stats.streak} 天`} tone="amber" hint="每天满 1 分钟即计入" />
         <StatTile label="答题正确率" value={`${stats.accuracy}%`} tone="emerald" hint={`错题 ${wrongQuestions.length} 道`} />
+      </div>
+
+      <div className="mt-4">
+        <StudyPlanCard />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
@@ -115,7 +130,7 @@ export function Dashboard() {
               );
             })}
             <Link to="/roadmap" className="mt-1 inline-flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300">
-              查看全部 {STAGES.length} 个阶段 <ArrowRight className="h-3.5 w-3.5" />
+              查看全部 {TOTALS.acts} 幕 {STAGES.length} 个阶段 <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </Card>
@@ -188,9 +203,8 @@ export function Dashboard() {
             <Flame className="h-3.5 w-3.5" /> 求职视角
           </div>
           <p className="text-xs leading-relaxed text-slate-400">
-            面向 AI 算法开发岗，优先把
-            <span className="text-slate-200"> 算法岗核心 </span>
-            类别的阶段吃透：
+            先把<span className="text-slate-200">主线 {TOTALS.main} 节 </span>
+            走完（能独立训练并部署一个小模型），再补这些面向算法岗的专项阶段：
           </p>
           <ul className="mt-3 space-y-2">
             {STAGES.filter((s) => s.category === '算法岗核心').map((stage) => (

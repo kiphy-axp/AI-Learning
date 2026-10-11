@@ -1,757 +1,490 @@
 {
   "stage": 4,
-  "stageSlug": "mathematics",
-  "stageTitle": "数学基础",
-  "stageEmoji": "📐",
-  "stageDesc": "线性代数、微积分与概率统计：读懂模型公式的最小数学集",
+  "stageSlug": "python-first-step",
+  "stageTitle": "Python 起步",
+  "stageEmoji": "🐍",
+  "stageDesc": "装好环境、跑起第一行代码、学会读报错，最后写出第一个能玩的小程序",
+  "act": 2,
+  "actName": "第二幕 · 编程入门",
   "category": "基础",
   "lessons": [
     {
-      "slug": "vector",
-      "title": "Vector 向量",
+      "slug": "why-python",
+      "title": "为什么第一门语言选 Python",
       "order": 1,
-      "module": "线性代数",
+      "module": "写第一行代码",
       "difficulty": "基础",
-      "estimatedMinutes": 21,
-      "summary": "向量是一组按顺序排列的数字，是描述方向与大小的基本工具，也是机器学习中表示单个样本的标准方式。",
-      "intuition": "你可以把向量想象成坐标轴上的一支箭头：它既有长度也有方向。在机器学习里，一个学生有多门课的成绩、一首歌有不同的特征，都可以打包成一个向量。当我们说\"这个样本是一个 10 维向量\"时，意思是它由 10 个数字组成，计算机就能用统一的方式去处理它。",
-      "formal": "一个向量可以写成列向量 $\\mathbf{x} = [x_1, x_2, \\dots, x_n]^T$。向量加法是逐元素相加：$\\mathbf{x} + \\mathbf{y} = [x_1+y_1, \\dots, x_n+y_n]$。数乘是每个元素乘以同一个标量。向量在机器学习中常表示单个数据样本（特征向量），一组样本排成矩阵后一次运算即可处理整批数据。",
-      "formula": "\\mathbf{x} = \\begin{bmatrix} x_1 \\\\ x_2 \\\\ \\vdots \\\\ x_n \\end{bmatrix}, \\quad \\mathbf{x} + \\mathbf{y} = \\begin{bmatrix} x_1 + y_1 \\\\ \\vdots \\\\ x_n + y_n \\end{bmatrix}, \\quad c\\mathbf{x} = \\begin{bmatrix} c x_1 \\\\ \\vdots \\\\ c x_n \\end{bmatrix}",
-      "aiConnection": "大模型把每个 token 都表示成一个高维向量（embedding），方向相近的向量在语义上也相近。理解\"数字列表 = 样本\"的视角，是理解 embedding、相似度检索和注意力机制的基础。",
+      "track": "main",
+      "estimatedMinutes": 25,
+      "summary": "第一门语言的任务是尽快建立手感。Python 语法接近英语、生态最厚、AI 圈通用，是最省力的起点；这一节先弄清它是什么，再敲下第一行 print。",
+      "intuition": "学编程有点像学做菜，第一道菜不必是佛跳墙。挑第一门语言只看三条：说人话、有人陪、用得上。说人话，是指语法接近英语，不用先背一屏符号；有人陪，是指你遇到的每个报错，网上早就有人问过；用得上，是指学完当天就能做出点小东西。Python 三条全占：print('你好') 读作「打印：你好」，几乎是把中文直译成英文。换成 C++，你得先搞懂编译、指针、内存管理，才能让屏幕显示一句话，像还没学会走路就被拉去跨栏。更实际的一点是，AI 论文的开源代码、开源模型、Kaggle 比赛几乎清一色是 Python，你今天敲下的每一行 print，以后都会长成训练脚本里的一行。",
+      "formal": "**Python 是什么。** 1991 年由 Guido van Rossum 发布，是一门解释型（Interpreted）语言：代码交给解释器 Interpreter 逐行翻译执行，不需要你先手动编译成机器码。它还是动态类型语言，写变量不必声明类型，所以代码短、上手快。\n\n**它的位置。** 在 TIOBE、PYPL 等语言热度榜上长期排第一，是数据科学、Web 后端、自动化脚本和人工智能的通用胶水语言。\n\n**边界条件要说清。** 纯 Python 循环比 C 慢约 30 到 60 倍，这是事实。但真正耗时的计算并不在 Python 里跑：NumPy、PyTorch 把矩阵运算下沉到 C / CUDA 实现的内核，一段向量化代码常比纯 Python 循环快 50 倍以上。所以 Python 在 AI 里的角色是「调度层」——它负责把数据和算子组装起来，重活交给底层。\n\n**版本。** 只学 Python 3（当前主流是 3.12 / 3.13）。Python 2 已在 2020 年停止维护，如果教程里的 print 后面不带括号，那是十几年前的老代码，直接换一份教程。",
+      "formula": "",
+      "aiConnection": "AI 圈几乎只用 Python，不是因为它在语言设计上最优雅，而是三件事叠加。一是生态：NumPy、pandas、PyTorch、Hugging Face transformers、LangChain 都首选 Python 接口，换语言等于放弃整个工具箱。二是论文：顶会开源代码基本是 PyTorch 加 Python，你想复现就得先读得懂。三是协作：同事、开源社区、面试白板都默认这套语言，沟通成本最低。落到工作日常就是一条流水线——读一篇论文，找到官方仓库，配环境跑通，改模型结构，写训练脚本，全程在 Python 里完成。只有当某个算子成为瓶颈时，才会用 C++ 或 CUDA 重写它，那已经是优化阶段的事了。",
       "codeExample": {
         "lang": "python",
-        "filename": "vector.py",
-        "code": "import numpy as np\n\n# 两个样本向量\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n\n# 向量加法（逐元素）\nprint('x + y =', x + y)      # [5 7 9]\n\n# 数乘\nprint('2x =', 2 * x)         # [2 4 6]\n\n# 向量的模（长度）\nprint('len(x) =', np.linalg.norm(x))  # sqrt(14)\n\n# 一个\"样本\"由多个特征组成\nsample = np.array([70.5, 165, 25])  # 体重/身高/年龄\nprint('sample =', sample)"
+        "filename": "hello.py",
+        "code": "# hello.py —— 你的第一个 Python 程序\n# 现在什么都不用装：打开 https://www.python.org/shell/ ，\n# 把下面每一行粘进去按回车，就能立刻看到结果。\n\nprint('Hello, Python!')\nprint('这是我写下的第一行代码。')\n\n# print 是「打印」的意思：把括号里的东西显示在屏幕上\nprint('Python 还能当计算器：', 2 + 3)\nprint('大一点的数也没问题：', 1234 * 5678)\n\n# 引号里的内容原样显示，引号外的算式会先算好再显示\nprint('1 加到 100 等于', 5050)\n\n# 一次打印多行，用 \\n 表示换行\nprint('第一步：装好 Python\\n第二步：写一个 .py 文件\\n第三步：运行它')"
       },
       "mistakes": [
-        "把向量相加写成把所有元素求和（得到一个标量），而是逐元素相加",
-        "混淆向量与标量，把向量当成单个数字直接做运算",
-        "忘记用 numpy array 而不是 Python list，导致不支持逐元素算术"
+        "纠结「先学哪门语言」迟迟不动手：第一门语言重在建立手感，直接开写 Python",
+        "以为要先背完语法才能写代码：正确做法是边写边查，报错信息和官方文档才是老师",
+        "把 Python 当成人工智能本身：它只是工具，模型、数据和算力才是核心",
+        "照抄 Python 2 老教程，print 不带括号就 SyntaxError"
       ],
       "interviewPoints": [
-        "「为什么样本要用向量表示？」要答到统一维度与批量矩阵运算，说明 embedding 把 token 映射成高维向量后为何能算相似度",
-        "「向量加法和数乘有什么几何意义？」要答到平移与缩放、线性组合，说明特征归一化与权重缩放对模型的影响",
-        "「向量的长度和方向哪个更重要？」要答到范数衡量大小、方向承载语义，说明检索时为何常先归一化再比相似度"
+        "「算法岗为什么默认用 Python？」要答到生态（PyTorch / NumPy / Hugging Face）、论文开源代码、团队协作三点，不要只答「简单」",
+        "「Python 慢，为什么还能做深度学习？」要答到热点计算下沉到 C / CUDA 内核、用向量化替代循环，Python 只当调度层",
+        "「解释型和编译型语言有什么区别？」要答到解释器逐行翻译执行 vs 先整体编译成机器码，并能联系到 .pyc 缓存与启动开销"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "Python 官方文档（简体中文）",
+          "url": "https://docs.python.org/zh-cn/3/"
+        },
+        {
+          "title": "Python 官方教程 · 中文版",
+          "url": "https://docs.python.org/zh-cn/3/tutorial/index.html"
+        }
+      ],
       "quiz": [
         {
-          "id": "vector-q1",
+          "id": "why-python-q1",
           "type": "choice",
-          "prompt": "向量 x=[1,2,3] 与 y=[4,5,6] 相加的结果是？",
+          "prompt": "关于 Python，下面哪一句是正确的？",
           "options": [
-            "[5,7,9]",
-            "21",
-            "[4,10,18]",
-            "[1,2,3,4,5,6]"
+            "Python 必须先编译成 exe 文件才能运行",
+            "Python 代码由解释器逐行翻译执行，不需要手动编译",
+            "Python 只能用来做人工智能，做不了别的事",
+            "Python 比 C 快，所以 AI 领域都选它"
           ],
-          "answerIndex": 0,
-          "explanation": "向量加法是逐元素相加：1+4=5, 2+5=7, 3+6=9，得到 [5,7,9]。"
+          "answerIndex": 1,
+          "explanation": "Python 是解释型语言，代码交给解释器逐行执行，不需要手动编译；它同样能做 Web 后端、自动化脚本和数据处理；速度上纯 Python 比 C 慢几十倍，AI 选它是因为生态和底层 C / CUDA 内核，不是因为快。"
         },
         {
-          "id": "vector-q2",
+          "id": "why-python-q2",
           "type": "short",
-          "prompt": "说说在机器学习中，为什么我们常用向量来表示一个数据样本？",
-          "answer": "参考回答：因为一个样本通常有多个特征（如身高、体重、年龄等），可以按固定顺序放入一个向量，从而用统一的数学运算（加法、数乘、点积）来批量处理和分析这些样本，同时 embedding 也让文本等非数值数据能被机器处理。",
+          "prompt": "为什么 AI 领域几乎都用 Python？请至少说出两点理由。",
+          "answer": "参考回答：一是生态，NumPy、PyTorch、Hugging Face 等主流库都首选 Python 接口，换语言等于放弃整套工具；二是论文与开源代码，顶会工作基本是 PyTorch 加 Python，复现必须先会读；三是协作成本低，团队和社区都默认这套语言。",
           "keywords": [
-            "向量",
-            "特征",
-            "样本"
+            "生态",
+            "PyTorch",
+            "论文开源代码"
           ],
-          "explanation": "关键在于\"多个特征打包成一个有序数字组\"，这样便于统一计算并支撑 embedding 表示。"
+          "explanation": "答到「生态」和「论文 / 协作」两点即可得分，只答「因为它简单」不算。"
         },
         {
-          "id": "vector-q3",
+          "id": "why-python-q3",
           "type": "code",
-          "prompt": "用 numpy 创建向量 a=[1,2,3]、b=[4,5,6]，计算它们的逐元素相加并打印结果。",
-          "starterCode": "import numpy as np\n\na = np.array([1, 2, 3])\nb = np.array([4, 5, 6])\n",
-          "solution": "import numpy as np\n\na = np.array([1, 2, 3])\nb = np.array([4, 5, 6])\n\nprint(a + b)",
+          "prompt": "用 print 打印三行内容：第一行是 Hello, Python!；第二行是你的名字（例如 我是小明）；第三行用 1 + 2 + 3 + 4 + 5 这样直接相加的写法算出 1 到 5 的和，输出成「1 到 5 的和是： 15」这样的形式。",
+          "starterCode": "# 在下面接着写\nprint('Hello, Python!')\n",
+          "solution": "print('Hello, Python!')\nprint('我是小明')\nprint('1 到 5 的和是：', 1 + 2 + 3 + 4 + 5)\n\n# 运行输出：\n# Hello, Python!\n# 我是小明\n# 1 到 5 的和是： 15",
           "checks": [
-            "np.array",
-            "+"
+            "print(",
+            "Hello, Python!",
+            "的和"
           ],
-          "explanation": "用 np.array 构造向量，用 + 做逐元素相加并打印。"
+          "explanation": "考察是否真的动手敲过代码：print 的用法、引号内外的区别、多个参数用逗号分隔。"
         }
       ]
     },
     {
-      "slug": "matrix",
-      "title": "Matrix 矩阵",
+      "slug": "install-and-run",
+      "title": "装好环境，跑起第一行代码",
       "order": 2,
-      "module": "线性代数",
+      "module": "写第一行代码",
       "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "矩阵是按行和列排列的数字表格，可表示一组数据，也可表示对向量的线性变换。",
-      "intuition": "如果说向量是一行数据，那么矩阵就是很多行数据叠在一起，或是一次对空间中所有点做同一种\"操作\"。想象把一张表格里的每行都做同样的处理，矩阵乘法就是在高效地一举完成这件事。",
-      "formal": "矩阵 $\\mathbf{A} \\in \\mathbb{R}^{m \\times n}$ 有 $m$ 行、$n$ 列。矩阵与向量相乘 $\\mathbf{A}\\mathbf{x}$ 把向量线性变换到新空间。两个矩阵相乘时，结果 $\\mathbf{C} = \\mathbf{A}\\mathbf{B}$ 的第 $(i,j)$ 项是 $\\mathbf{A}$ 第 $i$ 行与 $\\mathbf{B}$ 第 $j$ 列的点积，故要求 $\\mathbf{A}$ 的列数等于 $\\mathbf{B}$ 的行数。在机器学习中，$X$ 常攒多条样本，$W$ 是权重矩阵，前向传播即一次矩阵乘。",
-      "formula": "\\mathbf{C} = \\mathbf{A}\\mathbf{B}, \\quad c_{ij} = \\sum_{k} a_{ik} b_{kj} \\\\ \\mathbf{y} = \\mathbf{W}\\mathbf{x} + \\mathbf{b}, \\quad \\mathbf{W}\\in\\mathbb{R}^{m\\times n}",
-      "aiConnection": "神经网络的每一层本质上就是一个矩阵乘法 + 偏置 + 非线性激活。一次前向传播把整批样本一次性通过权重矩阵变换，GPU 之所以擅长这类计算，正是因为矩阵乘法可以被高度并行化。",
+      "track": "main",
+      "estimatedMinutes": 35,
+      "summary": "在 macOS 或 Windows 上装好 Python，认清解释器、终端、PATH 三件事，然后用三种方式把第一个 .py 文件跑起来。",
+      "intuition": "装 Python 有点像给厨房通水通电：灶还没点上，菜谱看得再熟也做不出饭。所谓「环境」，就是让电脑听懂 Python 的那套东西——一个解释器程序，加上一堆配套工具。很多新手卡在第一步，不是因为笨，而是因为报错信息只说了「找不到命令」，没说「你安装时少勾了一个框」。这一节把安装、验证、运行三件事一次做完。跑通之后，你才算真正开始学 Python；在那之前，一切都只是看别人做菜。",
+      "formal": "**三件必须先分清的事。**\n\n- **解释器 Interpreter**：真正读懂 .py 文件并逐行执行的程序。装 Python，装的就是它。\n- **终端 Terminal**：你打字下命令的窗口。macOS 在「访达 → 应用程序 → 实用工具 → 终端」；Windows 在开始菜单搜 PowerShell。\n- **PATH**：系统查找可执行文件的目录清单。安装时没把 Python 加进 PATH，终端就会说「找不到命令」。\n\n**安装。** macOS：打开 python.org/downloads 下载最新版安装包，双击一路继续（会一并装好 python3、IDLE 和 pip）；或者用 Homebrew，在终端执行 `brew install python`。Windows：同样到 python.org/downloads 下载安装包，**安装第一屏务必勾选 Add python.exe to PATH**，再点 Install Now。\n\n**验证。** macOS / Linux 执行 `python3 --version`，Windows 执行 `python --version`，看到 `Python 3.12.x` 这样的输出就说明装好了。\n\n**运行代码的三种方式。** ① 存成 .py 文件，在终端里 `cd` 到该文件所在目录，执行 `python3 first_run.py`；② 直接输入 `python3` 进入 REPL（Read-Eval-Print Loop，读一句、算一句、打印一句），输入 `exit()` 退出；③ 在 VS Code 里打开文件，点右上角的运行按钮。初学者推荐方式 ①，因为报错信息最完整，也最接近以后跑训练脚本的样子。",
+      "formula": "",
+      "aiConnection": "在 AI 岗，配环境是每天都在做的事。拿到一个开源模型仓库，第一步永远是核对三件事：Python 版本、PyTorch 版本、CUDA 版本是否互相匹配，然后建虚拟环境、装依赖、跑一个最小 demo。业内有个粗略说法：新手遇到的「跑不起来」，八成是环境问题，不是模型问题。能熟练敲出 python3 --version、which python3、pip list 这几条命令，你定位问题的时间能从两小时缩到十分钟。后面 Linux 与 Git 阶段会专门讲虚拟环境和依赖管理，这一节先把解释器跑通。",
       "codeExample": {
         "lang": "python",
-        "filename": "matrix.py",
-        "code": "import numpy as np\n\n# 2x3 权重矩阵 和 3维向量\nW = np.array([[1, 2, 3],\n              [4, 5, 6]])\nx = np.array([1, 1, 1])\n\n# 矩阵乘向量：结果维度 = (2,) 即 2 行\nprint('W @ x =', W @ x)  # [ 6 15]\n\n# 多条样本排成矩阵，一次算完\nX = np.array([[1, 1, 1],\n              [2, 0, 0]])\nprint('W @ X =', W @ X.T)  # 2x2\n\n# 形状要求：A 的列数 == B 的行数\nprint('W shape =', W.shape, 'x shape =', x.shape)"
+        "filename": "first_run.py",
+        "code": "# first_run.py —— 在你的电脑上跑通的第一个程序\n#\n# 【第一步】确认 Python 装好了。打开终端（macOS：访达 → 应用程序 →\n#   实用工具 → 终端；Windows：开始菜单搜 PowerShell），输入：\n#       python3 --version     # macOS / Linux\n#       python --version      # Windows\n#   看到 Python 3.12.x 之类的输出，就说明装好了。\n#\n# 【第二步】把本文件保存成 first_run.py，后缀必须是 .py。\n#\n# 【第三步】在终端里进入文件所在目录并运行：\n#       cd 文件所在的文件夹\n#       python3 first_run.py   # macOS / Linux\n#       python first_run.py    # Windows\n\nprint('Hello，我在自己的电脑上跑起来了！')\n\nimport sys          # 先照抄：sys 是 Python 自带的工具箱，能读到解释器信息\nprint('解释器版本：', sys.version.split()[0])\nprint('解释器位置：', sys.executable)\nprint('这个文件叫：', __file__)"
       },
       "mistakes": [
-        "忽略维度匹配：A 的列数必须等于 B 的行数，否则报错",
-        "用 * 做矩阵乘法（那是逐元素乘），应该用 @ 或 np.dot",
-        "忘记矩阵乘法不满足交换律，A@B 与 B@A 通常不同"
+        "Windows 漏勾 PATH 选项，之后敲 python 报找不到命令",
+        "文件存成 .txt 或 .py.txt，运行报错：后缀必须真的是 .py",
+        "没先 cd 到文件目录就运行，报 can't open file",
+        "macOS 上 python 命令不存在：新系统要用 python3"
       ],
       "interviewPoints": [
-        "「矩阵乘法的维度规则是什么？」要答到内维必须相等、结果形状由外维决定，说明 shape 报错时该怎么定位",
-        "「为什么神经网络一层就是矩阵乘法？」要答到线性变换语义与批量样本并行处理，说明 GPU 为何擅长这类运算",
-        "「* 和 @ 有什么区别？」要答到逐元素乘与矩阵乘，说明广播机制导致的静默错误以及维度检查的习惯"
+        "「python 和 python3 有什么区别？」要答到 python 曾是 Python 2 的遗留命令、Python 2 已停止维护，Python 3 才是现在唯一的选择",
+        "「拿到一个新项目怎么配环境？」要答到先读 README 与 requirements.txt、确认 Python 版本、建虚拟环境，再验证 import torch 与 CUDA 是否可用",
+        "「PATH 是什么？」要答到它是系统查找可执行文件的目录清单，并能解释为什么装了 Python 还要把它加进 PATH"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "Python 官方下载页",
+          "url": "https://www.python.org/downloads/"
+        },
+        {
+          "title": "Python 官方文档 · 使用 Python 解释器",
+          "url": "https://docs.python.org/zh-cn/3/tutorial/interpreter.html"
+        }
+      ],
       "quiz": [
         {
-          "id": "matrix-q1",
+          "id": "install-and-run-q1",
           "type": "choice",
-          "prompt": "矩阵 A 形状为 (m, n)，要与 B 相乘得到 A@B，B 的行数应当是？",
+          "prompt": "在 Windows 上装完 Python，打开 PowerShell 输入 python 却提示「不是内部或外部命令」，最可能的原因是？",
           "options": [
-            "m",
-            "n",
-            "任意",
-            "m×n"
+            "Python 没装成功，必须重装系统",
+            "安装时没有勾选 Add python.exe to PATH",
+            "Windows 系统不支持 Python",
+            "必须先装好 VS Code，Python 才能用"
           ],
           "answerIndex": 1,
-          "explanation": "矩阵乘法要求 A 的列数等于 B 的行数，即 B 的行数必须为 n。"
+          "explanation": "Windows 安装包默认不勾选 PATH 选项，装完后系统找不到 python.exe，所以终端报「找不到命令」。重装时勾上该选项，或手动把安装目录加进 PATH 即可。Python 本身装好了，也和 VS Code 没有关系。"
         },
         {
-          "id": "matrix-q2",
+          "id": "install-and-run-q2",
           "type": "short",
-          "prompt": "为什么神经网络的每一层可以用一次矩阵乘法来表示？",
-          "answer": "参考回答：因为一层中的每个输出神经元都是对输入向量做一次加权求和（点积），并把所有权重组装成矩阵 W，再加上偏置 b，就能用 y = Wx + b 一次完成对所有神经元的计算，也便于并行和批量处理。",
+          "prompt": "解释器和 .py 文件是什么关系？为什么必须先装 Python 才能运行代码？",
+          "answer": "参考回答：.py 文件只是一份纯文本的指令清单，CPU 看不懂它。解释器是一个已经装好的程序，它逐行读取 .py 文件，翻译成 CPU 能执行的机器指令并立刻执行，所以叫解释型语言。装 Python 就是把这名翻译官请到电脑上；没有它，双击 .py 文件只会用记事本打开一堆文字。",
           "keywords": [
-            "矩阵",
-            "权重",
-            "点积"
+            "解释器",
+            "逐行",
+            "翻译"
           ],
-          "explanation": "核心是把每个神经元的加权求和写成矩阵乘，用 Wx+b 一次表达整层变换。"
+          "explanation": "要点是「文件是文本、解释器负责逐行翻译执行」，说到这一层就能得分。"
         },
         {
-          "id": "matrix-q3",
+          "id": "install-and-run-q3",
           "type": "code",
-          "prompt": "用 numpy 定义矩阵 A=[[1,2],[3,4]] 和向量 x=[1,0]，计算 A@x 并打印形状。",
-          "starterCode": "import numpy as np\n\nA = np.array([[1, 2], [3, 4]])\nx = np.array([1, 0])\n",
-          "solution": "import numpy as np\n\nA = np.array([[1, 2], [3, 4]])\nx = np.array([1, 0])\n\nprint(A @ x)\nprint((A @ x).shape)",
+          "prompt": "写一个 self_check.py，输出三行自检信息：第一行打印 Hello from my own computer!；第二行打印你的 Python 版本（提示：先 import sys，再用 sys.version）；第三行打印 1 到 10 的和（用 1 + 2 + ... + 10 直接相加即可）。",
+          "starterCode": "print('Hello from my own computer!')\n# 下面两行接着写：\n",
+          "solution": "print('Hello from my own computer!')\n\nimport sys\nprint('Python 版本：', sys.version)\n\nprint('1 到 10 的和是：', 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10)\n\n# 运行输出（版本号因机器而异）：\n# Hello from my own computer!\n# Python 版本： 3.12.4 (main, ...)\n# 1 到 10 的和是： 55",
           "checks": [
-            "@",
-            "shape"
+            "Hello from my own computer!",
+            "import sys",
+            "sys.version"
           ],
-          "explanation": "用 @ 做矩阵乘，A@x 结果为一维向量，形状为 (2,)。"
+          "explanation": "考察是否真的在自己机器上跑通了程序，并会用 import 引入自带模块读环境信息。"
         }
       ]
     },
     {
-      "slug": "dot-product",
-      "title": "Dot Product 点积",
+      "slug": "input-output",
+      "title": "输入与输出：让程序和你说上话",
       "order": 3,
-      "module": "线性代数",
+      "module": "写第一行代码",
       "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "点积把两个同长向量映射成一个标量，度量它们方向上的相似程度，是相似度与注意力的核心运算。",
-      "intuition": "点积回答\"这两个向量有多像\"。如果两个向量方向一致，点积很大；如果互相垂直，点积为 0；如果方向相反，点积为负。把两个 embedding 向量做点积，就能得到一个表示语义相似程度的分数，这正是注意力和向量检索背后的引擎。",
-      "formal": "两个 $n$ 维向量的点积为 $\\mathbf{x}\\cdot\\mathbf{y} = \\sum_{i=1}^{n} x_i y_i = \\mathbf{x}^T\\mathbf{y}$。点积与夹角有关：$\\mathbf{x}\\cdot\\mathbf{y} = \\|\\mathbf{x}\\|\\|\\mathbf{y}\\|\\cos\\theta$。因此余弦相似度为 $\\cos\\theta = \\frac{\\mathbf{x}\\cdot\\mathbf{y}}{\\|\\mathbf{x}\\|\\|\\mathbf{y}\\|}$，它只关心方向而忽略长度，常用于文本向量相似度比较。",
-      "formula": "\\mathbf{x}\\cdot\\mathbf{y} = \\sum_{i=1}^{n} x_i y_i = \\|\\mathbf{x}\\|\\|\\mathbf{y}\\|\\cos\\theta, \\quad \\cos\\theta = \\frac{\\mathbf{x}\\cdot\\mathbf{y}}{\\|\\mathbf{x}\\|\\|\\mathbf{y}\\|}",
-      "aiConnection": "Transformer 的注意力分数就是 query 向量与 key 向量的点积（再除以 $\\sqrt{d_k}$ 归一化）。向量数据库检索相似内容时，也常常用 embedding 的点积或余弦相似度来排序。",
+      "track": "main",
+      "estimatedMinutes": 30,
+      "summary": "print 是程序的嘴，input 是它的耳朵。这一节把两者接起来，写出第一个能一问一答的小程序，并搞清 input 拿到的永远是文字。",
+      "intuition": "只会 print 的程序像一个念稿的播音员：词儿都对，但你说话它听不见。input 让它长出耳朵。你运行程序，光标停在屏幕上等你打字，你按下回车，程序才继续往下走——这一刻，程序从「播放录音」变成了「对话」。几乎所有你以后要用的 AI 工具，本质都是这个循环的放大版：读入你的问题，处理一下，输出答案。区别只是中间那一步，换成了一个千亿参数的模型。所以你今天写的这个一问一答，已经是所有聊天机器人的骨架了。",
+      "formal": "**print 的参数。** 完整写法是 `print(*objects, sep=' ', end='\\n')`：多个参数默认用空格隔开（sep），结尾默认补一个换行（end）。想让两次输出连在同一行，写 `print('加载中', end='')`；想自己定分隔符，写 `print(1, 2, 3, sep='-')`。\n\n**input 的行为。** `input(prompt)` 先把 prompt 原样打印出来（不换行），然后**暂停程序**，等你输入并按回车；回车之后，它把这一行内容作为**字符串**返回，赋给左边的名字。它不做任何类型推断，也不替你去掉多余空格。\n\n**边界条件（新手最常踩的一条）。** `age = input('你几岁？')` 输入 17，你拿到的是文本 `'17'`，不是数字 17。因此 `age + 1` 会抛 `TypeError: can only concatenate str (not \"int\") to str`。要做算术必须先转换：`int(input('你几岁？'))` 得到整数，`float(...)` 得到小数。如果输入的内容不是数字，`int('abc')` 会抛 `ValueError`——所以转换要放在输入之后、计算之前。\n\n**格式化输出。** 推荐 f-string：`print(f'{name} 今年 {age} 岁')`，花括号里可以直接写变量甚至算式，可读性最好。",
+      "formula": "",
+      "aiConnection": "命令行式的「读入—处理—输出」是 AI 工具最常见的形态。你以后会写 python train.py --epochs 10 这样的启动命令，也会写一个不断 input() 的聊天脚本；再往上，Agent 的每一次工具调用、每一个聊天界面，本质都是同一件事：拿到输入、交给模型、把结果打印出来。而 print 在模型开发里还有个硬用途——调试。张量形状不对、loss 变成 nan 的时候，最直接的办法就是在关键位置 print 出 shape 和数值范围，这是所有算法工程师的日常动作。",
       "codeExample": {
         "lang": "python",
-        "filename": "dot_product.py",
-        "code": "import numpy as np\n\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n\n# 点积\nprint('dot =', np.dot(x, y))         # 32\nprint('x @ y =', x @ y)             # 32\n\n# 余弦相似度\ncos = np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y))\nprint('cosine =', round(cos, 4))\n\n# 两个完全相同的向量相似度为 1\nprint('self cos =', np.dot(x, x) / np.linalg.norm(x) ** 2)\n\n# 垂直向量点积为 0\na = np.array([1, 0])\nb = np.array([0, 1])\nprint('orthogonal dot =', np.dot(a, b))"
+        "filename": "chat.py",
+        "code": "# chat.py —— 第一个会一问一答的程序\n# 运行：python3 chat.py\n\nprint('你好！我是你的第一个会聊天的程序。')\n\nname = input('你叫什么名字？')          # 程序在这里停下来，等你打字并回车\ncity = input('你住在哪个城市？')\nyear = input('你出生在哪一年？')        # 注意：这里拿到的是文字，不是数字\n\nage = 2026 - int(year)                  # int() 把文字 '2008' 变成数字 2008\n\nprint()                                 # 不带参数，就只打印一个空行\nprint('认识你很高兴，' + name + '！')\nprint(f'原来你在 {city}，今年大约 {age} 岁。')\nprint(f'{name}，记住这两句：输入用 input()，输出用 print()。')\nprint('程序结束，再见！')"
       },
       "mistakes": [
-        "把点积当作逐元素乘（那是 *），点积得到的是标量",
-        "混淆点积与余弦相似度，余弦相似度额外除以各自长度",
-        "用长度不同的向量做点积，导致不匹配或错误"
+        "忘了 input() 拿到的是文字，直接加减会报 TypeError",
+        "input() 括号里不写提示语，运行后屏幕一片空白，不知道该输入什么",
+        "用了中文全角括号或引号，直接 SyntaxError：符号要用英文半角",
+        "把 int(input()) 写成 input(int()) 会报错"
       ],
       "interviewPoints": [
-        "「点积为什么能衡量相似度？」要答到投影与夹角余弦、模长带来的影响，说明余弦相似度为何要先做归一化",
-        "「注意力里的点积是怎么算的？」要答到 QK^T 得到分数矩阵、除以 sqrt(d_k) 防止梯度消失，以及 softmax 归一化",
-        "「点积和逐元素乘有什么区别？」要答到一个得标量一个得向量、维度必须相同，说明两者在代码里的不同写法"
+        "「input() 返回什么类型？」必须答 str，并能解释为什么它的结果直接加 1 会报 TypeError",
+        "「print 多个值怎么控制分隔和换行？」答 sep 与 end 的默认值，并联系到日志想实时刷新时要加 flush=True",
+        "「程序怎么读命令行参数？」答 sys.argv 与 argparse，并说清它和交互式 input() 各自适合什么场景"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "Python 官方教程 · 输入与输出",
+          "url": "https://docs.python.org/zh-cn/3/tutorial/inputoutput.html"
+        },
+        {
+          "title": "Python 官方文档 · 内置函数 print",
+          "url": "https://docs.python.org/zh-cn/3/library/functions.html"
+        }
+      ],
       "quiz": [
         {
-          "id": "dot-product-q1",
+          "id": "input-output-q1",
           "type": "choice",
-          "prompt": "向量 x=[1,2,3] 与 y=[4,5,6] 的点积是多少？",
+          "prompt": "运行 age = input('你几岁？')，你输入 17 并回车，那么 age + 1 会得到什么？",
           "options": [
-            "32",
-            "15",
-            "96",
-            "21"
+            "18，因为 Python 会自动把文字变成数字",
+            "171，因为 1 被接到了文字后面",
+            "报 TypeError，因为 age 是字符串 '17'",
+            "报 SyntaxError，因为写法本身不合法"
           ],
-          "answerIndex": 0,
-          "explanation": "点积 = 1*4 + 2*5 + 3*6 = 4 + 10 + 18 = 32。"
+          "answerIndex": 2,
+          "explanation": "input() 永远返回字符串，'17' + 1 在 Python 里不允许字符串和整数相加，因此抛 TypeError。想要 18，要写成 int(input('你几岁？')) + 1。"
         },
         {
-          "id": "dot-product-q2",
+          "id": "input-output-q2",
           "type": "short",
-          "prompt": "两个互相垂直（正交）的向量的点积是多少？这说明什么？",
-          "answer": "参考回答：点积为 0。因为点积为 |x||y|cosθ，且 cos90°=0。这说明点积为零意味着两个向量方向完全不相关（正交），常用于特征去相关性或\"无关\"语义的表示。",
+          "prompt": "为什么 input() 得到的内容常常要先经过 int() 或 float() 转换？不转换会发生什么？",
+          "answer": "参考回答：input() 把用户敲的一整行原样作为字符串返回，不做类型判断，所以 '17' 是文字而不是数字。文字不能参与算术：'17' + 1 会抛 TypeError，'17' * 2 得到 '1717' 而不是 34。要计算必须先显式转换，int() 转整数、float() 转小数。",
           "keywords": [
-            "0",
-            "正交",
-            "垂直"
+            "字符串",
+            "int()",
+            "TypeError"
           ],
-          "explanation": "正交向量点积为 0，反映了它们方向上的独立性。"
+          "explanation": "答到「input 返回字符串」和「必须显式转换，否则报错或结果不符预期」即可。"
         },
         {
-          "id": "dot-product-q3",
+          "id": "input-output-q3",
           "type": "code",
-          "prompt": "用 numpy 计算 x=[1,2,3] 与 y=[4,5,6] 的点积，并计算其余弦相似度。",
-          "starterCode": "import numpy as np\n\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n",
-          "solution": "import numpy as np\n\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n\ndot = np.dot(x, y)\ncos = dot / (np.linalg.norm(x) * np.linalg.norm(y))\nprint(dot)\nprint(round(cos, 4))",
+          "prompt": "写一个 adder.py：先打印「我来帮你做加法」，然后用 input() 分别问用户两个数字，最后打印它们的和，输出形如「两数之和是： 30」。要求先把输入转成整数再相加。",
+          "starterCode": "print('我来帮你做加法')\n# 接着用 input() 问两个数字，再打印它们的和\n",
+          "solution": "print('我来帮你做加法')\n\na = int(input('请输入第一个数字：'))\nb = int(input('请输入第二个数字：'))\n\nprint('两数之和是：', a + b)\n\n# 运行示例：\n# 我来帮你做加法\n# 请输入第一个数字：12\n# 请输入第二个数字：18\n# 两数之和是： 30",
           "checks": [
-            "np.dot",
-            "norm"
+            "input(",
+            "int(",
+            "两数之和"
           ],
-          "explanation": "用 np.dot 求点积，再用向量模长归一化得到余弦相似度。"
+          "explanation": "考察 input 与 int 的配合顺序，以及 print 多参数的写法。"
         }
       ]
     },
     {
-      "slug": "eigenvalue",
-      "title": "Eigenvalue 特征值",
+      "slug": "read-errors",
+      "title": "报错不可怕：读懂 Python 的错误信息",
       "order": 4,
-      "module": "线性代数",
+      "module": "不怕出错",
       "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "特征值和特征向量刻画一个线性变换在特定方向上的放大倍数与不变方向，用于降维与数据主成分分析。",
-      "intuition": "想象矩阵是一种\"拉伸\"操作。大多数方向被拉伸后方向都会改变，但某些特殊方向被拉伸时方向保持不变，只是长度变了——那个缩放倍数就是特征值，那个方向就是特征向量。找到这些特殊方向，就能理解变换的本质。",
-      "formal": "对矩阵 $\\mathbf{A}$，若存在非零向量 $\\mathbf{v}$ 与标量 $\\lambda$ 使得 $\\mathbf{A}\\mathbf{v} = \\lambda\\mathbf{v}$，则 $\\lambda$ 是特征值，$\\mathbf{v}$ 是对应特征向量。特征值由特征多项式 $\\det(\\mathbf{A} - \\lambda\\mathbf{I}) = 0$ 求得。在 PCA 中，数据协方差矩阵的特征向量给出主成分方向，特征值大小表示该方向上的方差（信息量）。",
-      "formula": "\\mathbf{A}\\mathbf{v} = \\lambda\\mathbf{v}, \\quad \\det(\\mathbf{A} - \\lambda\\mathbf{I}) = 0",
-      "aiConnection": "PCA 用协方差矩阵的特征分解找出数据方差最大的方向来降维，是模型训练前常见的特征压缩手段。理解特征值大小 = 信息量，能帮你判断该保留几个主成分。",
+      "track": "main",
+      "estimatedMinutes": 35,
+      "summary": "报错是线索不是判决。这一节拆开 Traceback 的三段结构，看三个真实报错的逐行解读，并给出报错排查四步法。",
+      "intuition": "新手看到满屏红字的第一反应是关掉窗口，其实那堆字是 Python 在认真跟你解释它为什么不干活。它告诉了你三件事：哪个文件的第几行、它看到了什么、它认为哪里不对。读报错就像医生看化验单：外行只看到一堆数字，医生先看哪一项超标、再看超标意味着什么。这一节要练的就是这个本事。记住一句话：报错信息里没有一个字是多余的，它只是用英文写的，而且写得很直接。",
+      "formal": "**报错信息的三段结构。** Python 的报错叫 Traceback（回溯），意思是「顺着调用一层层往回找」。它总是三部分：\n\n1. **位置**：`File \"hello.py\", line 3` —— 出错的文件和第几行，先看这里。\n2. **现场**：把那一行代码原样抄给你，并用 `^` 指出具体位置。\n3. **类型与描述**：`NameError: name 'score' is not defined` —— 冒号前是错误类型，冒号后是解释。\n\n最后一行才是结论，中间几行只是路径。新手常犯的错是从第一行逐字读，读到最后已经晕了；正确姿势是**先看最后一行，再看位置那一行**。\n\n**样例 1 · SyntaxError（语法错误）**\n\n```\n# 你写的 broken.py\nprint('你好'\n```\n\n```\n  File \"broken.py\", line 1\n    print('你好'\n         ^\nSyntaxError: '(' was never closed\n```\n\n哪一行：第 1 行。什么类型：SyntaxError，代码根本没被读懂。什么意思：左括号 `(` 没有对应的右括号，`^` 指着的就是没配上的那个括号。怎么改：补上右括号，写成 `print('你好')`。\n\n**样例 2 · NameError（名字错误）**\n\n```\n# 你写的 broken.py\nprint('总分是：')\nprint(score)\n```\n\n```\nTraceback (most recent call last):\n  File \"broken.py\", line 3, in <module>\n    print(score)\n          ^^^^^\nNameError: name 'score' is not defined\n```\n\n哪一行：第 3 行。什么类型：NameError。什么意思：`score` 这个名字从没被赋过值，Python 不知道它指什么。怎么改：在使用之前先给它一个值，例如在前面加一行 `score = 60`；同时检查是不是拼错了，比如把 `score` 写成了 `socre`。\n\n**样例 3 · IndentationError（缩进错误）**\n\n```\n# 你写的 broken.py\nif True:\nprint('缩进不对')\n```\n\n```\n  File \"broken.py\", line 2\n    print('缩进不对')\n    ^\nIndentationError: expected an indented block after 'if' statement on line 1\n```\n\n哪一行：第 2 行。什么类型：IndentationError。什么意思：第 1 行的 `if` 结尾带冒号，说明它下面要跟一段从属代码，这段代码必须缩进，而你顶格写了。怎么改：把第 2 行缩进 4 个空格。（`if` 的含义后面阶段会讲，这里只记结论：冒号后面必须缩进。）\n\n**报错排查四步法**\n\n1. **定位**：读 `File \"...\", line N`，把光标先跳到第 N 行。\n2. **归类**：看错误类型。SyntaxError / IndentationError 是「写错了」，先检查括号、引号、冒号、缩进；NameError 是「名字没定义」，多半是拼错或忘了赋值；TypeError 是「类型不对」，多半是把文字当数字用了。\n3. **翻译**：把冒号后的英文当句子读，它通常直接说了原因，例如 not defined（没定义）、was never closed（没闭合）、expected an indented block（这里应该有缩进块）。\n4. **最小化验证**：把出错的那几行单独复制到一个新文件，删掉无关代码，改一处跑一次。能用 5 行复现的问题，不要在 500 行里猜。",
+      "formula": "",
+      "aiConnection": "读报错的能力，直接决定你调模型的效率。跑一个开源模型，最常见的失败不是模型不行，而是几类固定报错：ModuleNotFoundError 说明依赖没装、CUDA out of memory 说明显存不够、shape mismatch 说明张量维度对不上、KeyError 说明配置里少了字段。老手看到最后一行就知道该改什么，新手会把整段 Traceback 复制去搜，搜到十个不相干的答案。更关键的是，深度学习框架的报错往往有几十层调用栈，最后一行才是你的代码，中间全是框架内部——不学会「先看最后一行、再找自己那一层」，你会在无关信息里迷路。",
       "codeExample": {
         "lang": "python",
-        "filename": "eigenvalue.py",
-        "code": "import numpy as np\n\nA = np.array([[2, 1],\n              [1, 2]])\n\n# 特征值分解\nw, v = np.linalg.eig(A)\n\nprint('特征值:', np.round(w, 3))   # [3. 1.]\nprint('特征向量(每列):')\nprint(np.round(v, 3))\n\n# 验证 Av = lambda * v\nfor i in range(len(w)):\n    lhs = A @ v[:, i]\n    rhs = w[i] * v[:, i]\n    print('check', i, np.allclose(lhs, rhs))\n\n# 用特征值排序可近似降维\nprint('largest eig =', np.max(w))"
+        "filename": "error_lab.py",
+        "code": "# error_lab.py —— 亲手制造一个报错，再把它读明白\n# 运行：python3 error_lab.py\n# 说明：try / except 是「接住错误」的装置，后面阶段会细讲，这里先照抄。\n\nprint('我要故意犯一个错，然后把错误信息读给你听。')\n\ntry:\n    text = input('请输入你的年龄（输入 abc 试试故意报错）：')\n    age = int(text)                      # 如果 text 不是数字，这一行会出错\n    print('明年你就', age + 1, '岁了。')\nexcept ValueError as err:\n    print()\n    print('--- 报错信息读法演示 ---')\n    print('哪一行：int(text) 这一行')\n    print('什么类型：', type(err).__name__)\n    print('什么意思：', err)\n    print('怎么改：输入 17 这样的阿拉伯数字，小数可以用 float() 接收。')"
       },
       "mistakes": [
-        "把 np.linalg.eig 返回的 v 的每一列当成特征向量，而非每行",
-        "混淆特征值与特征向量，误以为它们是同一个矩阵的属性",
-        "用非方阵做特征分解（只有方阵才有标准特征值）"
+        "看到报错就慌，直接关掉窗口重跑：报错是线索不是判决，先读最后一行",
+        "只改报错指出的那一行就重跑，没检查同样的问题是否在别处也有：先定位再批量改",
+        "把整段 Traceback 复制去搜，得到一堆无关答案：只搜最后一行",
+        "用中文全角符号或漏写冒号括号，会制造大量 SyntaxError"
       ],
       "interviewPoints": [
-        "「特征值和特征向量的几何意义？」要答到变换中方向不变、只被缩放的向量，缩放倍数就是特征值",
-        "「PCA 为什么用特征分解？」要答到协方差矩阵、特征值代表方差即信息量，说明保留几个主成分的判断依据",
-        "「特征值在模型稳定性里有什么用？」要答到正定性与 Hessian 特征值决定曲率，说明学习率过大为何导致震荡发散"
+        "「Traceback 应该怎么读？」要答到从下往上看：最后一行是错误类型与原因，往上是出错位置与调用栈，自己的代码通常在最下面一层",
+        "「NameError 和 TypeError 分别说明什么？」要答到名字未定义 vs 类型不匹配，并能各举一个例子",
+        "「线上服务报错怎么排查？」要答到看日志时间戳与堆栈、构造最小复现、先止血再修根因"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "Python 官方教程 · 错误和异常",
+          "url": "https://docs.python.org/zh-cn/3/tutorial/errors.html"
+        },
+        {
+          "title": "Python 官方文档 · 内置异常类型一览",
+          "url": "https://docs.python.org/zh-cn/3/library/exceptions.html"
+        }
+      ],
       "quiz": [
         {
-          "id": "eigenvalue-q1",
+          "id": "read-errors-q1",
           "type": "choice",
-          "prompt": "对矩阵 A 和特征向量 v，满足关系的等式是？",
+          "prompt": "运行 print(score) 时 Python 报出：NameError: name 'score' is not defined，并且指出问题在 score.py 第 2 行。这段信息告诉你什么？",
           "options": [
-            "Av = λv",
-            "Av = v",
-            "A·v = 0",
-            "Av = λ·v⁻¹"
+            "第 2 行的 print 语法写错了，少了一个括号",
+            "名字 score 在使用之前没有被赋过值",
+            "缩进不对，第 2 行应该缩进 4 个空格",
+            "Python 没装好，需要重新安装"
           ],
-          "answerIndex": 0,
-          "explanation": "特征向量的定义是 A·v = λ·v，即变换后方向不变、长度缩放 λ 倍。"
+          "answerIndex": 1,
+          "explanation": "NameError 的含义是「这个名字没有定义」，位置信息指出问题在第 2 行。修法是先写 score = 60 再打印，或检查拼写。语法错误会报 SyntaxError，缩进问题会报 IndentationError，都与本题无关。"
         },
         {
-          "id": "eigenvalue-q2",
+          "id": "read-errors-q2",
           "type": "short",
-          "prompt": "在 PCA 中，特征值的大小代表什么含义？",
-          "answer": "参考回答：特征值大小代表对应特征向量方向上的方差（信息量）。特征值越大，说明数据在该主成分方向上的变化越显著，因此应优先保留特征值大的方向实现降维。",
+          "prompt": "请写出读 Python 报错的「四步法」，并说明为什么要先看最后一行。",
+          "answer": "参考回答：第一步定位，看 File \"...\", line N，跳到出错行；第二步归类，看错误类型，SyntaxError 是写法问题，NameError 是名字没定义；第三步翻译，把冒号后的英文当句子读；第四步最小化验证，把出错几行单独复制出来。",
           "keywords": [
-            "方差",
-            "信息",
-            "降维"
+            "定位",
+            "错误类型",
+            "最小化"
           ],
-          "explanation": "特征值 = 该主成分方向上保留的方差/信息量，越大越值得保留。"
+          "explanation": "四步齐全，并说明「最后一行才是结论、中间是路径」即可得满分。"
         },
         {
-          "id": "eigenvalue-q3",
+          "id": "read-errors-q3",
           "type": "code",
-          "prompt": "对矩阵 A=[[2,1],[1,2]] 用 numpy 求特征值与特征向量并打印。",
-          "starterCode": "import numpy as np\n\nA = np.array([[2, 1], [1, 2]])\n",
-          "solution": "import numpy as np\n\nA = np.array([[2, 1], [1, 2]])\n\nw, v = np.linalg.eig(A)\nprint(w)\nprint(v)",
+          "prompt": "写一个程序：先用一个名字保存分数 60（写法是 score = 60），再把分数打印出来，输出形如「总分是： 60」。要求代码能正常运行，不出现 NameError，也不要有括号或引号不配对的语法错误。",
+          "starterCode": "score = 60\n# 在这里把分数打印出来，格式为：总分是： 60\n",
+          "solution": "score = 60\nprint('总分是：', score)\n\n# 运行输出：\n# 总分是： 60\n\n# 如果写成 print('总分是：', scroe)，就会得到：\n# NameError: name 'scroe' is not defined\n# 这时按四步法：定位第 2 行，归类为名字错误，翻译 not defined，再检查拼写。",
           "checks": [
-            "np.linalg.eig",
-            "w, v"
+            "score",
+            "print(",
+            "总分是"
           ],
-          "explanation": "用 np.linalg.eig(A) 返回特征值数组 w 与特征向量矩阵 v。"
+          "explanation": "考察「先赋值再使用」这条最基本的规则，以及 print 多参数的写法。"
         }
       ]
     },
     {
-      "slug": "derivative",
-      "title": "Derivative 导数",
+      "slug": "comments-indent-style",
+      "title": "注释、缩进与代码风格",
       "order": 5,
-      "module": "微积分",
+      "module": "不怕出错",
       "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "导数衡量函数在某一点的瞬时变化率，是梯度下降更新权重的基础。",
-      "intuition": "把函数想成一座山坡，导数就是某一点的山坡有多陡。为负时往下走，为正时往上走，越陡变化越快。训练模型时我们想知道：稍微改一点权重，损失会变大还是变小？导数正好给出这个答案。",
-      "formal": "函数 $f(x)$ 在 $x_0$ 处的导数定义为 $f'(x_0) = \\lim_{h\\to 0}\\frac{f(x_0+h)-f(x_0)}{h}$。常用规则：$\\frac{d}{dx}x^n=nx^{n-1}$、$\\frac{d}{dx}\\sin x=\\cos x$、$\\frac{d}{dx}\\ln x=\\frac{1}{x}$。导数为 0 且符号变化的地方是极值点。在机器学习中用梯度下降，权重更新 $w \\leftarrow w - \\eta\\,\\nabla L$，负号表示向损失下降方向走。",
-      "formula": "f'(x) = \\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}, \\quad \\frac{d}{dx}x^n = nx^{n-1}, \\quad w \\leftarrow w - \\eta\\frac{\\partial L}{\\partial w}",
-      "aiConnection": "模型的训练过程就是反复计算损失对每个权重的导数（梯度），然后反向更新。解释机器学习为何能\"学会\"，最核心的就是导数告诉我们往哪个方向调参能减小误差。",
+      "track": "main",
+      "estimatedMinutes": 30,
+      "summary": "注释写给人和未来的自己，缩进在 Python 里是语法而不是排版；再记住 PEP 8 里最值得遵守的五条，让代码一眼能读懂。",
+      "intuition": "代码是写给两个人看的：电脑，和三个月后的你自己。电脑那一关，只要语法对就过；人那一关，靠的是名字取得清楚、结构排得整齐、关键处有一句说明。你可能会想「我自己看得懂就行」，但真实情况是：三个月后你打开自己的代码，会像在看陌生人写的东西。团队里更严格——一份代码会被 review、被接手、被改十次，风格不统一，别人读你的代码就像读一篇没有标点的古文。所以这一节不是讲究，是省时间。",
+      "formal": "**注释。** Python 用 `#` 开头写单行注释，从 `#` 到行尾的内容解释器完全忽略。多行说明用三引号字符串（docstring），写在文件或函数开头，用 `help()` 能读出来。注释的原则是解释「为什么」，而不是复述「做了什么」：`i = i + 1  # i 加 1` 是废话，`i = i + 1  # 跳过表头行` 才有价值。如果一段代码写不出「为什么」，通常说明它该拆小或改名，而不是该加注释。\n\n**缩进是语法。** 大多数语言用花括号 `{}` 划分代码块，Python 用缩进。同一层的语句必须缩进相同，子层比父层多一级。官方风格是**每级 4 个空格**，不要用 Tab。混用 Tab 和空格会报 `TabError: inconsistent use of tabs and spaces in indentation`。空行和行内空格不影响语法，但缩进影响——这就是 Python 看起来干净、抄代码却容易翻车的原因：从网页复制时，缩进可能被悄悄换成了 Tab。\n\n**PEP 8 里最值得遵守的五条。**\n\n1. 每级缩进用 4 个空格，绝不用 Tab。\n2. 一行别太长：代码 79 字符、注释和文档 72 字符；团队常放宽到 100，关键是全队统一。\n3. 命名用 snake_case：变量和函数写成 `learning_rate`、`load_data`，类名用 PascalCase，常量全大写 `MAX_STEP`。\n4. 运算符两侧各留一个空格：`x = 1`、`a + b`；但函数调用的括号前不留空格，写 `print(x)`。\n5. 别用 `l`（小写 L）、`O`（大写 o）、`I`（大写 i）当变量名——它们在很多字体里和 1、0 几乎一样，是经典事故来源。",
+      "formula": "",
+      "aiConnection": "代码风格在团队协作里是硬要求，AI 岗尤其明显。训练脚本往往要多人共用，配置里写错一个字段名，一整晚的算力就白烧了；变量叫 lr 还是 learning_rate、日志里有没有写清第几个 epoch，直接决定同事能不能在半夜接手你的实验。开源社区更直接：给 PyTorch、Hugging Face 提 PR，风格不合规范会被机器人直接打回，连人都不用看。而注释的价值在 AI 项目里被放大——模型超参、数据版本、为什么选这个阈值，这些信息代码本身表达不出来，只能靠注释传下去。",
       "codeExample": {
         "lang": "python",
-        "filename": "derivative.py",
-        "code": "import numpy as np\n\n# 用中心差分数值求导逼近 f'(x)\ndef f(x):\n    return x ** 2  # f'(x) = 2x\n\ndef numerical_derivative(f, x, h=1e-6):\n    return (f(x + h) - f(x - h)) / (2 * h)\n\nprint('f\\'(2) ≈', numerical_derivative(f, 2))  # ≈ 4\nprint('f\\'(3) ≈', numerical_derivative(f, 3))  # ≈ 6\n\n# 用导数做一步梯度下降找最小值\nx = 5.0\neta = 0.1\nfor _ in range(10):\n    x = x - eta * numerical_derivative(f, x)\nprint('min at x ≈', round(x, 3))  # 接近 0"
+        "filename": "style_demo.py",
+        "code": "# style_demo.py —— 注释、缩进与命名的最小样例\n# 运行：python3 style_demo.py\n\n# ---- 1. 注释：解释「为什么」，不要复述「做了什么」----\nprice = 199          # 这是学生优惠价，原价 299\n# price = price + 1  # 坏注释：把 price 加 1（这种注释等于没写）\n\n# ---- 2. 缩进：Python 用缩进划分代码块，标准是 4 个空格 ----\n# 注意：下面用到的 if，含义后面阶段会讲，这里只看缩进规则。\nif price < 300:                       # 冒号表示「下面跟着一段从属代码」\n    print('这个价格可以接受')          # 缩进 4 个空格，从属于上面的 if\n    print('准备下单')                  # 同一层，缩进必须完全一样\nprint('这行顶格写，不属于 if 内部')     # 回到顶层\n\n# ---- 3. 命名与空格：snake_case + 运算符两侧留空格 ----\nstudent_name = '小明'                  # 变量：小写字母加下划线\nstudent_score = 87\nprint(student_name, '的总分是', student_score)\nprint('平均分是：', student_score / 2)   # 运算符 / 两侧各留一个空格"
       },
       "mistakes": [
-        "把导数的符号弄反，导致梯度下降反而推向损失变大的方向",
-        "把导数当作函数值本身，而不是变化率",
-        "数值求导时步长 h 取太大导致近似不准确"
+        "用 Tab 或 2 空格缩进，和别人混用就报 TabError",
+        "把注释写成代码复述，例如 i = i + 1 后写「i 加 1」",
+        "变量名起成 a、b、x1，过两天自己都看不懂：用 snake_case",
+        "用 l、O、I 当变量名，和数字 1、0 混淆，读代码时看错：换成语义化的名字"
       ],
       "interviewPoints": [
-        "「导数为什么能指导参数更新？」要答到变化率、符号决定下降方向与负梯度更新公式，说明学习率的作用",
-        "「导数为 0 就一定是极值点吗？」要答到驻点与拐点、二阶导判断，说明深度学习中鞍点比局部极小更常见",
-        "「数值求导和解析求导有什么区别？」要答到差分近似与误差、精度和速度的权衡，说明梯度检查为何用中心差分"
+        "「Python 为什么用缩进而不是花括号？」要答到强制统一风格、减少符号噪音，并说出混用 Tab 和空格会报 TabError",
+        "「代码 review 你会关注什么？」要答到命名是否表意、函数是否单一职责、边界与异常是否处理、注释是否解释为什么",
+        "「PEP 8 里最容易被扣分的点？」答到缩进 4 空格、行长限制、snake_case 命名、运算符两侧空格，以及别用 l / O / I 当变量名"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "PEP 8 · Python 代码风格指南（官方）",
+          "url": "https://peps.python.org/pep-0008/"
+        },
+        {
+          "title": "PEP 20 · Python 之禅",
+          "url": "https://peps.python.org/pep-0020/"
+        }
+      ],
       "quiz": [
         {
-          "id": "derivative-q1",
+          "id": "comments-indent-style-q1",
           "type": "choice",
-          "prompt": "函数 f(x)=x² 的导数是？",
+          "prompt": "下面哪种写法最符合 PEP 8？",
           "options": [
-            "x",
-            "2x",
-            "x²",
-            "2"
+            "用 2 个空格缩进，节省屏幕空间",
+            "每级缩进用 4 个空格，变量名用 snake_case",
+            "用 Tab 缩进，同时混入几个空格做对齐",
+            "变量名用 l、O、I，短又好打"
           ],
           "answerIndex": 1,
-          "explanation": "由幂法则 d/dx x^n = n·x^(n-1)，f'(x) = 2x。"
+          "explanation": "PEP 8 规定每级缩进 4 个空格、命名用 snake_case。Tab 与空格混用会抛 TabError；l、O、I 在多数字体里和 1、0 难以区分，是被明确劝阻的命名。"
         },
         {
-          "id": "derivative-q2",
+          "id": "comments-indent-style-q2",
           "type": "short",
-          "prompt": "在梯度下降里，为什么要用权重的导数来决定更新方向？",
-          "answer": "参考回答：因为导数（梯度）指示了损失随权重变化的瞬时方向与快慢，损失函数在当前点的梯度指向增长最快的方向，因此我们朝梯度的反方向移动（w ← w - η·∇L）就能减小损失。",
+          "prompt": "为什么 Python 用缩进划分代码块，而不是像 C 那样用花括号？这样做有什么代价？",
+          "answer": "参考回答：用缩进划分代码块，等于把排版和语法合成一件事，代码在视觉上的从属关系就是真实的从属关系，不需要花括号，也不会出现花括号配对正确但格式混乱的情况，可读性更整齐。代价是缩进变成硬性语法：同一层缩进必须完全一致，混用 Tab 和空格会直接报 TabError，从网页复制代码时尤其容易翻车。",
           "keywords": [
-            "梯度",
-            "损失",
-            "反方向"
+            "缩进",
+            "代码块",
+            "TabError"
           ],
-          "explanation": "导数给出最陡上升方向，取反则是下降方向，故用 w-η∇L 更新。"
+          "explanation": "答到「排版即语法、可读性更好」和「代价是缩进错误直接报错」即可。"
         },
         {
-          "id": "derivative-q3",
+          "id": "comments-indent-style-q3",
           "type": "code",
-          "prompt": "用中心差分数值求 f(x)=x² 在 x=2 处的导数并打印结果。",
-          "starterCode": "def f(x):\n    return x ** 2\n\ndef numerical_derivative(f, x, h=1e-6):\n    pass\n",
-          "solution": "def f(x):\n    return x ** 2\n\ndef numerical_derivative(f, x, h=1e-6):\n    return (f(x + h) - f(x - h)) / (2 * h)\n\nprint(numerical_derivative(f, 2))",
+          "prompt": "把下面这段风格很糟的代码改写成符合 PEP 8 的版本：x=199，接着 if x<300:，然后是一行用 2 个空格缩进的 print('可以接受')。要求改成 4 个空格缩进、变量名用 snake_case、运算符两侧留空格，并补一句解释「为什么」的注释，最后保证能正常运行。",
+          "starterCode": "# 把下面这段代码改成符合 PEP 8 的版本\nx=199\nif x<300:\n  print('可以接受')\n",
+          "solution": "# 这个价格低于 300，属于学生优惠范围内的可接受价位\nprice = 199\nif price < 300:\n    print('可以接受')\n\n# 运行输出：可以接受",
           "checks": [
-            "numerical_derivative",
-            "2 * h"
+            " = 199",
+            "    print(",
+            "#"
           ],
-          "explanation": "用中心差分 (f(x+h)-f(x-h))/(2h) 求近似导数。"
+          "explanation": "考察四件事：缩进改成 4 空格、变量名改 snake_case、运算符两侧加空格、注释解释为什么。"
         }
       ]
     },
     {
-      "slug": "gradient",
-      "title": "Gradient 梯度",
+      "slug": "mini-project-guess-number",
+      "title": "小项目：猜数字游戏",
       "order": 6,
-      "module": "微积分",
-      "difficulty": "基础",
-      "estimatedMinutes": 23,
-      "summary": "梯度是多元函数在每个自变量方向上的偏导数组成的向量，指向函数增长最快的方向。",
-      "intuition": "一元函数有导数，多元函数把每个方向的导数排成一个向量就是梯度。想象你站在一座浓雾里的山上，梯度向量指着最陡的上坡方向。训练时我们偏要反着走（朝梯度反方向），因为那样损失下降最快。",
-      "formal": "对 $f:\\mathbb{R}^n\\to\\mathbb{R}$，梯度为 $\\nabla f = \\left[\\frac{\\partial f}{\\partial x_1}, \\dots, \\frac{\\partial f}{\\partial x_n}\\right]^T$。梯度指向函数上升最快的方向，其反方向指向下降最快的方向，因此梯度下降更新为 $\\mathbf{w} \\leftarrow \\mathbf{w} - \\eta\\,\\nabla_{\\mathbf{w}} L$。每一步移动的幅度是学习率 $\\eta$。在神经网络中，梯度向量的每个分量表示某个权重对损失的贡献，反向传播高效算出梯度。",
-      "formula": "\\nabla f = \\begin{bmatrix} \\frac{\\partial f}{\\partial x_1} \\\\ \\vdots \\\\ \\frac{\\partial f}{\\partial x_n} \\end{bmatrix}, \\quad \\mathbf{w} \\leftarrow \\mathbf{w} - \\eta\\,\\nabla_{\\mathbf{w}} L",
-      "aiConnection": "训练大规模模型时，反向传播专门高效地算出损失相对每个参数的梯度，再用梯度下降更新。学习率过大会震荡不收敛，过小则训练极慢，这正是实践中调参的核心。",
+      "module": "第一个小项目",
+      "difficulty": "进阶",
+      "track": "main",
+      "estimatedMinutes": 40,
+      "summary": "把输入输出、判断、循环拼成第一个完整小项目：程序随机想一个 1 到 100 的数，你来猜，它提示大了还是小了，最多 7 次机会。",
+      "intuition": "前面五节你学的都是零件：打印、输入、缩进、读报错。这一节把它们装成一台能玩的小机器。猜数字是最好的第一个项目，因为它天生就是一个循环：问你一次，判断一次，没猜对就再问一次——这正是所有程序的心跳。而且它有个漂亮的数学性质：1 到 100 的范围，每次猜中间值，7 次一定能猜到（2 的 7 次方是 128，已经盖住 100 个数），这其实就是二分查找。玩通它，你就摸到了算法课的第一块砖。",
+      "formal": "**项目规格。** 程序随机选一个 1 到 100 的整数；玩家最多猜 7 次；每次猜完给出三种反馈之一——太大了、太小了、猜对了；猜对或次数用尽后游戏结束，并公布答案。\n\n**四个零件的分工。**\n\n- `random.randint(1, 100)`：从闭区间 [1, 100] 里等概率取一个整数当答案。`random` 是 Python 自带的模块，`import random` 之后就能用。\n- `input()`：读玩家输入，返回的是字符串，所以要 `int()` 转成整数再比大小。\n- `if / elif / else`：把猜的数和答案比大小，决定打印哪一句反馈。\n- `while`：只要「还没猜对」且「还有次数」，就再来一轮。循环变量必须在这两处之一被改变，否则会死循环；`while True` 配 `break` 是常见写法，`break` 表示立刻跳出循环。\n\n**为什么是 7 次。** 每次猜中间值，剩余候选数减半：100 → 50 → 25 → 13 → 7 → 4 → 2 → 1，7 次之内必然收敛。反过来，如果每次只排除一个数（比如从 1 开始往上猜），最坏要 100 次。这就是二分查找 Binary Search 的思想，最坏次数从 O(n) 降到 O(log n)。\n\n**边界条件。** 输入非数字时 `int()` 会抛 ValueError，练习版可以先不处理，进阶做法是用 try / except 接住并提示重新输入；次数用尽时必须公布答案，否则玩家不知道自己输在哪。\n\n**练习：改成猜单词版本。** 把 `answer = random.randint(1, 100)` 换成 `answer = random.choice(['apple', 'banana', 'cherry', 'orange', 'peach'])`，`random.choice()` 会从列表里随机挑一个元素；再把 `guess = int(input('请输入你猜的数字：'))` 换成 `guess = input('请输入你猜的单词：').strip().lower()`，其中 `strip()` 去掉首尾空格、`lower()` 统一成小写，这样 Apple 和 apple 算同一个答案；比大小的 `>` 和 `<` 不再有意义，改成只判断相等，提示换成「再想想」。次数限制和循环结构完全不用动。想再加难度，可以把提示从「对不对」升级成「首字母是什么」「单词有几个字母」。",
+      "formula": "T = \\lceil \\log_2 N \\rceil",
+      "aiConnection": "这个小项目的结构和真实 AI 系统惊人地相似：一个循环（训练轮次或对话轮次）、一个判断（loss 是否下降、答案是否正确）、一个终止条件（达到目标或耗尽预算）、一份反馈（日志、指标、用户看到的回答）。你在猜数字里体会到的「每轮拿到反馈、据此调整下一次尝试」，就是梯度下降和强化学习在概念上的雏形。而「最多 7 次」这种预算约束在工程里处处存在：推理时的最大 token 数、训练早停的 patience、评测集的采样条数，说的都是同一件事。",
       "codeExample": {
         "lang": "python",
-        "filename": "gradient.py",
-        "code": "import numpy as np\n\n# 损失函数 L(w) = (w - 3)^2，梯度为 2*(w-3)\ndef loss(w):\n    return (w - 3) ** 2\n\ndef grad(w):\n    return 2 * (w - 3)\n\n# 梯度下降\nw = 0.0\neta = 0.1\nhistory = []\nfor i in range(20):\n    g = grad(w)\n    w = w - eta * g\n    history.append(round(w, 3))\n\nprint('w after 20 steps =', w)  # 接近 3\nprint('first few:', history[:5])\n\n# 用数值梯度做对比\nh = 1e-6\nnumerical = (loss(w + h) - loss(w - h)) / (2 * h)\nprint('numerical grad ≈', numerical)"
+        "filename": "guess_number.py",
+        "code": "# guess_number.py —— 第一个完整小项目：猜数字\n# 运行：python3 guess_number.py\n\nimport random                        # random 是 Python 自带的工具箱，用来生成随机数\n\nanswer = random.randint(1, 100)      # 答案：1 到 100 之间的随机整数（含 1 和 100）\nmax_tries = 7                        # 最多允许猜 7 次\ntries = 0                            # 已经猜了几次，从 0 开始\n\nprint(f'我想好了一个 1 到 100 的整数，你有 {max_tries} 次机会猜中它。')\n\nwhile tries < max_tries:             # 只要还没用完次数，就再来一轮\n    guess_text = input('请输入你猜的数字：')   # input 拿到的是文字\n    guess = int(guess_text)                   # 转成整数才能比大小\n    tries = tries + 1                         # 这一轮用掉一次机会\n\n    if guess == answer:                       # == 是「相等吗」；= 是赋值，别写混\n        print(f'猜对了！你只用了 {tries} 次。')\n        break                                 # 猜中就跳出循环，不再继续问\n    elif guess > answer:\n        print('太大了，往小猜。')\n    else:\n        print('太小了，往大猜。')\n\n    if tries < max_tries:                     # 还有机会，就报一下剩余次数\n        print(f'还剩 {max_tries - tries} 次机会。')\n    else:                                     # 机会用完了，公布答案\n        print(f'次数用完了，答案是 {answer}。')\n\nprint('游戏结束，再见！')"
       },
       "mistakes": [
-        "把梯度方向当成下降方向，实际应取负梯度才是下降",
-        "学习率设置过大导致发散或震荡，过小导致收敛慢",
-        "把梯度（向量）与偏导数（单个标量）混为一谈"
+        "判断相等要用 ==，写成单个 = 会直接 SyntaxError",
+        "忘了把输入转成整数，字符串和数字比大小会报 TypeError",
+        "循环里没修改次数，tries 永远是 0，程序死循环",
+        "输入字母导致 int() 抛 ValueError，程序直接崩掉"
       ],
       "interviewPoints": [
-        "「梯度指向哪个方向？」要答到函数增长最快的方向、负梯度下降最快，说明更新为何是 w 减去学习率乘梯度",
-        "「学习率太大或太小会怎样？」要答到震荡发散与收敛过慢，说明 warmup 与学习率调度为何必要",
-        "「梯度消失和爆炸是什么原因？」要答到连乘导致指数衰减或放大、深层网络与激活函数选择，说明残差连接与梯度裁剪"
+        "「猜数字为什么 7 次一定能中？」要答到每次猜中点、候选区间减半，2 的 7 次方大于 100，也就是二分查找的 O(log n)",
+        "「while True 加 break 和写条件循环有什么区别？」要答到可读性与退出路径是否唯一，并提醒每条分支都要能到达 break",
+        "「怎么防止死循环？」要答到循环变量必须在循环体内被修改、给循环加上限或超时、先在纸上推一遍退出条件"
       ],
-      "resources": [],
-      "quiz": [
+      "resources": [
         {
-          "id": "gradient-q1",
-          "type": "choice",
-          "prompt": "梯度向量∇L 指向的是哪个方向？",
-          "options": [
-            "函数下降最快方向",
-            "函数上升最快方向",
-            "函数值恒定的方向",
-            "随机方向"
-          ],
-          "answerIndex": 1,
-          "explanation": "梯度指向函数上升最快的方向，因此下降要取负梯度方向。"
+          "title": "Python 官方教程 · 更多控制流工具",
+          "url": "https://docs.python.org/zh-cn/3/tutorial/controlflow.html"
         },
         {
-          "id": "gradient-q2",
-          "type": "short",
-          "prompt": "梯度下降中把学习率设得太大或太小各自会怎样？",
-          "answer": "参考回答：学习率过大会导致每次更新跨过最低点，在最优解附近震荡甚至发散；学习率过小会让收敛非常缓慢，需要很多步才能接近最优解。",
-          "keywords": [
-            "震荡",
-            "收敛",
-            "学习率"
-          ],
-          "explanation": "大学习率易震荡发散，小学习率收敛慢，需要折中并配合调度。"
-        },
-        {
-          "id": "gradient-q3",
-          "type": "code",
-          "prompt": "对损失 L(w)=(w-3)²，其梯度为 2*(w-3)，实现一次 10 步、学习率 0.1 的梯度下降。",
-          "starterCode": "def grad(w):\n    return 2 * (w - 3)\n\nw = 0.0\neta = 0.1\n",
-          "solution": "def grad(w):\n    return 2 * (w - 3)\n\nw = 0.0\neta = 0.1\nfor _ in range(10):\n    w = w - eta * grad(w)\nprint(w)",
-          "checks": [
-            "eta",
-            "grad"
-          ],
-          "explanation": "循环中用 w = w - eta*grad(w) 更新，10 步后接近 3。"
+          "title": "Python 官方文档 · random 模块",
+          "url": "https://docs.python.org/zh-cn/3/library/random.html"
         }
-      ]
-    },
-    {
-      "slug": "chain-rule",
-      "title": "Chain Rule 链式法则",
-      "order": 7,
-      "module": "微积分",
-      "difficulty": "基础",
-      "estimatedMinutes": 23,
-      "summary": "链式法则给出复合函数求导的方法，是反向传播算法从输出层逐层回传梯度的数学原理。",
-      "intuition": "模型是一层套一层的函数组合：输入经过很多层才得到输出。链式法则告诉我们，想求最外层对最内层输入的导数，就把一路上每一段的导数乘起来。反向传播正是从误差出发，一路乘回去，算出每个权重的梯度。",
-      "formal": "若 $y = f(g(x))$，则 $\\frac{dy}{dx} = \\frac{dy}{du}\\cdot\\frac{du}{dx}$，其中 $u = g(x)$。对多层复合 $L = f_N(\\dots f_1(x))$，梯度按链式逐层累计：$\\frac{\\partial L}{\\partial x_i} = \\frac{\\partial L}{\\partial x_{i+1}}\\frac{\\partial x_{i+1}}{\\partial x_i}$。反向传播用动态规划从最后一层往前，避免重复计算，这正是它能高效训练深层网络的数学基础。",
-      "formula": "\\frac{dy}{dx} = \\frac{dy}{du}\\cdot\\frac{du}{dx}, \\quad \\frac{\\partial L}{\\partial w_1} = \\frac{\\partial L}{\\partial x_2}\\cdot\\frac{\\partial x_2}{\\partial w_1}",
-      "aiConnection": "神经网络反向传播就是链式法则的工程化：从损失层回传，逐层乘上局部导数，高效得到所有权重的梯度。理解链式法则是理解为什么深层网络能训练、以及为什么需要自动求导框架（如 PyTorch autograd）的关键。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "chain_rule.py",
-        "code": "# 用数值微分验证链式法则\n# y = f(g(x)), f(u)=u^2, g(x)=2x+1\ndef g(x):\n    return 2 * x + 1\n\ndef f(u):\n    return u ** 2\n\n# 由链式法则 dy/dx = f'(g(x)) * g'(x) = 2*g(x) * 2\ndef chain_derivative(x):\n    return 2 * g(x) * 2\n\n# 数值验证\ndef numeric(fn, x, h=1e-6):\n    return (fn(x + h) - fn(x - h)) / (2 * h)\n\ndef full(x):\n    return f(g(x))\n\nx = 3.0\nprint('chain =', chain_derivative(x))   # 2*(7)*2 = 28\nprint('numeric =', round(numeric(full, x), 6))  # ≈ 28"
-      },
-      "mistakes": [
-        "把复合函数当成单层直接求导，漏掉中间层导数",
-        "记反内外层，把 f'(g(x)) 和 g'(x) 的顺序搞错",
-        "误以为链式法则只适用于单变量，不理解它在层间传播的含义"
       ],
-      "interviewPoints": [
-        "「链式法则和反向传播是什么关系？」要答到复合函数逐层求导连乘、从后往前复用中间结果，说明动态规划为何高效",
-        "「为什么深层网络需要自动求导？」要答到手工推导易错、计算图记录算子，说明 PyTorch autograd 的 backward 机制",
-        "「梯度消失和链式法则有什么关系？」要答到连乘中小于 1 的因子指数衰减，说明激活函数与归一化层的作用"
-      ],
-      "resources": [],
       "quiz": [
         {
-          "id": "chain-rule-q1",
+          "id": "mini-project-guess-number-q1",
           "type": "choice",
-          "prompt": "y=f(g(x))，则 dy/dx 等于？",
+          "prompt": "猜数字游戏中，范围是 1 到 100，每次都猜当前区间的中间值，最多几次一定能猜中？",
           "options": [
-            "f'(x)·g'(x)",
-            "f'(g(x))·g'(x)",
-            "f(g(x))·g'(x)",
-            "f'(g'(x))"
-          ],
-          "answerIndex": 1,
-          "explanation": "链式法则 dy/dx = f'(g(x)) * g'(x)，先对外层求导、代入内层，再乘内层导数。"
-        },
-        {
-          "id": "chain-rule-q2",
-          "type": "short",
-          "prompt": "为什么说反向传播就是链式法则的工程应用？",
-          "answer": "参考回答：因为神经网络是层层复合函数，损失对某层权重的梯度需要由链式法则逐层累计求得；反向传播从最后一层往前、复用已算梯度，高效地对每层应用链式法则，从而得到所有权重的梯度。",
-          "keywords": [
-            "链式",
-            "逐层",
-            "梯度"
-          ],
-          "explanation": "反向传播自后向前逐层乘局部导数，正是链式法则的体现。"
-        },
-        {
-          "id": "chain-rule-q3",
-          "type": "code",
-          "prompt": "设 g(x)=2x+1，f(u)=u²，用链式法则求 y=f(g(x)) 在 x=3 处的导数。",
-          "starterCode": "def g(x):\n    return 2 * x + 1\n\ndef f(u):\n    return u ** 2\n\nx = 3.0\n",
-          "solution": "def g(x):\n    return 2 * x + 1\n\ndef f(u):\n    return u ** 2\n\nx = 3.0\n# dy/dx = f'(g(x)) * g'(x) = 2*g(x) * 2\nprint(2 * g(x) * 2)",
-          "checks": [
-            "g(x)",
-            "2"
-          ],
-          "explanation": "链式法则得到 2·g(x)·g'(x)，g'(x)=2，x=3 时结果为 28。"
-        }
-      ]
-    },
-    {
-      "slug": "distribution",
-      "title": "Distribution 分布",
-      "order": 8,
-      "module": "概率统计",
-      "difficulty": "基础",
-      "estimatedMinutes": 24,
-      "summary": "分布描述随机变量取各个值（或落在某个区间）的概率，是理解数据来源与生成模型的基石。",
-      "intuition": "分布就是\"数据可能怎么出现\"的说明书。它告诉你哪个结果更常见、哪些很少见。抛硬币是二项分布，身高近似正态分布。在语言模型里，下一个词会按什么概率出现，也叫一个概率分布，模型输出常常就是这个分布。",
-      "formal": "离散随机变量用概率质量函数 $P(X=x)$，连续随机变量用概率密度函数 $f(x)$，满足归一化 $\\sum_x P(X=x)=1$ 或 $\\int f(x)dx=1$。常见分布：均匀、伯努利、二项、正态 $N(\\mu,\\sigma^2)$、泊松等。正态分布密度 $f(x)=\\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-(x-\\mu)^2/(2\\sigma^2)}$。语言模型的输出层是一个离散概率分布。",
-      "formula": "\\sum_x P(X=x)=1, \\quad \\int_{-\\infty}^{\\infty} f(x)dx=1, \\quad f(x)=\\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}",
-      "aiConnection": "大模型输出层 softmax 会产生一个词表上的概率分布，采样/解码就是从该分布里挑词。理解分布帮助我们解释\"模型在预测概率\"，也用于生成、评估困惑度等任务。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "distribution.py",
-        "code": "import numpy as np\n\nnp.random.seed(0)\n\n# 采样：正态分布 N(mean=0, std=1)\nsamples = np.random.normal(0, 1, size=100000)\nprint('mean ≈', round(samples.mean(), 3))    # ≈ 0\nprint('std ≈', round(samples.std(), 3))      # ≈ 1\n\n# 均匀分布 [0,1)\nuni = np.random.uniform(0, 1, 100000)\nprint('uniform mean ≈', round(uni.mean(), 3))\n\n# 模拟抛硬币（伯努利）\ncoin = np.random.binomial(1, 0.5, 100000)\nprint('P(heads) ≈', round(coin.mean(), 3))   # ≈ 0.5\n\n# 归一化的\"概率分布\"：softmax 的输出和为 1\nlogits = np.array([2.0, 1.0, 0.1])\nexp = np.exp(logits - logits.max())\nprobs = exp / exp.sum()\nprint('prob sum =', round(probs.sum(), 6))\nprint('probs =', np.round(probs, 3))"
-      },
-      "mistakes": [
-        "混淆概率质量函数（离散）与概率密度函数（连续）",
-        "忘记概率密度可 >1（密度不是概率），而离散概率必须 ≤1",
-        "把采样得到的经验分布直接当成精确理论分布"
-      ],
-      "interviewPoints": [
-        "「大模型的输出为什么是概率分布？」要答到 softmax 归一化到词表、概率和为 1，说明采样与解码策略都基于它",
-        "「概率密度可以大于 1 吗？」要答到密度不是概率、必须积分才得概率，说明连续与离散分布的区别",
-        "「temperature 是怎么改变分布的？」要答到对 logits 缩放后再 softmax，说明高温更随机、低温更确定的原因"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "distribution-q1",
-          "type": "choice",
-          "prompt": "关于概率分布的归一化条件，正确说法是？",
-          "options": [
-            "离散概率之和必须为 1",
-            "连续密度可以为任意值无需归一化",
-            "概率值都可以大于 1",
-            "只有正态分布需要归一化"
+            "7 次",
+            "10 次",
+            "50 次",
+            "100 次"
           ],
           "answerIndex": 0,
-          "explanation": "所有概率分布都要满足求和（离散）或积分（连续）等于 1 的归一化。"
+          "explanation": "每次猜中间值可把候选区间减半：100→50→25→13→7→4→2→1，共 7 步；因为 2 的 7 次方是 128，已经覆盖 100 个数。这就是二分查找，最坏 O(log n)；而逐个往上猜最坏要 100 次。"
         },
         {
-          "id": "distribution-q2",
+          "id": "mini-project-guess-number-q2",
           "type": "short",
-          "prompt": "为什么说大模型的输出可以看成一个概率分布？",
-          "answer": "参考回答：模型在词表上给每个词一个分数，经 softmax 归一化后得到一组和为 1 的概率，表示每个词作为下一个词的可能性，因此输出可视为一个离散概率分布，解码就是从这个分布中选取词。",
+          "prompt": "在猜数字程序里，while 循环的「继续条件」是什么？如果忘了在循环体里修改次数变量，会发生什么？",
+          "answer": "参考回答：继续条件是已猜次数小于最大次数，也就是 tries < max_tries，只要为真就再问一轮。如果循环体里没有 tries = tries + 1 这类修改，条件永远为真，程序就会死循环停不下来，只能手动中断。所以每轮都要有让条件趋向为假的语句，或者用 break 给出退出路径。",
           "keywords": [
-            "softmax",
-            "概率",
-            "归一化"
+            "tries < max_tries",
+            "死循环",
+            "break"
           ],
-          "explanation": "softmax 把词表分数转成和为 1 的概率，即一个离散概率分布。"
+          "explanation": "答到「条件是比较次数」与「不修改循环变量会死循环、必须保证有退出路径」即可。"
         },
         {
-          "id": "distribution-q3",
+          "id": "mini-project-guess-number-q3",
           "type": "code",
-          "prompt": "用 numpy 生成 10000 个 N(0,1) 正态样本，打印它们的均值与标准差。",
-          "starterCode": "import numpy as np\n\nnp.random.seed(0)\n",
-          "solution": "import numpy as np\n\nnp.random.seed(0)\nsamples = np.random.normal(0, 1, size=10000)\nprint(samples.mean())\nprint(samples.std())",
+          "prompt": "写一个简易版猜数字：答案固定为 42（不用随机数），让玩家最多猜 3 次；每次猜完提示「太大了」或「太小了」，猜中则打印「猜对了」并立刻结束。要求用 while 控制次数，用 if / elif / else 比较大小，并用 input() 读取猜测。",
+          "starterCode": "answer = 42\ntries = 0\nmax_tries = 3\n\n# 用 while 循环让玩家最多猜 3 次\n",
+          "solution": "answer = 42\ntries = 0\nmax_tries = 3\n\nwhile tries < max_tries:\n    guess = int(input('请输入你猜的数字：'))\n    tries = tries + 1\n\n    if guess == answer:\n        print('猜对了')\n        break\n    elif guess > answer:\n        print('太大了')\n    else:\n        print('太小了')\n\nprint('游戏结束')",
           "checks": [
-            "np.random.normal",
-            "mean",
-            "std"
+            "while",
+            "input(",
+            "break"
           ],
-          "explanation": "用 np.random.normal(0,1,size=10000) 采样，再用 .mean() 与 .std() 打印统计量。"
-        }
-      ]
-    },
-    {
-      "slug": "expectation",
-      "title": "Expectation 期望",
-      "order": 9,
-      "module": "概率统计",
-      "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "期望是随机变量取值的加权平均，权重为对应概率，描述\"平均而言会发生什么\"。",
-      "intuition": "期望就是\"长期平均\"。今天可能得 1 块，明天得 5 块，但机会有多大概率，平均下来是多少？期望就是把每个可能结果乘以它发生的概率，再全部加起来。它不等于是最可能出现的结果，而是平均表现。",
-      "formal": "离散随机变量期望为 $E[X]=\\sum_x x\\,P(X=x)$；连续为 $E[X]=\\int x f(x)dx$。期望是线性的：$E[aX+b]=aE[X]+b$，$E[X+Y]=E[X]+E[Y]$，但一般 $E[XY]\\ne E[X]E[Y]$（仅当独立时成立）。样本均值 $\\bar{x}=\\frac{1}{n}\\sum x_i$ 是期望的无偏估计。在机器学习中，损失的风险常取期望。",
-      "formula": "E[X] = \\sum_x x\\,P(X=x) = \\int x f(x)\\,dx, \\quad E[aX+b] = aE[X]+b, \\quad E[X+Y] = E[X]+E[Y]",
-      "aiConnection": "评估一个模型/策略的好坏常看期望性能：预期损失、期望奖励等。强化学习中的回报、决策的预期收益都建立在期望之上；训练时的批内平均损失也是期望的一种经验估计。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "expectation.py",
-        "code": "import numpy as np\n\n# 掷公平骰子的期望 E[X] = (1+2+3+4+5+6)/6 = 3.5\nvalues = np.array([1, 2, 3, 4, 5, 6])\nprobs = np.full(6, 1 / 6)\nexp = np.sum(values * probs)\nprint('骰子期望 =', exp)\n\n# 用大量采样逼近期望\nnp.random.seed(1)\nrolls = np.random.choice(values, size=100000, p=probs)\nprint('采样均值 ≈', round(rolls.mean(), 3))\n\n# 线性性质 E[aX+b] = a*E[X] + b\na, b = 3, 5\nprint('E[3X+5] =', a * exp + b)\n\n# 模拟不均匀(作弊)骰子\np2 = np.array([0.4, 0.1, 0.1, 0.1, 0.1, 0.2])\nprint('偏置骰子期望 =', round(np.sum(values * p2), 3))"
-      },
-      "mistakes": [
-        "把期望等同于最可能出现的值（众数）",
-        "误以为 E[XY] 恒等于 E[X]E[Y]，其实仅独立时成立",
-        "用样本均值时未考虑是否为无偏/有偏估计"
-      ],
-      "interviewPoints": [
-        "「期望和平均值有什么区别？」要答到理论加权平均与样本估计，说明批内平均损失为何是期望的经验近似",
-        "「期望的线性性质有什么用？」要答到 E[aX+b] 与 E[X+Y] 可以拆开，说明它不要求独立而 E[XY] 才需要",
-        "「为什么用期望来评估模型？」要答到风险即期望损失、单次结果波动大，说明交叉验证取平均的意义"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "expectation-q1",
-          "type": "choice",
-          "prompt": "偶数个均匀骰子（点数为 1..6）的期望值是多少？",
-          "options": [
-            "3",
-            "3.5",
-            "6",
-            "2.5"
-          ],
-          "answerIndex": 1,
-          "explanation": "E = (1+2+3+4+5+6)/6 = 3.5，是各点数按 1/6 概率的加权平均。"
-        },
-        {
-          "id": "expectation-q2",
-          "type": "short",
-          "prompt": "期望的线性性质是什么？E[aX+b] 等于什么？",
-          "answer": "参考回答：期望是线性的，E[aX+b] = a·E[X] + b。常数可以提出来，加上一个常数 b 只会让期望偏移 b。特别地，一般情况下 E[XY] ≠ E[X]·E[Y]，仅在 X、Y 独立时成立。",
-          "keywords": [
-            "线性",
-            "aE",
-            "独立"
-          ],
-          "explanation": "E[aX+b]=aE[X]+b；乘积仅在独立时等于二者期望之积。"
-        },
-        {
-          "id": "expectation-q3",
-          "type": "code",
-          "prompt": "用 numpy 计算骰子 [1..6] 等概率的期望，并抽样 100000 次逼近。",
-          "starterCode": "import numpy as np\n\nnp.random.seed(1)\nvalues = np.array([1, 2, 3, 4, 5, 6])\nprobs = np.full(6, 1 / 6)\n",
-          "solution": "import numpy as np\n\nnp.random.seed(1)\nvalues = np.array([1, 2, 3, 4, 5, 6])\nprobs = np.full(6, 1 / 6)\n\nprint(np.sum(values * probs))\nrolls = np.random.choice(values, size=100000, p=probs)\nprint(rolls.mean())",
-          "checks": [
-            "np.sum",
-            "mean"
-          ],
-          "explanation": "期望用 values*probs 求和，再用随机抽样 .mean() 逼近。"
-        }
-      ]
-    },
-    {
-      "slug": "variance",
-      "title": "Variance 方差",
-      "order": 10,
-      "module": "概率统计",
-      "difficulty": "基础",
-      "estimatedMinutes": 23,
-      "summary": "方差衡量随机变量取值围绕期望的波动程度，标准差是其平方根。",
-      "intuition": "期望告诉你平均在哪，方差告诉你\"漂移\"有多大。同样平均分 80 的班上，一个班人人都 80，另一个班一半 0 分一半 100 分，后者的方差大得多。训练数据、模型预测都有方差，理解它能帮你判断稳定与过拟合。",
-      "formal": "方差定义为 $\\text{Var}(X)=E[(X-E[X])^2]=E[X^2]-E[X]^2$，标准差 $\\sigma=\\sqrt{\\text{Var}(X)}$。方差性质：$\\text{Var}(aX+b)=a^2\\text{Var}(X)$（平移不变、缩放按平方），$\\text{Var}(X+Y)=\\text{Var}(X)+\\text{Var}(Y)$ 当且仅当 $X,Y$ 不相关。样本方差 $s^2=\\frac{1}{n-1}\\sum(x_i-\\bar{x})^2$ 是无偏估计（除以 $n-1$）。在偏差-方差权衡中，方差反映模型对训练数据的敏感度。",
-      "formula": "\\text{Var}(X) = E[(X-E[X])^2] = E[X^2]-E[X]^2, \\quad \\text{Var}(aX+b) = a^2\\text{Var}(X), \\quad \\text{Var}(X+Y)=\\text{Var}(X)+\\text{Var}(Y)",
-      "aiConnection": "统计学与机器学习常谈偏差-方差权衡：过大方差意味着模型对训练数据过拟合、泛化差。归一化（标准化）时除以标准差，正是为了让各特征方差一致，从而更稳定地训练。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "variance.py",
-        "code": "import numpy as np\n\n# 两组均值相同但离散度不同的数据\na = np.array([80, 80, 80, 80, 80])\nb = np.array([60, 70, 80, 90, 100])\n\nprint('a mean/std =', a.mean(), a.std())\nprint('b mean/std =', b.mean(), b.std())\n\n# numpy 默认方差是总体方差（除以 n），样本方差需 ddof=1\nx = np.array([1, 2, 3, 4, 5])\nprint('var (population) =', np.var(x))\nprint('var (sample)     =', np.var(x, ddof=1))\n\n# 标准化 (x - mean)/std\nstd_x = (x - x.mean()) / x.std()\nprint('standardized mean/std =', round(std_x.mean(), 6), round(std_x.std(), 6))\n\n# 常数平移不改变方差\nprint('var(x+10) =', np.var(x + 10))"
-      },
-      "mistakes": [
-        "混淆总体方差（除以 n）与样本方差（除以 n-1）",
-        "把标准差与方差混用，标准差是方差的平方根",
-        "误以为平移数据会改变方差（平移不变，缩放才改变）"
-      ],
-      "interviewPoints": [
-        "「方差和标准差有什么区别？」要答到平方根关系与量纲，说明数据标准化时为什么要除以标准差",
-        "「偏差-方差权衡是什么？」要答到欠拟合与过拟合、模型复杂度的影响，说明正则化如何降低方差",
-        "「样本方差为什么除以 n-1？」要答到无偏估计与自由度，说明 ddof 参数写错会导致指标出现偏差"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "variance-q1",
-          "type": "choice",
-          "prompt": "关于方差，下列哪个说法正确？",
-          "options": [
-            "Var(aX+b) = a²Var(X)",
-            "Var(aX+b) = a·Var(X)",
-            "平移数据会改变方差",
-            "方差一定等于标准差"
-          ],
-          "answerIndex": 0,
-          "explanation": "方差满足 Var(aX+b)=a²Var(X)：平移 b 不变，缩放按系数平方改变。"
-        },
-        {
-          "id": "variance-q2",
-          "type": "short",
-          "prompt": "数据标准化 (x-mean)/std 的作用是什么？",
-          "answer": "参考回答：标准化让每个特征的均值变为 0、标准差变为 1，即方差归一到相同尺度，避免某个量纲大的特征主导训练，从而让模型更稳定、收敛更快，尤其在神经网络的梯度下降中很重要。",
-          "keywords": [
-            "均值",
-            "标准差",
-            "尺度"
-          ],
-          "explanation": "标准化消除量纲差异，使各特征方差一致，利于稳定训练。"
-        },
-        {
-          "id": "variance-q3",
-          "type": "code",
-          "prompt": "用 numpy 计算数组 x=[1,2,3,4,5] 的样本方差（ddof=1）并打印。",
-          "starterCode": "import numpy as np\n\nx = np.array([1, 2, 3, 4, 5])\n",
-          "solution": "import numpy as np\n\nx = np.array([1, 2, 3, 4, 5])\nprint(np.var(x, ddof=1))",
-          "checks": [
-            "np.var",
-            "ddof=1"
-          ],
-          "explanation": "样本方差用 np.var(x, ddof=1)，即除以 n-1。"
-        }
-      ]
-    },
-    {
-      "slug": "bayes",
-      "title": "Bayes 贝叶斯",
-      "order": 11,
-      "module": "概率统计",
-      "difficulty": "基础",
-      "estimatedMinutes": 27,
-      "summary": "贝叶斯公式在已知先验与似然的情况下更新对某假设的信任程度，是推断与分类的重要框架。",
-      "intuition": "贝叶斯思考的是\"在得到新证据后，我该多相信原来那个假设\"。先有个先验看法，看到数据后用似然去修正，得到后验看法。比如先觉得某病患病率低，但如果检测阳性（证据），就应上调概率。它是一个把新信息融入判断的朴素而强大的规则。",
-      "formal": "贝叶斯公式 $P(A|B)=\\frac{P(B|A)P(A)}{P(B)}$，其中 $P(A)$ 是先验、$P(B|A)$ 是似然、$P(B)$ 是归一化常数、$P(A|B)$ 是后验。分类器做预测时，选最大后验类：$\\hat{y}=\\arg\\max_c P(c|x)\\propto P(x|c)P(c)$。朴素贝叶斯假设特征在给定类下条件独立，从而将 $P(x|c)$ 分解为各特征概率之积，训练简单、常用于文本分类。",
-      "formula": "P(A|B) = \\frac{P(B|A)P(A)}{P(B)}, \\quad \\hat{y} = \\arg\\max_c P(x|c)P(c) = \\arg\\max_c P(c)\\prod_i P(x_i|c)",
-      "aiConnection": "分类模型（如垃圾邮件判断、医学诊断）本质是在做后验推断。朴素贝叶斯因其简单高效，常被当作文本分类基线；理解\"先验+似然=后验\"也能帮你推理大模型在给定上下文下的输出偏好。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "bayes.py",
-        "code": "import numpy as np\nfrom collections import Counter\n\n# 简易朴素贝叶斯文本分类：根据单词判断是否\"垃圾邮件\"\ntrain = [\n    ('buy now cheap', 'spam'),\n    ('win free money', 'spam'),\n    ('meeting tomorrow', 'ham'),\n    ('report due friday', 'ham'),\n]\n\ndef tokenize(s):\n    return s.lower().split()\n\n# 统计先验与条件概率\nvocab = set()\nfor text, _ in train:\n    vocab |= set(tokenize(text))\n\ncls_counts = Counter(lbl for _, lbl in train)\nword_counts = Counter()\nfor text, lbl in train:\n    for w in tokenize(text):\n        word_counts[(w, lbl)] += 1\n\nspam_p = cls_counts['spam'] / len(train)\nham_p = cls_counts['ham'] / len(train)\nprint('P(spam) =', spam_p, 'P(ham) =', ham_p)\n\n# 预测 \"cheap\" 的邮件\nnew = tokenize('cheap offer')\nps = np.prod([word_counts.get((w, 'spam'), 0) + 1 for w in new])\nph = np.prod([word_counts.get((w, 'ham'), 0) + 1 for w in new])\nprint('spam score =', ps, 'ham score =', ph)\nprint('predict =', 'spam' if ps > ph else 'ham')"
-      },
-      "mistakes": [
-        "把 P(A|B) 与 P(B|A) 混淆（错误地把条件概率对称化）",
-        "忘记分母 P(B) 是归一化常数，比较时只看分子即可",
-        "朴素贝叶斯里把\"条件独立假设\"当成现实一定成立"
-      ],
-      "interviewPoints": [
-        "「先验、似然、后验分别是什么？」要答到 P(A)、P(B|A)、P(A|B) 的含义与更新逻辑，说明观测越多后验越贴近数据",
-        "「朴素贝叶斯的朴素指什么？」要答到给定类别下特征条件独立的假设，说明它在文本分类里为何简单高效",
-        "「P(A|B) 和 P(B|A) 为什么不能混？」要答到条件概率不对称与基率谬误，说明医学检测阳性率与大模型幻觉的类比"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "bayes-q1",
-          "type": "choice",
-          "prompt": "贝叶斯公式 P(A|B) = ？",
-          "options": [
-            "P(B|A)·P(A)/P(B)",
-            "P(A)·P(B)/P(A|B)",
-            "P(B|A)/P(A)",
-            "P(A|B)=P(A)+P(B)"
-          ],
-          "answerIndex": 0,
-          "explanation": "贝叶斯公式为 P(A|B)=P(B|A)·P(A)/P(B)，用似然和先验更新后验。"
-        },
-        {
-          "id": "bayes-q2",
-          "type": "short",
-          "prompt": "朴素贝叶斯中的\"朴素\"指什么？",
-          "answer": "参考回答：指\"朴素\"地假设各特征在给定类别下条件独立，从而把 P(x|c) 分解为各特征概率之积，简化计算。尽管这个假设现实中常不成立，模型仍常表现良好且训练极快。",
-          "keywords": [
-            "独立",
-            "条件",
-            "特征"
-          ],
-          "explanation": "\"朴素\"指特征条件独立假设，使似然可分解为乘积。"
-        },
-        {
-          "id": "bayes-q3",
-          "type": "code",
-          "prompt": "实现函数，用贝叶斯公式计算 P(A|B)：给定 P(B|A)=0.9, P(A)=0.01, P(B)=0.05。",
-          "starterCode": "def bayes(p_ba, p_a, p_b):\n    pass\n\nprint(bayes(0.9, 0.01, 0.05))\n",
-          "solution": "def bayes(p_ba, p_a, p_b):\n    return p_ba * p_a / p_b\n\nprint(bayes(0.9, 0.01, 0.05))",
-          "checks": [
-            "p_ba * p_a",
-            "p_b"
-          ],
-          "explanation": "按公式 P(A|B)=P(B|A)*P(A)/P(B) 返回 0.18。"
+          "explanation": "考察循环条件、输入转换、三分支判断与 break 的配合；猜中即跳出，次数用尽则自然退出。"
         }
       ]
     }

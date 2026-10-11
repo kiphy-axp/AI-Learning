@@ -1,841 +1,413 @@
 {
   "stage": 1,
-  "stageSlug": "computer-science",
-  "stageTitle": "计算机基础",
-  "stageEmoji": "💻",
-  "stageDesc": "CPU、内存、操作系统、网络与 HTTP：看懂程序运行时到底发生了什么",
+  "stageSlug": "what-is-computer",
+  "stageTitle": "计算机是什么",
+  "stageEmoji": "💡",
+  "stageDesc": "从算盘到芯片：计算机能做什么、由什么组成、数据为什么是 0 和 1",
+  "act": 1,
+  "actName": "第一幕 · 起步",
   "category": "基础",
   "lessons": [
     {
-      "slug": "cpu",
-      "title": "CPU 处理器",
+      "slug": "from-abacus-to-chip",
+      "title": "从算盘到芯片：计算机是怎么来的",
       "order": 1,
-      "module": "计算机核心",
+      "module": "认识计算机",
       "difficulty": "基础",
-      "estimatedMinutes": 21,
-      "summary": "CPU 是计算机的运算与控制核心，负责取指令、译码并顺序执行，是程序真正运行的执行单元。",
-      "intuition": "把 CPU 想成一个非常勤奋的工人，它只会一件事：不断从内存里取出一条指令，理解它，然后执行它。它跑得极快，一分钟能处理几十亿条指令。但它的短板也很明显——一次只能专心干一件事，所以现代 CPU 用多个核心来'多开'。",
-      "formal": "CPU（Central Processing Unit，中央处理器）由三个主要部分组成。`control unit` 控制单元负责从内存取指令、译码并协调其它部件的动作；`ALU` 算术逻辑单元执行加减乘除与逻辑比较；`register` 寄存器保存极少量马上要用的数据。CPU 每个时钟周期执行一条基本指令，频率（GHz）代表一秒钟能跑多少个周期。现代 CPU 通过多核心（multi-core）与超线程技术并行处理任务，同时依赖 `cache` 高速缓存缓解内存速度远慢于 CPU 的问题。对程序而言，CPU 的核心任务是按 `instruction`（指令集）串行推进，并尽量提高指令级并行度。",
+      "track": "main",
+      "estimatedMinutes": 24,
+      "summary": "计算机不是突然被发明出来的，它是算盘、齿轮机器一路演变的结果；不管外形怎么变，它本质上只会做一件极简单的事——按顺序执行加法。",
+      "intuition": "先别想电脑。想算盘：几根杆子串着珠子，往上拨是加，往下拨是减。它没有屏幕，不会自己思考，但你手够快就能算得很快。它的毛病是慢——珠子得靠人手拨，一秒拨三次就顶天了。于是有人想：能不能用齿轮代替手指？齿轮转一圈就是一格，脚踏板或水车提供力气，机器自己就把数算完了。再后来，人们发现电流比齿轮快几百万倍：一个开关开或关，就代表 1 或 0。把几十亿个这样的开关（晶体管）刻在指甲盖大小的硅片上，就是芯片。所以计算机的家族谱是：算盘 → 齿轮机器 → 电子管 → 晶体管 → 芯片。外形天翻地覆，内核从来没变：它只会一件极简单的事，只是做得越来越快。",
+      "formal": "计算工具的演进，本质是「运算的载体」在不断更换：手（算盘）→ 机械部件（帕斯卡加法器、巴贝奇差分机）→ 电子元件（电子管、晶体管、集成电路）。载体换了，运算逻辑却没换。计算机能执行的最基本操作只有加法和几个逻辑判断；减法靠加负数，乘法靠重复相加，除法靠重复相减——你小学做的「3 × 6 就是 6 个 3 加起来」，正是硬件里发生的事。真正的分水岭是冯·诺依曼结构：把「程序」（一份告诉它先做什么、后做什么的指令清单）和「数据」一起放进存储器（内存，计算机临时记事的地方，断电就忘），机器就能自动一条接一条地执行指令，不需要人每次重新接线。这一步才让「通用计算机」成为可能——同一台机器，换个程序就能算工资、放电影、跑大模型。所以它的能力上限不取决于会不会思考，而取决于每秒能执行多少条这种简单操作。",
       "formula": "",
-      "aiConnection": "训练和推理大模型时，最贵的是矩阵乘加运算，这些恰好在 CPU/GPU 上执行。理解 CPU 的单核串行本质，就理解了为什么 AI 框架会优先把矩阵并行运算扔给 GPU 或专门加速器，而 CPU 仍承担数据调度、预处理等串行工作。",
+      "aiConnection": "今天训练一个大模型，底层仍然只是海量的加法和乘法：一次矩阵乘法就是几百万次「乘再累加」，一个 7B 参数的模型跑一次推理要做的乘加次数在十亿量级。AI 算法岗天天在做的优化——算子融合、量化、混合精度——说到底都是在问同一个问题：怎么用更少的简单运算，换到同样的结果。理解了「计算机只会加法，但每秒能加几十亿次」，你就理解了为什么 GPU（专门用来做这类大量并行计算的显卡芯片）值钱、为什么算力是 AI 的硬约束。",
       "codeExample": {
-        "lang": "python",
-        "filename": "cpu.py",
-        "code": "import time\n\n# 模拟 CPU 串行执行：一次只做一件事\ndef task(name, n):\n    total = 0\n    for i in range(n):\n        total += i\n    print(f\"{name} 完成，结果={total}\")\n\nstart = time.time()\ntask(\"任务A\", 2_000_000)\ntask(\"任务B\", 2_000_000)\nprint(f\"串行耗时 {time.time() - start:.3f} 秒\")"
+        "lang": "bash",
+        "filename": "how-computer-multiplies.sh",
+        "code": "# 在 macOS 打开「终端」(Terminal)，逐行粘贴下面每一条命令，回车看输出。\n\n# 1) 让计算机用「重复相加」算 3 x 6：\n#    从 0 开始，把 3 加 6 次，看它是不是 18。\n#    输出：6 次加 3 的结果: 18\nawk 'BEGIN{s=0; for(i=1;i<=6;i++) s=s+3; print \"6 次加 3 的结果:\", s}'\n\n# 2) 直接让它算乘法，结果完全一样。\n#    硬件里第 1 条那种累加才是真相，第 2 条只是被包装得更方便。\n#    输出：18\nawk 'BEGIN{print 6*3}'\n\n# 3) 计算机存储的最小单位是「位」(bit)，一位只能放 0 或 1。\n#    10 位能表示 2 的 10 次方 = 1024 种不同的组合。\n#    输出：1024 256 65536   （分别是 2^10、2^8、2^16）\nawk 'BEGIN{print 2^10, 2^8, 2^16}'\n\n# 4) 看看你这台电脑的「大脑」是什么型号。\n#    输出（每台机器不同）：Apple M1 Pro\nsysctl -n machdep.cpu.brand_string\n\n# 5) 看看它的操作系统版本。\n#    输出：ProductName: macOS / ProductVersion: 26.6.2 / BuildVersion: 25G83\nsw_vers"
       },
       "mistakes": [
-        "把 CPU 频率当作衡量性能的唯一标准，忽略了核心数与每周期指令吞吐",
-        "以为 CPU 能立刻拿到任意数据，忽略了内存访问带来的延迟",
-        "混淆 CPU 与 GPU：CPU 擅长串行逻辑控制，GPU 擅长大规模并行浮点运算",
-        "认为程序越大一定越慢，其实瓶颈常出现在数据搬运而非运算本身"
+        "以为计算机「懂」中文或英文——它只认数字，文字必须先被编码成数字",
+        "以为乘法是硬件直接算出来的，其实是把加法重复很多遍",
+        "以为计算机天生聪明，其实它只会执行人写好的简单指令",
+        "以为「核多就一定快」，单核速度与内存带宽同样决定上限"
       ],
       "interviewPoints": [
-        "「CPU 为什么需要多级 cache？」要答到 CPU 与内存存在数量级速度差、时间与空间局部性，以及数据预处理为何常成为训练瓶颈",
-        "「CPU 和 GPU 在 AI 里怎么分工？」要答到 CPU 擅串行调度、GPU 擅并行矩阵运算，说明框架为何把矩阵乘交给 GPU",
-        "「主频越高程序就越快吗？」要答到 IPC、核心数、访存延迟与 Amdahl 定律，解释为何不能只看 GHz 判断推理性能"
+        "别人问「计算机为什么能算得这么快」，你就答：它每秒能执行几十亿次极简单的操作，而且不知疲倦、不会算错，不是因为它聪明",
+        "别人问「计算机到底会做什么运算」，你就答：硬件层面只有加法和逻辑判断，减法、乘法、除法都是用加法反复凑出来的",
+        "别人问「为什么同一台电脑能干完全不同的事」，你就答：因为程序和数据都放在存储器里，换一个程序就换一种本事，这正是冯·诺依曼结构的关键"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "维基百科：計算機硬體歷史",
+          "url": "https://zh.wikipedia.org/wiki/%E8%A8%88%E7%AE%97%E6%A9%9F%E7%A1%AC%E9%AB%94%E6%AD%B7%E5%8F%B2"
+        },
+        {
+          "title": "维基百科：算盘",
+          "url": "https://zh.wikipedia.org/wiki/%E7%AE%97%E7%9B%A4"
+        }
+      ],
       "quiz": [
         {
-          "id": "cpu-q1",
+          "id": "from-abacus-to-chip-q1",
           "type": "choice",
-          "prompt": "CPU 中负责执行加减乘除等运算的部件是？",
+          "prompt": "关于「计算机怎么算乘法」，下面哪种说法是对的？",
           "options": [
-            "控制单元",
-            "寄存器",
-            "ALU 算术逻辑单元",
-            "高速缓存"
+            "计算机里有一块专门算乘法的硬件，和加法完全无关",
+            "计算机把乘法变成很多次加法，做完加法就得到结果",
+            "计算机先去查一张预先存好的乘法表，直接读出答案",
+            "计算机其实不会算乘法，乘法必须由人先算好再输入"
           ],
-          "answerIndex": 2,
-          "explanation": "ALU（Arithmetic Logic Unit）负责执行算术与逻辑运算；控制单元负责取指译码，寄存器临时存数据，缓存加速内存访问。"
+          "answerIndex": 1,
+          "explanation": "硬件最擅长的是加法，乘法被拆成重复相加（3 × 6 就是 6 个 3 相加）。A 错在乘法并非与加法无关的独立硬件能力；C 错在查表只适用于很小的数，无法覆盖任意大小的乘法；D 错在计算机确实能算乘法，只是通过累加实现。"
         },
         {
-          "id": "cpu-q2",
+          "id": "from-abacus-to-chip-q2",
           "type": "short",
-          "prompt": "简述 CPU 取指令-译码-执行的过程，并说明为什么缓存对 CPU 很重要。",
-          "answer": "CPU 先从内存取下一条指令，控制单元对其译码，再由相关部件执行。内存速度远慢于 CPU，若每次都直接访问内存，CPU 会大量空闲。缓存把常用数据提前放到靠近 CPU 的高速小容量存储中，大幅减少等待时间。",
+          "prompt": "用你自己的话解释：为什么说计算机「很快但很笨」？",
+          "answer": "参考回答：计算机笨，是因为它天生只会做极简单的事——加法、比较大小、按顺序执行指令，它不理解你在算什么，也不会自己想办法；说它快，是因为它每秒能执行几十亿次这样的简单操作，不累也不出错。复杂的事不是它「想」出来的，而是人把大问题拆成一堆简单步骤，再由它高速跑完。",
           "keywords": [
-            "cache",
-            "内存",
-            "执行"
+            "只会加法",
+            "每秒几十亿次",
+            "拆成简单步骤"
           ],
-          "explanation": "关键在缓存缓解 CPU 与内存的速度差距。"
+          "explanation": "得分点在于同时说清「能力极简单」和「执行极快」这两面，并点出复杂能力来自人拆解步骤。"
         },
         {
-          "id": "cpu-q3",
+          "id": "from-abacus-to-chip-q3",
           "type": "code",
-          "prompt": "写一个函数 sum_n(n)，用循环计算 0 到 n-1 的和，模拟 CPU 串行累加。",
-          "starterCode": "def sum_n(n):\n    pass",
-          "solution": "def sum_n(n):\n    total = 0\n    for i in range(n):\n        total += i\n    return total\n\nprint(sum_n(5))",
+          "prompt": "打开 macOS 的「终端」，用一条命令让计算机通过「重复相加」算出 3 × 6，并确认结果等于 18。（写出你敲的命令和看到的输出）",
+          "starterCode": "# 在终端里敲一条命令，用循环把 3 累加 6 次\n# 提示：awk 'BEGIN{...}'\n",
+          "solution": "awk 'BEGIN{s=0; for(i=1;i<=6;i++) s=s+3; print \"6 次加 3 的结果:\", s}'\n# 输出：6 次加 3 的结果: 18\n\n# 再直接算一次乘法，验证结果一致：\nawk 'BEGIN{print 6*3}'\n# 输出：18",
           "checks": [
-            "def sum_n",
-            "for i in range",
-            "total"
+            "awk",
+            "s=s+3",
+            "18"
           ],
-          "explanation": "用循环逐次累加，就是 CPU 逐条指令串行工作的写照。"
+          "explanation": "考察是否真的动手跑通，并理解「乘法在底层就是重复加法」。只要循环变量、累加语句和结果 18 都对即可。"
         }
       ]
     },
     {
-      "slug": "memory",
-      "title": "Memory 内存",
+      "slug": "hardware-five-parts",
+      "title": "一台计算机的五大部分",
       "order": 2,
-      "module": "计算机核心",
+      "module": "认识计算机",
       "difficulty": "基础",
-      "estimatedMinutes": 21,
-      "summary": "内存（RAM）是程序运行时存放数据与指令的临时工作区，断电即失，速度快于硬盘但小于它。",
-      "intuition": "把你的桌面想象成内存：你正在处理的文件、草稿都摊在桌上，伸手就能拿到，很快；但书桌是有限的，东西太多就摆不下。存到硬盘就像放进抽屉或仓库，容量大但拿起来要站起来走几步。内存就是那块'正在摊开的桌面'，一关机就被清空。",
-      "formal": "Memory（随机存取存储器 RAM）是程序的运行时工作空间。程序加载后，其代码、数据段、堆和栈都位于内存中。内存按字节编址，允许以近乎恒定的随机访问延迟读取任一地址，这与硬盘的块式访问明显不同。内存的关键特性是`volatile`（易失性）：断电后数据丢失。典型的内存分层结构是：寄存器（最小最快）→ 各级 Cache → 主内存（RAM）→ 大容量存储。内存有限意味着程序不能无限占用；`stack` 存放函数调用帧与局部变量，`heap` 存放动态分配的对象，两者容易用尽导致程序崩溃。",
-      "formula": "",
-      "aiConnection": "大模型的权重参数和中间激活值都要驻留在内存中。模型的参数量直接决定了需要多少显存/内存；例如一个 7B 模型仅权重就要约 7×2 字节 = 14GB。理解内存与显存的容量限制，就能理解为什么大模型需要量化、分片和批处理来降低内存占用。",
+      "track": "main",
+      "estimatedMinutes": 26,
+      "summary": "计算机硬件可以拆成五大部分：运算器、控制器、存储器、输入设备、输出设备；今天说的 CPU 就是运算器加控制器，而内存和硬盘是两种完全不同的存储器。",
+      "intuition": "把计算机想成一家小饭馆。CPU 是厨师，负责所有加工；内存是灶台旁边的操作台，切好的菜、正在炒的锅都摊在上面，随手就能拿到，但台面就那么大，而且下班一关火就全清空；硬盘是后厨的冷库，能塞下几百斤食材，可要拿东西得走进去翻，慢得多。键盘鼠标是采购员，负责把外面的东西送进来；屏幕和音箱是服务员，负责把做好的菜端出去。这五部分缺一不可：没有操作台，厨师手里同时拿不了几样东西；没有冷库，东西过夜就没了。理解这套分工，你就明白了电脑为什么既要有内存又要有硬盘——它们不是谁替代谁，而是一快一久。",
+      "formal": "冯·诺依曼结构把计算机硬件划为五部分：运算器（ALU，做加减与逻辑判断）、控制器（取指令、译码、指挥各部件的时序）、存储器（存放程序与数据）、输入设备、输出设备。现代芯片把运算器与控制器合并成 CPU（中央处理器，Central Processing Unit）。存储器分成层级：寄存器最小最快，然后是 CPU 缓存（Cache）、内存（RAM，Random Access Memory，随机存取存储器，即计算机临时记事的地方，断电就忘）、最后是硬盘或固态硬盘（SSD）这类永久存储。层级越靠上越快越小越贵，越靠下越慢越大越便宜。关键规律是：CPU 一次只能直接处理内存里的数据，硬盘上的东西必须先搬进内存；所以内存容量决定了「同时能摊开多少活」，硬盘容量决定了「总共能存多少东西」。",
+      "formula": "1\\ \\text{字节 (Byte)} = 8\\ \\text{位 (bit)}",
+      "aiConnection": "内存和显存（显卡自带的内存，专门给 GPU 用）是两个不同的池子：模型权重必须放进显存，GPU 才能算；显存不够，程序直接报「显存不足」（CUDA out of memory）跑不起来。这解释了三个常见现象：7B 参数的模型用半精度存放光权重就要约 14 GB 显存，消费级显卡要靠量化（把每个数从 2 字节压到 1 字节甚至更少）才塞得下；batch size 调大一点就爆显存，是因为每批数据都要在显存里摊开。学会区分内存、显存和硬盘，你才能看懂报错并决定是减 batch、换小模型，还是加卡。",
       "codeExample": {
-        "lang": "python",
-        "filename": "memory.py",
-        "code": "import sys\n\n# 观察一个可变对象在内存中的行为\nlst = [1, 2, 3]\nprint(\"list 对象占用内存(bytes):\", sys.getsizeof(lst))\n\n# 引用语义：lst2 只是指向同一块内存\nlst2 = lst\nlst2.append(4)\nprint(\"修改 lst2 后 lst 也会变化:\", lst)\n\n# 大数据集时注意内存占用\nbig = [i for i in range(1000000)]\nprint(\"百万元素列表占内存(bytes):\", sys.getsizeof(big) // 1024 // 1024, \"MB\")"
+        "lang": "bash",
+        "filename": "five-parts.sh",
+        "code": "# 在 macOS 的「终端」里逐行敲，看看你这台机器的五大部分长什么样。\n\n# 1) CPU 型号——运算器 + 控制器，也就是「厨师」。\n#    输出（每台机器不同）：Apple M1 Pro\nsysctl -n machdep.cpu.brand_string\n\n# 2) 硬盘总容量、已用、剩余——永久存储，也就是「冷库」。\n#    输出示例：/dev/disk3s1s1  460Gi  12Gi  73Gi  14%  /\n#    含义：总共 460 GB，已用 12 GB，还剩 73 GB 可用。\n#    注意 df 的单位是 Gi（1024 进制），和硬盘广告上的 GB 略有差别。\ndf -h /\n\n# 3) 当前有多少个程序在跑——每个跑着的程序都要占内存。\n#    输出示例：Processes: 1119 total, 5 running, 1114 sleeping\n#    以及 PhysMem: 15G used ..., 325M unused.（内存用了多少、还剩多少）\ntop -l 1 | head -n 8\n\n# 4) 看一个具体文件占多少空间，这是硬盘上的「一个东西」。\n#    输出示例：-rw-r--r--  1 你  wheel  256M  Oct 11 21:56  big.bin\nls -lh\n\n# 5) 对比内存和硬盘的速度：都是写 256 MB 数据。\n#    第 1 条几乎不花时间（数据没落盘，只是流过内存），\n#    第 2 条要真的写进文件，明显慢得多。\n#    输出示例：268435456 bytes transferred in 0.006 secs (44739242666 bytes/sec)\ndd if=/dev/zero of=/dev/null bs=1m count=256 2>&1 | tail -1\n#    输出示例：268435456 bytes transferred in 0.060 secs (4427217126 bytes/sec)\ndd if=/dev/zero of=test_speed.bin bs=1m count=256 2>&1 | tail -1\n\n# 6) 删掉刚才生成的测试文件，别占你的硬盘。\n#    输出：无（删掉了就没有输出，这是正常的）\nrm -f test_speed.bin"
       },
       "mistakes": [
-        "把内存当永久存储，重启程序后以为数据还在",
-        "以为内存越大越好，完全忽视算法本身的空间复杂度",
-        "混淆内存地址与数据值，以为改引用就是改数据副本",
-        "在程序里一次创建过多大对象导致 MemoryError，或干脆用内存换不必要的速度"
+        "把内存和硬盘当成一回事——内存断电就忘、小而快，硬盘能长期保存、大而慢",
+        "以为关掉文档窗口内容就没了——不保存到硬盘，内存里的东西一断电就消失",
+        "只盯着 CPU 型号买电脑，忽略内存容量，结果开几个程序就卡",
+        "混淆字节和位：1 字节 = 8 位，100 Mbps 网速实际约 12 MB/s"
       ],
       "interviewPoints": [
-        "「栈和堆有什么区别？」要答到栈自动管理调用帧、分配快而小，堆容量大但易碎片泄漏，并联系 Python 对象其实都在堆上",
-        "「为什么 7B 模型光权重就要约 14GB 内存？」要答到参数量乘精度字节数、激活值与 KV cache 的额外占用，以及量化与分片的动机",
-        "「内存越大越好吗？」要答到空间复杂度、显存容量对 batch size 的硬约束，以及 OOM 时该减小 batch 还是换优化器"
+        "别人问「内存和硬盘有什么区别」，你就答：内存是临时操作台，快、小、断电就忘；硬盘是仓库，慢、大、断电还在，程序必须先从硬盘搬进内存才能跑",
+        "别人问「CPU 是什么」，你就答：运算器加控制器，负责做加减和逻辑判断，并按顺序指挥其他部件干活",
+        "别人问「为什么模型跑不起来会报显存不足」，你就答：模型权重和数据都必须待在显存里 GPU 才能算，显存比内存更小更贵，所以要量化或减小 batch"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "维基百科：计算机硬件",
+          "url": "https://zh.wikipedia.org/wiki/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A1%AC%E4%BB%B6"
+        },
+        {
+          "title": "Apple 官方：Mac 使用手册",
+          "url": "https://support.apple.com/zh-cn/guide/mac-help/welcome/mac"
+        }
+      ],
       "quiz": [
         {
-          "id": "memory-q1",
+          "id": "hardware-five-parts-q1",
           "type": "choice",
-          "prompt": "关于内存（RAM）的描述，正确的一项是？",
+          "prompt": "下面哪一组正好是冯·诺依曼结构里的五大部分？",
           "options": [
-            "断电后数据仍然保留",
-            "容量通常比硬盘大",
-            "访问速度快于硬盘但断电数据丢失",
-            "只能顺序访问不能随机访问"
+            "屏幕、键盘、鼠标、音箱、摄像头",
+            "运算器、控制器、存储器、输入设备、输出设备",
+            "CPU、内存、硬盘、显卡、电源",
+            "操作系统、浏览器、办公软件、驱动程序、固件"
           ],
-          "answerIndex": 2,
-          "explanation": "RAM 是易失性存储，速度快、容量小于硬盘、支持随机访问，但断电即丢失数据。"
+          "answerIndex": 1,
+          "explanation": "五大部分是运算器、控制器、存储器、输入设备、输出设备。A 只列了输入输出设备；C 是买东西时的叫法，显卡电源不属于这五类；D 全是软件，不是硬件分类。"
         },
         {
-          "id": "memory-q2",
+          "id": "hardware-five-parts-q2",
           "type": "short",
-          "prompt": "解释内存中的栈（stack）与堆（heap）有什么区别。",
-          "answer": "栈用于保存函数调用帧和局部变量，由系统自动管理，分配和释放都很快，但容量较小。堆用于动态分配的对象，由程序员或运行时管理，容量大但分配与释放开销更大，可能出现碎片或泄漏。",
+          "prompt": "用「操作台和冷库」的类比，说明内存和硬盘各自的作用与区别。",
+          "answer": "参考回答：内存像灶台边的操作台，程序运行时用到的数据都摊在上面，CPU 伸手就能拿到，所以很快；但台面小，一断电（关火下班）就全清空。硬盘像后厨冷库，容量大得多、断电也在，但取东西要进去翻，慢得多。程序必须先由硬盘搬进内存才能运行，所以内存决定「同时能摊开多少活」，硬盘决定「总共能存多少东西」。",
           "keywords": [
-            "栈",
-            "堆",
-            "局部变量"
+            "临时",
+            "断电就忘",
+            "永久保存",
+            "先从硬盘搬进内存"
           ],
-          "explanation": "栈自动化管理、快而小；堆手动/运行时管理、大而慢。"
+          "explanation": "得分点在于说清速度、容量、断电是否保留这三个差异，并点出「必须先搬进内存」这条因果。"
         },
         {
-          "id": "memory-q3",
+          "id": "hardware-five-parts-q3",
           "type": "code",
-          "prompt": "写一个函数 max_memory_example(n)，创建一个包含 0 到 n-1 的列表并返回其长度，验证创建大数据集时的内存使用。",
-          "starterCode": "def max_memory_example(n):\n    pass",
-          "solution": "def max_memory_example(n):\n    data = list(range(n))\n    return len(data)\n\nprint(max_memory_example(100000))",
+          "prompt": "在 macOS 的「终端」里查出两件事：你这台电脑的 CPU 型号，以及系统盘的总容量和剩余空间。（写出命令和输出）",
+          "starterCode": "# 第 1 条：打印 CPU 型号\n# 第 2 条：打印磁盘容量，注意看 Size / Avail 两列\n",
+          "solution": "# 查看 CPU 型号（运算器 + 控制器）\nsysctl -n machdep.cpu.brand_string\n# 输出：Apple M1 Pro\n\n# 查看系统盘容量：Size 是总容量，Avail 是剩余可用\ndf -h /\n# 输出示例：\n# Filesystem        Size    Used   Avail Capacity  Mounted on\n# /dev/disk3s1s1   460Gi    12Gi    73Gi      14%  /",
           "checks": [
-            "def max_memory_example",
-            "list(range"
+            "sysctl",
+            "df -h"
           ],
-          "explanation": "创建大列表即占用内存，考察对象在内存中的空间开销。"
+          "explanation": "考察能否用系统自带的命令观察真实硬件，并读懂 Size（总量）与 Avail（剩余）这两列。"
         }
       ]
     },
     {
-      "slug": "storage",
-      "title": "Storage 存储",
+      "slug": "software-and-os",
+      "title": "软件是什么：程序、操作系统与 App",
       "order": 3,
-      "module": "计算机核心",
+      "module": "硬件与软件",
       "difficulty": "基础",
-      "estimatedMinutes": 21,
-      "summary": "存储是断电仍然保留数据的持久化设备，如机械硬盘、固态硬盘，容量大但访问慢。",
-      "intuition": "内存是正在用的桌面，存储就是关灯后也不会清空的仓库。你关机再开机，文件还在，就是因为它们被写进了硬盘。代价是：从仓库取东西比较慢。硬盘分两种：像老式留声机那样靠磁盘旋转和磁头移动读取的机械硬盘（HDD），以及像一块大内存芯片但能断电保存的固态硬盘（SSD）。",
-      "formal": "Storage（持久化存储）是指断电后数据仍能保留的设备。主要分为两类：`HDD`（机械硬盘）通过旋转磁盘与磁头机械移动读写，容量大、单位容量便宜，但有机械延迟和震动风险；`SSD`（固态硬盘）基于闪存芯片，无机械部件，随机读写快得多且更耐震。存储以`file`为单位组织数据，操作系统通过`file system`管理这些文件。相比内存，存储延迟高 数百倍到数千倍，因此程序总希望能把常用数据提前加载到内存（缓存）。常见接口有 SATA、NVMe，其中 NVMe SSD 在现代系统中显著提升 I/O 性能。",
+      "track": "main",
+      "estimatedMinutes": 25,
+      "summary": "硬件是能摸到的身体，软件是看不见的指令清单；操作系统是硬件的大管家，负责把 CPU 时间、内存和文件分配给各个程序。",
+      "intuition": "硬件是厨房和灶具，软件是菜谱。菜谱本身不是锅碗瓢盆，但没有菜谱，再好的灶也做不出菜。菜谱要写得极其啰嗦：不能写「炒个鸡蛋」，得写成「右手拿蛋，在碗沿敲一下，把壳掰开……」——因为厨师（CPU）只会照字面做，你少写一步它就卡在那儿。程序就是这样一份给机器看的、一步不漏的清单。而操作系统是这家饭馆的店长：它决定今天谁能用灶台、用多久，谁去冷库拿哪块肉，谁在门口排队。你在电脑上同时开浏览器、听歌、下载文件，其实是三个程序在抢同一块 CPU，店长让它们轮流用，每个只用几十毫秒，快到你根本察觉不到切换。App 就是装在这个系统里的、专门干某件事的一套程序。",
+      "formal": "软件是告诉硬件「做什么、按什么顺序做」的指令与数据的集合；程序是其中一份可执行的具体清单。操作系统（Operating System，简称 OS）是运行在硬件之上的第一层软件，它提供三样东西：一是资源管理，把 CPU 时间切分成极短的时间片轮流分给各个程序，把内存空间按需分配给它们，并回收不再使用的部分；二是抽象接口，用「文件」表示硬盘上的数据、用「进程」表示一个正在运行的程序，让程序不必关心硬盘具体怎么读写；三是统一入口，让不同厂商的硬件都能被同一套方式调用。App（应用程序）建立在操作系统之上，通过系统调用使用硬件，自己不能直接碰硬件。软件还有个关键性质：它是可以被无限复制的，复制一份的成本几乎为零——这是软件和硬件最本质的区别。",
       "formula": "",
-      "aiConnection": "训练数据集、模型权重、检查点（checkpoint）都存放在持久化存储里。训练过程中定期保存 checkpoint，就是为了防止机器重启或崩溃丢失已训练的权重。同时，把大数据集读取到显存/内存的前置 I/O 常常成为训练瓶颈，这也推动了数据加载与预取优化。",
+      "aiConnection": "训练和部署模型几乎都在 Linux 上，因为服务器领域 Linux 占绝对主导，而它的命令行让你能远程批量操作几十台机器。工作里最常见的三类问题都落在这一节：显存（显卡自带的内存，专门给 GPU 用）或内存不足，是操作系统的资源分配到了上限；程序莫名被杀掉，多半是系统判定它占用内存过多（OOM，Out of Memory）；模型跑得慢，要判断瓶颈在 CPU、内存带宽还是显卡，靠的都是系统提供的观察工具。会用系统工具看资源，是 AI 工程师和「只会写脚本的人」最直观的分界线。",
       "codeExample": {
-        "lang": "python",
-        "filename": "storage.py",
-        "code": "# 把数据写入存储中的文件，重启后依然存在\nwith open(\"data.txt\", \"w\", encoding=\"utf-8\") as f:\n    f.write(\"保存在存储里的一句话\\n\")\n\n# 从文件读回\nwith open(\"data.txt\", \"r\", encoding=\"utf-8\") as f:\n    content = f.read()\nprint(\"读到的内容:\", content.strip())\n\n# 观察文件在磁盘上确实存在\nimport os\nprint(\"文件大小(bytes):\", os.path.getsize(\"data.txt\"))"
+        "lang": "bash",
+        "filename": "software-and-os.sh",
+        "code": "# 在 macOS 的「终端」里逐行敲，用系统工具观察「软件」的存在。\n\n# 1) 看操作系统自己的名字和版本——这就是你这台电脑的「店长」。\n#    输出：ProductName: macOS / ProductVersion: 26.6.2 / BuildVersion: 25G83\nsw_vers\n\n# 2) 看当前有哪些程序（进程）在跑，各占多少 CPU 和内存。\n#    %CPU 是占用率，%MEM 是内存占用百分比，RSS 是实际占用的内存大小。\n#    输出示例（前 3 行）：\n#    USER   PID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND\n#    你   92694  99.7  9.8 435861456 1648080  ??   R   9:55PM   0:56.09 /Applications/...\nps aux | head -n 3\n\n# 3) 看内存总量和已用量——软件不是凭空跑的，每一步都要占地方。\n#    输出示例：PhysMem: 15G used (3022M wired, ...), 325M unused.\ntop -l 1 | head -n 8\n\n# 4) 数一数系统里一共有多少个进程（每个进程就是一个在跑的程序）。\n#    输出示例：     486\nps aux | wc -l\n\n# 5) 看看磁盘上的文件，它们是操作系统用「文件」这个抽象帮你管起来的。\n#    输出：当前目录下的文件列表（含权限、大小、修改时间）\nls -lh"
       },
       "mistakes": [
-        "把存储和内存等同，以为关机后内存数据还在",
-        "以为 SSD 是内存的一种，忽略其持久化特性",
-        "频繁读写磁盘造成 I/O 瓶颈，而不是用缓存优化",
-        "没有及时把重要计算结果持久化到文件，进程崩溃后全部丢失"
+        "以为软件是硬件的一部分——软件是指令清单，硬件只负责执行",
+        "以为关掉窗口程序就退出了——很多程序还在后台占内存",
+        "以为 Windows 程序能直接在 Mac 上跑——接口不同，要各自适配",
+        "把「内存不够」和「硬盘不够」混为一谈，删文件解决不了内存不足"
       ],
       "interviewPoints": [
-        "「HDD 和 SSD 的区别？」要答到机械寻道与闪存随机读、IOPS 和延迟的差距，说明训练数据为何要放本地 NVMe 而不是网络盘",
-        "「为什么要定期存 checkpoint？」要答到持久化与易失性的区别、训练中断后的重跑成本，以及存档频率与 I/O 开销的权衡",
-        "「数据加载为什么常成训练瓶颈？」要答到存储延迟比内存高数百倍、预取与多进程 DataLoader 如何掩盖 I/O，以及小文件读放大"
+        "别人问「操作系统到底管什么」，你就答：管 CPU 时间、管内存分配、管文件，把硬件包装成程序能用的接口，并让多个程序公平地轮流使用硬件",
+        "别人问「程序和 App 什么关系」，你就答：程序是给机器看的指令清单，App 是装在操作系统上、专门干某件事的应用程序，它们都通过操作系统去用硬件",
+        "别人问「为什么 AI 都用 Linux」，你就答：Linux 在服务器上占主导，命令行便于远程批量管理，而且主流深度学习框架和显卡驱动在它上面支持最完整"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "维基百科：操作系统",
+          "url": "https://zh.wikipedia.org/wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F"
+        },
+        {
+          "title": "Apple 官方：终端使用手册",
+          "url": "https://support.apple.com/zh-cn/guide/terminal/welcome/mac"
+        }
+      ],
       "quiz": [
         {
-          "id": "storage-q1",
+          "id": "software-and-os-q1",
           "type": "choice",
-          "prompt": "断电后仍能保留数据的是？",
+          "prompt": "操作系统最主要的工作是什么？",
           "options": [
-            "RAM 内存",
-            "CPU 寄存器",
-            "固态硬盘 SSD",
-            "CPU 高速缓存"
+            "让电脑能上网，并提供浏览器和邮件功能",
+            "管理硬件资源，并把 CPU、内存、文件分配给各个程序使用",
+            "把程序里的代码翻译成机器能懂的 0 和 1",
+            "负责杀毒和清理垃圾文件，让电脑变快"
           ],
-          "answerIndex": 2,
-          "explanation": "SSD 是持久化存储，断电数据仍在；RAM、寄存器、缓存都是易失性存储。"
+          "answerIndex": 1,
+          "explanation": "操作系统的核心是资源管理加接口抽象：分配 CPU 时间、内存和文件，让多个程序轮流使用硬件。A 是具体应用做的事；C 是编译器或解释器的工作；D 只是系统附带的一小部分功能，不是核心职责。"
         },
         {
-          "id": "storage-q2",
+          "id": "software-and-os-q2",
           "type": "short",
-          "prompt": "比较 HDD 与 SSD 的主要差异。",
-          "answer": "HDD 用旋转磁盘和磁头机械读写，容量大、单位便宜但延迟高、有机械噪音易震损；SSD 用闪存芯片，无机械部件，随机读写快、更耐震、耗电低但单位容量更贵。",
+          "prompt": "用「厨房、菜谱、店长」的类比解释硬件、程序和操作系统的关系。",
+          "answer": "参考回答：硬件是厨房和灶具，是能摸到的身体；程序是菜谱，是一份给机器看的、一步不漏的指令清单，厨师只会照字面执行，少写一步就卡住；操作系统是店长，决定谁用灶台、用多久，谁去冷库拿哪块肉。所以同一套硬件能做出完全不同的菜，靠的是换菜谱；多个程序能同时跑，靠的是店长把时间切成小片轮流分配。",
           "keywords": [
-            "hdd",
-            "ssd",
-            "闪存"
+            "硬件是身体",
+            "程序是指令清单",
+            "操作系统分配资源",
+            "轮流使用"
           ],
-          "explanation": "核心差异在于机械 vs 闪存，导致速度与可靠性不同。"
+          "explanation": "得分点在于三层关系都说到：硬件执行、程序是指令、操作系统做分配与调度。"
         },
         {
-          "id": "storage-q3",
+          "id": "software-and-os-q3",
           "type": "code",
-          "prompt": "写一个函数 save_and_load(filename, text)，把 text 写入 filename 文件，随后读回并返回。",
-          "starterCode": "def save_and_load(filename, text):\n    pass",
-          "solution": "def save_and_load(filename, text):\n    with open(filename, \"w\", encoding=\"utf-8\") as f:\n        f.write(text)\n    with open(filename, \"r\", encoding=\"utf-8\") as f:\n        return f.read()\n\nprint(save_and_load(\"demo.txt\", \"持久化\"))",
+          "prompt": "在 macOS 的「终端」里查出：你的操作系统名称与版本、当前正在运行的进程数。（写出命令与输出）",
+          "starterCode": "# 第 1 条：打印系统名称与版本\n# 第 2 条：统计进程数量\n",
+          "solution": "# 查看操作系统名称与版本\nsw_vers\n# 输出：\n# ProductName:\t\tmacOS\n# ProductVersion:\t\t26.6.2\n# BuildVersion:\t\t25G83\n\n# 统计当前进程数（wc -l 数行数，减去表头一行才是真实进程数）\nps aux | wc -l\n# 输出示例：     486",
           "checks": [
-            "def save_and_load",
-            "open(",
-            "read"
+            "sw_vers",
+            "ps aux",
+            "wc -l"
           ],
-          "explanation": "写入再读回即演示了存储的持久化能力。"
+          "explanation": "考察能否用系统工具观察「操作系统」和「进程」这两个抽象概念，并知道 wc -l 是用来数行数的。"
         }
       ]
     },
     {
-      "slug": "operating-system",
-      "title": "Operating System 操作系统",
+      "slug": "binary-and-data",
+      "title": "0 和 1 的世界：文字、图片怎么存",
       "order": 4,
-      "module": "计算机核心",
+      "module": "数据的样子",
       "difficulty": "基础",
-      "estimatedMinutes": 21,
-      "summary": "操作系统是管理硬件与软件资源的中介，负责进程调度、内存管理、文件系统与设备驱动。",
-      "intuition": "如果没有操作系统，每个程序员都要自己跟磁盘、屏幕、键盘这些硬件打交道，那将是一场灾难。操作系统就像一个总管家，它把复杂的硬件细节藏起来，给你一个干净的接口（比如'打开文件'），并负责公平地分配 CPU、内存等资源给各个程序，防止它们互相打架。",
-      "formal": "操作系统（Operating System）是位于硬件与应用软件之间的系统软件，核心职责包括：`process`（进程）与 `thread`（线程）的调度，把有限的 CPU 时间片公平分配给多个运行中的程序；`memory management` 内存管理，为每个进程提供隔离的虚拟地址空间；`file system` 文件系统，以树状目录组织持久化数据；`device driver` 管理鼠标、键盘、磁盘等外围设备；以及提供系统调用 `syscall` 作为应用访问硬件资源的唯一合法入口。常见操作系统有 Linux、Windows、macOS。现代操作系统通过虚拟内存让每个进程以为自己独占整块内存，并通过多任务让单核看似同时运行多个程序。",
-      "formula": "",
-      "aiConnection": "训练大模型往往需要在 Linux 服务器上跑分布式任务，操作系统负责在多卡多机上调度进程、管理 GPU 显存和网络资源。理解进程、内存管理与文件权限，才能正确配置训练环境、排查进程被杀（OOM）等问题，这也是 AI 工程师必须熟悉 Linux 的原因。",
+      "track": "main",
+      "estimatedMinutes": 28,
+      "summary": "计算机只认得两种状态——通电和断电，也就是 1 和 0；所有文字、图片、声音都必须先被换算成一串 0 和 1，才能存进硬盘、被 CPU 处理。",
+      "intuition": "想象一排电灯开关，每个开关只有开和关两种状态，没有「半开」。八个开关排成一组，就能摆出 2 的 8 次方 = 256 种不同的组合——这就是为什么一个字节是 8 位。计算机内部全是这样的开关（晶体管），所以它天生只懂 0 和 1。那文字怎么办？约定一套编号就行：大家说好 65 代表 A、66 代表 B；汉字更复杂，得用三个字节来表示一个「中」。图片也一样：把画面切成密密麻麻的小方格（像素），每个格子记下「红多少、绿多少、蓝多少」三个数字，整张照片就变成了一大串数字。声音呢？每秒记录几万次「此刻空气振动多大」，同样是一串数字。所以你屏幕上看到的一切，底下都是 0 和 1 的长队。",
+      "formal": "位（bit）是信息的最小单位，只有 0 和 1 两种取值；字节（Byte）固定为 8 位，可表示 2 的 8 次方 = 256 种组合。n 位二进制能表示 2 的 n 次方个不同的数，这是容量换算的基本依据。编码（encoding）是「把现实中的东西映射成数字」的约定：字符编码把字符映射成整数，ASCII 用 1 字节表示英文与符号（A 是 65），UTF-8 用 1 到 4 字节表示全世界字符（常用汉字通常 3 字节）。图片编码把画面切成像素，每像素用若干字节记录颜色，文件大小约等于「宽 × 高 × 每像素字节数」，一张 1920×1080 的 24 位真彩图未压缩约 6 MB。关键在于：0 和 1 本身没有含义，含义来自双方约定好的编码方式，用错编码就会看到乱码。",
+      "formula": "n\\ \\text{位二进制可表示}\\ 2^n\\ \\text{个不同的数};\\quad 1\\ \\text{字节} = 8\\ \\text{位}",
+      "aiConnection": "这一节直接决定三件 AI 工作里的事。第一，模型权重是浮点数（小数在计算机里的近似表示），二进制下位数有限，所以 0.1 + 0.2 得不到精确的 0.3；训练时用半精度或 bfloat16 就是把每个数从 32 位压到 16 位，省一半显存、快一倍，代价是精度损失。第二，模型看不见文字，它看到的是一串整数编号（token id），文本先被切成 token 再查表变成数字，这就是「分词」。第三，一张图片在模型眼里就是一个「高 × 宽 × 3 通道」的数字表格，图片越大显存占用越高。",
       "codeExample": {
         "lang": "bash",
-        "filename": "os.sh",
-        "code": "#!/bin/bash\n# 查看当前操作系统的进程与资源分配\nuname -a                 # 内核信息\nnproc                    # CPU 核心数\nfree -h                  # 内存使用\nps aux | head -n 5       # 查看当前进程\n# 查看当前用户与所在目录\nwhoami\npwd"
+        "filename": "binary-data.sh",
+        "code": "# 在 macOS 的「终端」里逐行敲，亲眼看看文字是怎么变成 0 和 1 的。\n\n# 1) 一个英文字母占几个字节？\n#    wc -c 统计字节数，输出：       1\nprintf 'A' | wc -c\n\n# 2) 一个汉字占几个字节？\n#    UTF-8 里一个常用汉字要 3 个字节，输出：       3\nprintf '中' | wc -c\n\n# 3) 把「中」这个字的字节用十六进制打出来。\n#    输出：00000000: e4b8 ad                                  ...\n#    也就是说：中 = e4 b8 ad 这三个字节。\nprintf '中' | xxd\n\n# 4) 换成二进制看，就是真正的 0 和 1 了。\n#    输出：00000000: 11100100 10111000 10101101\n#    三个字节 = 24 位，所以 1 个汉字 = 3 字节 = 24 个 0/1。\nprintf '中' | xxd -b\n\n# 5) 验证换算：2 的 8 次方 = 256，所以 1 字节能表示 256 种组合。\n#    输出：256\nawk 'BEGIN{print 2^8}'\n\n# 6) 用 python3 现场生成一张 2x2 的红色小图片，图片在硬盘上也是一串字节。\n#    输出：已生成 shot.png\npython3 -c \"import zlib,struct;c=lambda t,d:struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff);r=b''.join(b'\\x00'+b'\\xff\\x00\\x00'*2 for _ in range(2));open('shot.png','wb').write(b'\\x89PNG\\r\\n\\x1a\\n'+c(b'IHDR',struct.pack('>IIBBBBB',2,2,8,2,0,0,0))+c(b'IDAT',zlib.compress(r))+c(b'IEND',b''));print('已生成 shot.png')\"\n\n# 7) 看这张图片的文件类型和大小。\n#    输出：shot.png: PNG image data, 2 x 2, 8-bit/color RGB, non-interlaced\nfile shot.png\n#    输出示例：-rw-r--r--@  1 你  wheel    73B  shot.png\nls -lh shot.png\n\n# 8) 收拾干净，删掉测试图片。\n#    输出：无（删掉就没有输出，这是正常的）\nrm -f shot.png"
       },
       "mistakes": [
-        "把操作系统等同于应用软件，忽略它是硬件与应用之间的管理层",
-        "以为一个程序独占所有资源，忽略多进程共享 CPU 与内存",
-        "直接绕过系统调用去操作硬件，这在现代系统是不被允许的",
-        "混淆进程（系统资源分配单位）与线程（CPU 调度单位）"
+        "以为汉字和字母一样大——UTF-8 里字母 1 字节，常用汉字要 3 字节",
+        "以为 n 位二进制能表示 n 个数——是 2 的 n 次方个，位数增长是指数级",
+        "把字节和位搞混——1 字节 = 8 位，100 Mbps 实际约 12 MB/s",
+        "以为乱码是文件坏了——多数是打开时用错了编码，按 UTF-8 重开就好"
       ],
       "interviewPoints": [
-        "「操作系统的核心职责有哪些？」要答到进程调度、虚拟内存隔离、文件系统与系统调用，说明训练任务为何几乎都跑在 Linux 上",
-        "「训练进程为什么会莫名其妙被杀？」要答到 OOM Killer、cgroup 内存上限与虚拟内存机制，联系进程被 kill 时的排查思路",
-        "「虚拟内存有什么用？」要答到地址空间隔离、按需分页与 swap 的代价，解释 swap 抖动为何让训练吞吐骤降"
+        "别人问「为什么计算机用二进制」，你就答：因为它由海量开关（晶体管）组成，开关只有通和断两种稳定状态，做成十进制反而容易出错、成本高",
+        "别人问「一个汉字占多少字节」，你就答：看编码，UTF-8 里常用汉字一般 3 字节，GBK 里 2 字节，英文 ASCII 是 1 字节",
+        "别人问「为什么 0.1 + 0.2 不等于 0.3」，你就答：小数在计算机里用二进制浮点数近似存放，位数有限，很多十进制小数无法精确表示，累积就有误差"
       ],
-      "resources": [],
+      "resources": [
+        {
+          "title": "维基百科：二进制",
+          "url": "https://zh.wikipedia.org/wiki/%E4%BA%8C%E8%BF%9B%E5%88%B6"
+        },
+        {
+          "title": "维基百科：UTF-8",
+          "url": "https://zh.wikipedia.org/wiki/UTF-8"
+        }
+      ],
       "quiz": [
         {
-          "id": "os-q1",
+          "id": "binary-and-data-q1",
           "type": "choice",
-          "prompt": "操作系统的核心职责不包括？",
+          "prompt": "在 UTF-8 编码下，一个常用汉字「中」在硬盘上占多少空间？",
           "options": [
-            "进程与线程调度",
-            "内存管理",
-            "提供系统调用接口",
-            "直接编译高级语言代码"
+            "1 位",
+            "1 字节，和英文字母一样",
+            "3 字节，也就是 24 位",
+            "8 字节，也就是 64 位"
           ],
-          "answerIndex": 3,
-          "explanation": "编译高级语言是编译器的工作；操作系统负责调度、内存管理、文件系统与提供系统调用。"
+          "answerIndex": 2,
+          "explanation": "UTF-8 里常用汉字用 3 个字节表示，3 字节 = 24 位。A 把位和字节搞混且数值错误；B 是英文字母的占用；D 是 64 位系统里一个指针的大小，与汉字编码无关。"
         },
         {
-          "id": "os-q2",
+          "id": "binary-and-data-q2",
           "type": "short",
-          "prompt": "简述操作系统如何让多个程序看起来'同时运行'。",
-          "answer": "通过时间片轮转等调度算法，操作系统把 CPU 时间分成极短的时间片，轮流分配给不同进程。由于切换极快，用户感觉像多个程序同时在运行。同时通过虚拟内存和进程隔离，让每个进程拥有独立的内存空间。",
+          "prompt": "计算机只懂 0 和 1，那它是怎么存下一张照片的？请说明过程。",
+          "answer": "参考回答：先把画面切成小方格，每格叫一个像素；每格记录红、绿、蓝三个数字，各取 0 到 255 之间的值。整张照片就变成一长串数字，每个数字再用 8 位二进制表示，最终成了 0 和 1 的长队。所以图片大小约等于「宽 × 高 × 每像素字节数」，一张 1920×1080 的未压缩彩图约 6 MB。",
           "keywords": [
-            "时间片",
-            "调度",
-            "进程"
+            "像素",
+            "红绿蓝",
+            "变成数字",
+            "0 和 1"
           ],
-          "explanation": "核心是多任务调度 + 进程隔离的虚拟内存。"
+          "explanation": "得分点在于说清「切格子 → 每格记颜色数字 → 数字转二进制」这条链路，并能给出大致容量估算。"
         },
         {
-          "id": "os-q3",
+          "id": "binary-and-data-q3",
           "type": "code",
-          "prompt": "使用 bash 补全一段命令：先打印系统内核信息，再打印 CPU 核心数。",
-          "starterCode": "#!/bin/bash\n# 查看内核与核心数\n",
-          "solution": "#!/bin/bash\nuname -a\nnproc",
+          "prompt": "在 macOS 的「终端」里完成两步：查出一个汉字「中」占几个字节，并把它用二进制 0/1 打印出来。写出命令和输出。",
+          "starterCode": "# 第 1 步：统计「中」的字节数\n# 第 2 步：以二进制形式打印「中」\n",
+          "solution": "# 第 1 步：统计字节数，输出 3\nprintf '中' | wc -c\n\n# 第 2 步：以二进制打印，输出 11100100 10111000 10101101\nprintf '中' | xxd -b\n\n# 结论：1 个汉字 = 3 字节 = 24 位 = 24 个 0/1",
           "checks": [
-            "uname",
-            "nproc"
+            "printf",
+            "wc -c",
+            "xxd -b"
           ],
-          "explanation": "两条命令分别查看内核信息和 CPU 核心数。"
+          "explanation": "考察是否真的把「文字变成字节、字节变成 0/1」跑通了一遍，并能说出 3 字节 = 24 位这个换算。"
         }
       ]
     },
     {
-      "slug": "process",
-      "title": "Process 进程",
+      "slug": "what-computers-cant-do",
+      "title": "计算机擅长什么、不擅长什么",
       "order": 5,
-      "module": "计算机核心",
+      "module": "数据的样子",
       "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "进程是程序的一次执行实例，是操作系统分配资源（内存、文件）的基本单位，彼此隔离。",
-      "intuition": "程序是菜谱，进程是实际下厨的那一次。同一本菜谱，你可以在不同时间、不同厨房做很多次，每次都有一份独立的材料（内存）。当你打开两个浏览器窗口，系统就跑起了两个进程。进程之间互相隔离，一个崩溃不会拖垮另一个。",
-      "formal": "进程（Process）是操作系统分配资源的最小单位。每个进程拥有独立的虚拟地址空间、打开的文件描述符、信号处理器等资源，彼此通过隔离机制互不干扰。操作系统通过 `process control block`（PCB）保存进程状态，并在进程间切换（context switch）。进程拥有状态机：`ready`、`running`、`blocked/waiting` 等。进程之间的通信称为 `IPC`（Inter-Process Communication），常见方式有管道、消息队列、共享内存、信号。创建进程的系统调用在 Linux 上是 `fork()`，随后用 `exec()` 加载新程序。相较于线程，进程更重、创建与切换开销更大，但隔离性更好。",
+      "track": "main",
+      "estimatedMinutes": 27,
+      "summary": "计算机擅长海量重复、精确计算和规则明确的任务，不擅长理解含义、处理模糊情况、做价值判断；而 AI 想补的正是后一半。",
+      "intuition": "让计算机把一亿个数加起来，它一秒钟就干完，而且绝不会加错；让它判断一句话是在夸你还是在骂你，它一筹莫展。这不是因为它不够快，而是因为「夸还是骂」这件事没有精确规则可写——你自己都很难用几句话把标准说清楚。凡是能用「如果……就……」写清楚的活儿，它都干得又快又准：算工资、排序、找文件里的错别字。凡是需要常识、语境、审美、价值取舍的活儿，它就傻眼：听懂玩笑、判断一段话是否得体、决定该不该把这条消息推给用户。所以过去几十年，能自动化的事情都有明确规则；剩下那些模糊的事情，只能靠人。AI 想改变的，正是这后一半——不是让计算机更精确，而是让它学会在不确定的情况下给出「大致合理」的答案。",
+      "formal": "计算机的优势来自三个特性：一是高速，每秒可执行几十亿次基本操作；二是确定性，同样的输入必然得到同样的输出，不会因为心情或疲劳而改变；三是可无限重复且零边际成本，跑一亿次和跑一次的代码完全相同。它的短板也随之而来：只会执行明确写出的规则，不会自己发现「这里还缺一条规则」；没有常识和世界模型，不理解符号背后的含义；无法处理需要主观判断的问题，因为这类问题没有可判定的正确答案。需要区分两类限制：一类是工程上的「暂时不会」，比如识别方言、理解反讽，随着数据和算法进步在改善；另一类是理论上就做不到的，比如停机问题证明了不存在一个程序能判断任意程序会不会永远运行下去。分清楚这两类，才不会对 AI 抱有不切实际的期待。",
       "formula": "",
-      "aiConnection": "在分布式训练中，每个 GPU 或每台机器上常会启动独立的训练进程，进程之间通过 NCCL 等通信库交换梯度。理解进程独立内存的性质，就能理解为什么多进程需要显式交换数据，而共享内存或消息传递是必要的。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "process.py",
-        "code": "import multiprocessing\nimport os\n\n\ndef worker(name):\n    # 每个进程都有独立的变量与内存空间\n    print(f\"子进程 {name}，PID={os.getpid()}\")\n\n\nif __name__ == \"__main__\":\n    print(f\"父进程 PID={os.getpid()}\")\n    p1 = multiprocessing.Process(target=worker, args=(\"A\",))\n    p2 = multiprocessing.Process(target=worker, args=(\"B\",))\n    p1.start()\n    p2.start()\n    p1.join()\n    p2.join()\n    print(\"所有子进程结束\")"
-      },
-      "mistakes": [
-        "把进程和程序混为一谈，进程是程序的一次执行实例",
-        "以为多进程自动共享内存，忘了进程间需要 IPC 协作",
-        "混淆进程与线程，进程是资源分配单位、线程是执行单位",
-        "频繁创建进程导致开销大，误以为多进程总是最快"
-      ],
-      "interviewPoints": [
-        "「进程和线程的区别？」要答到地址空间、切换开销、通信方式，并说明 Python GIL 对多线程的实际影响",
-        "「进程之间怎么通信？」要答到 IPC 的管道、消息队列、共享内存与信号，说明分布式训练为何用 NCCL 显式交换梯度",
-        "「fork 和 spawn 有什么区别？」要答到写时复制、内存继承与序列化开销，解释 DataLoader 在不同平台启动方式的差异"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "process-q1",
-          "type": "choice",
-          "prompt": "进程是操作系统中的何种单位？",
-          "options": [
-            "CPU 调度的最小单位",
-            "资源分配的基本单位",
-            "存储文件的最小单位",
-            "网络传输的最小单位"
-          ],
-          "answerIndex": 1,
-          "explanation": "进程是资源分配的基本单位；线程才是 CPU 调度的最小单位。"
-        },
-        {
-          "id": "process-q2",
-          "type": "short",
-          "prompt": "为什么说进程之间是隔离的？这对程序健壮性有什么好处？",
-          "answer": "每个进程拥有独立的虚拟地址空间和资源，一个进程的崩溃或越界不会影响其它进程。因此即使一个程序崩溃，其它进程仍然正常，系统整体更稳定、更安全。",
-          "keywords": [
-            "隔离",
-            "独立",
-            "崩溃"
-          ],
-          "explanation": "独立的地址空间保证了隔离性，提升稳定性与安全性。"
-        },
-        {
-          "id": "process-q3",
-          "type": "code",
-          "prompt": "用 multiprocessing 创建两个子进程，各自打印自己的 PID。",
-          "starterCode": "import multiprocessing\nimport os\n\ndef worker():\n    print(os.getpid())\n",
-          "solution": "import multiprocessing\nimport os\n\ndef worker():\n    print(os.getpid())\n\nif __name__ == \"__main__\":\n    p = multiprocessing.Process(target=worker)\n    p.start()\n    p.join()",
-          "checks": [
-            "multiprocessing.Process",
-            "start"
-          ],
-          "explanation": "用 Process 创建并 start 子进程。"
-        }
-      ]
-    },
-    {
-      "slug": "thread",
-      "title": "Thread 线程",
-      "order": 6,
-      "module": "计算机核心",
-      "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "线程是进程内的执行单元，同一进程的线程共享内存，是 CPU 调度的基本单位。",
-      "intuition": "一个进程就像一个办公室，里面有多个工位（线程），大家都共享同一个办公室的资源（内存、文件），各自干各自的活。线程切换比进程便宜多了，因为不用换'房间'，只要换个'工位'。缺点也明显：大家共用一张桌子，一个人乱丢东西，别人也可能被波及——共享内存带来数据竞争问题。",
-      "formal": "线程（Thread）是进程内部的一条执行流，是 CPU 调度的最小单位。同一进程内的多个线程共享进程的地址空间、打开的文件与全局数据，因而线程间通信只需读写共享内存，非常高效。正因共享，多线程访问共享变量时可能产生 `race condition`（竞态条件），需要借助锁（`lock`/`mutex`）等同步机制保证原子性。线程拥有独立的调用栈与寄存器的上下文，但共享堆。线程切换（context switch）开销小于进程切换。在 Python 中，由于 `GIL`（全局解释器锁），CPU 密集型多线程无法真正并行执行，而 I/O 密集型任务因等待 I/O 释放 GIL 仍能提升吞吐。",
-      "formula": "",
-      "aiConnection": "数据加载、推理时常用线程池并发处理多个请求或并行读取数据。理解 GIL 与线程共享内存的性质，就能明白为什么深度学习框架用多进程或底层 C++/CUDA 线程来做真正的并行，而 Python 多线程更适合 I/O 密集的请求服务场景。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "thread.py",
-        "code": "import threading\n\n\ndef worker(name):\n    print(f\"线程 {name} 开始\")\n    for i in range(3):\n        print(f\"线程 {name} 运行第 {i} 次\")\n    print(f\"线程 {name} 结束\")\n\n\nthreads = []\nfor i in range(2):\n    t = threading.Thread(target=worker, args=(f\"T{i}\",))\n    threads.append(t)\n    t.start()\n\nfor t in threads:\n    t.join()\n\nprint(\"所有线程结束\")"
-      },
-      "mistakes": [
-        "把线程和进程混为一谈，线程共享进程内存",
-        "以为多线程总是提升速度，在 Python CPU 密集场景受 GIL 限制",
-        "多线程访问共享变量不加锁，产生竞态条件",
-        "混淆线程安全与原子性，以为简单递增操作必然安全"
-      ],
-      "interviewPoints": [
-        "「什么是竞态条件，怎么避免？」要答到共享可变状态、执行时序不确定、锁与原子操作，并提到死锁和锁粒度的权衡",
-        "「Python 多线程能真正加速吗？」要答到 GIL 让 CPU 密集无法并行、I/O 等待会释放 GIL，说明推理服务为何用线程池",
-        "「线程切换为什么比进程便宜？」要答到共享地址空间、只需保存寄存器与栈，以及上下文切换对吞吐的隐性开销"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "thread-q1",
-          "type": "choice",
-          "prompt": "同一进程内的线程之间共享的是？",
-          "options": [
-            "各自的寄存器状态",
-            "进程的地址空间和全局数据",
-            "各自的调用栈",
-            "各自的高度隔离内存"
-          ],
-          "answerIndex": 1,
-          "explanation": "线程共享所属进程的地址空间、全局数据与文件；但各自持有独立的栈和寄存器上下文。"
-        },
-        {
-          "id": "thread-q2",
-          "type": "short",
-          "prompt": "什么是竞态条件（race condition）？如何避免？",
-          "answer": "当多个线程同时访问并修改同一共享数据且没有同步时，最终结果取决于执行时序，导致不可预期，这就是竞态条件。通常用锁（mutex）将关键区设为原子操作，或用原子变量来避免。",
-          "keywords": [
-            "race",
-            "共享",
-            "锁"
-          ],
-          "explanation": "核心是共享数据无同步导致的不确定性，用锁保证原子性。"
-        },
-        {
-          "id": "thread-q3",
-          "type": "code",
-          "prompt": "使用 threading 创建两个线程，每个线程打印自己的名字，并用 join 等待结束。",
-          "starterCode": "import threading\n\ndef worker(name):\n    print(name)\n",
-          "solution": "import threading\n\ndef worker(name):\n    print(name)\n\nthreads = []\nfor i in range(2):\n    t = threading.Thread(target=worker, args=(f\"T{i}\",))\n    threads.append(t)\n    t.start()\nfor t in threads:\n    t.join()",
-          "checks": [
-            "threading.Thread",
-            "start",
-            "join"
-          ],
-          "explanation": "创建、启动线程并用 join 等待完成。"
-        }
-      ]
-    },
-    {
-      "slug": "file-system",
-      "title": "File System 文件系统",
-      "order": 7,
-      "module": "文件与网络",
-      "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "文件系统用树状目录组织存储设备上的文件，提供路径、权限与读写接口。",
-      "intuition": "文件系统就像你电脑里的柜子系统：每个磁盘是一个大柜子，里面分了层层抽屉（文件夹/目录），每个抽屉里放着文件。你通过'路径'找到某个文件，就像说'走到第二层第三个抽屉里的那个文件'。它还负责记录每个文件夹能进去、谁有权限动它。",
-      "formal": "文件系统（File System）是操作系统组织和管理持久化数据的方式。它以树状层次结构组织目录（directory/folder）和文件，通过`path`（路径）定位，路径分绝对路径（从根目录 `/` 开始）与相对路径。文件系统维护元数据：文件名、大小、创建/修改时间、所有者与访问权限（`read/write/execute`）。常见的文件系统有 ext4、NTFS、APFS。它把文件映射到磁盘上的数据块，并支持创建、读取、写入、删除、重命名等操作。在 Linux 中一切皆文件，设备、socket 也以文件形式呈现，可通过挂载（mount）把不同存储设备挂到目录树上。",
-      "formula": "",
-      "aiConnection": "模型权重、数据集、日志都以文件形式存放在磁盘上，训练代码经常要遍历目录、批量读取、按权限访问。理解文件系统的路径与权限，有助于正确组织数据、避免权限报错，也便于用 glob、os 模块批量处理数据集文件。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "file_system.py",
-        "code": "import os\n\n# 查看当前目录与路径\nprint(\"当前目录:\", os.getcwd())\n\n# 创建目录与文件，模拟树状结构\nos.makedirs(\"data/raw\", exist_ok=True)\nwith open(\"data/raw/sample.txt\", \"w\", encoding=\"utf-8\") as f:\n    f.write(\"文件系统示例\")\n\n# 遍历目录结构\nfor root, dirs, files in os.walk(\"data\"):\n    print(root, \"->\", files)\n\n# 查看文件是否存在于该路径\nprint(\"文件存在:\", os.path.exists(\"data/raw/sample.txt\"))"
-      },
-      "mistakes": [
-        "混淆绝对路径与相对路径，导致找不到文件",
-        "以为删除文件只是移除名字，忽略了它对磁盘数据块的作用",
-        "在权限不足的目录里创建文件而不处理 PermissionError",
-        "忽略大小写与路径分隔符在不同系统的差异"
-      ],
-      "interviewPoints": [
-        "「绝对路径和相对路径有什么区别？」要答到起点是根目录还是当前目录，说明训练脚本为何要用绝对路径避免找不到数据集",
-        "「Linux 权限 755 和 644 代表什么？」要答到 owner/group/other 与 rwx 位，说明脚本没执行权限为何报错",
-        "「为什么说 Linux 一切皆文件？」要答到设备与 socket 也以文件抽象、统一 read/write 接口，并联系数据管线的目录遍历"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "file-system-q1",
-          "type": "choice",
-          "prompt": "在 Linux 中，从根目录开始定位文件的路径称为？",
-          "options": [
-            "相对路径",
-            "绝对路径",
-            "相对文件名",
-            "目录指针"
-          ],
-          "answerIndex": 1,
-          "explanation": "从根目录 `/` 开始的路径称为绝对路径；从当前目录开始的是相对路径。"
-        },
-        {
-          "id": "file-system-q2",
-          "type": "short",
-          "prompt": "简述什么是绝对路径和相对路径，并各举一例。",
-          "answer": "绝对路径从根目录开始，如 /home/user/data.txt，任何位置都一致；相对路径从当前工作目录开始，如 data/sample.txt，会随当前目录变化而不同。",
-          "keywords": [
-            "绝对",
-            "相对",
-            "根目录"
-          ],
-          "explanation": "区分起点：根目录（绝对）vs 当前目录（相对）。"
-        },
-        {
-          "id": "file-system-q3",
-          "type": "code",
-          "prompt": "用 os 模块创建目录 data/raw，并写入一个文件 sample.txt，再检查它是否存在。",
-          "starterCode": "import os\n",
-          "solution": "import os\n\nos.makedirs(\"data/raw\", exist_ok=True)\nwith open(\"data/raw/sample.txt\", \"w\", encoding=\"utf-8\") as f:\n    f.write(\"hello\")\nprint(os.path.exists(\"data/raw/sample.txt\"))",
-          "checks": [
-            "makedirs",
-            "open(",
-            "exists"
-          ],
-          "explanation": "创建目录、写文件、检查存在性即覆盖文件系统基本操作。"
-        }
-      ]
-    },
-    {
-      "slug": "network",
-      "title": "Network 网络",
-      "order": 8,
-      "module": "文件与网络",
-      "difficulty": "基础",
-      "estimatedMinutes": 20,
-      "summary": "网络让多台计算机互传数据，按分层模型组织，核心是传输层与网络层的可靠性协调。",
-      "intuition": "网络就像一套庞大的邮政系统。你要寄信给远方的朋友，信被分成一个个包裹（数据包），每个包裹上写好地址，经过一个个中转站（路由器），最终到达目的地再拼起来。为了让这套系统可靠又高效，大家约定了一套分层规则：各干各的活，上层请求下层服务。",
-      "formal": "网络（Network）遵循分层模型，最常用的是 OSI 七层或 TCP/IP 四层模型。`应用层`处理具体应用协议（HTTP、DNS）；`传输层`负责端到端传输，其中 `TCP` 提供可靠、有序的连接传输，`UDP` 提供快速但有丢包风险的无连接传输；`网络层`负责寻址与路由，核心协议是 `IP`；`链路层`处理物理传输。网络以`数据包`为单位传输，TCP 用序号、确认应答与重传保证可靠性，用三次握手建立连接、四次挥手断开发连接。数据的封装解封过程：发送方逐层加头，接收方逐层去头。",
-      "formula": "",
-      "aiConnection": "从服务器下载模型权重、调用远程 LLM API、分布式训练时多卡间的梯度同步，都依赖网络。理解 TCP 的可靠传输与握手，以及网络延迟与带宽对训练/推理的速度影响，是优化分布式 AI 系统与云端推理时延的关键。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "network.py",
-        "code": "import socket\n\n# 演示 DNS 解析：把域名解析为 IP 地址\ndef resolve(host):\n    try:\n        ip = socket.gethostbyname(host)\n        print(f\"{host} -> {ip}\")\n    except socket.gaierror as e:\n        print(f\"解析失败: {e}\")\n\n\nresolve(\"www.baidu.com\")\nresolve(\"google.com\")"
-      },
-      "mistakes": [
-        "以为 TCP 和 UDP 都保证可靠，UDP 是无连接快速但有丢包风险",
-        "混淆 IP 层寻址与传输层端口，端口是区分同一主机上不同应用",
-        "忽略握手与重传带来的延迟，误以为网络传输零开销",
-        "把延迟与带宽混为一谈，二者是不同性能指标"
-      ],
-      "interviewPoints": [
-        "「TCP 和 UDP 怎么选？」要答到可靠有序与低延迟无连接、握手重传开销，说明推理服务与梯度同步各自的取舍",
-        "「三次握手为什么不能改成两次？」要答到双向确认收发能力、同步初始序号与防止历史连接，说明握手 RTT 对 API 首包延迟的影响",
-        "「延迟和带宽是一回事吗？」要答到两者是不同指标、分布式训练受带宽约束而在线推理受延迟约束，以及流水线并行的通信瓶颈"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "network-q1",
-          "type": "choice",
-          "prompt": "下列哪个传输层协议提供可靠、有序的连接传输？",
-          "options": [
-            "UDP",
-            "IP",
-            "TCP",
-            "HTTP"
-          ],
-          "answerIndex": 2,
-          "explanation": "TCP 提供可靠、有序、面向连接的传输；UDP 是无连接、快速但可能丢包；IP 是网络层；HTTP 是应用层协议。"
-        },
-        {
-          "id": "network-q2",
-          "type": "short",
-          "prompt": "简述 TCP 三次握手的作用。",
-          "answer": "三次握手用于建立可靠的连接：客户端发送 SYN，服务端回复 SYN+ACK，客户端再发 ACK。双方由此确认各自的发送和接收能力正常，并同步初始序号，为后续可靠传输做准备。",
-          "keywords": [
-            "syn",
-            "ack",
-            "握手"
-          ],
-          "explanation": "三次握手确立双向可靠的连接并同步序号。"
-        },
-        {
-          "id": "network-q3",
-          "type": "code",
-          "prompt": "用 socket 写一个函数 resolve_host(host)，将域名解析为 IP 地址并打印。",
-          "starterCode": "import socket\n\ndef resolve_host(host):\n    pass",
-          "solution": "import socket\n\ndef resolve_host(host):\n    ip = socket.gethostbyname(host)\n    print(ip)\n\nresolve_host(\"www.baidu.com\")",
-          "checks": [
-            "socket.gethostbyname",
-            "def resolve_host"
-          ],
-          "explanation": "用 gethostbyname 完成域名到 IP 的解析。"
-        }
-      ]
-    },
-    {
-      "slug": "ip",
-      "title": "IP 地址",
-      "order": 9,
-      "module": "文件与网络",
-      "difficulty": "基础",
-      "estimatedMinutes": 20,
-      "summary": "IP 地址是网络上每个设备的逻辑地址，用于在网络层定位与路由数据包。",
-      "intuition": "IP 地址就像是每台联网设备的'门牌号'，负责在网络大海里找到你。假设你要给别人发包裹，必须先知道对方的门牌号（IP）。你的电脑、手机、服务器都有一个这样的号码，数据包顺着这个号码一层层转送，最终送到你家门口。",
-      "formal": "IP 地址是网络层的逻辑地址，用于唯一标识网络中的一台主机。`IPv4` 使用 32 位地址，格式为四个 0-255 数字如 `192.168.1.1`；`IPv6` 使用 128 位地址解决 IPv4 耗尽问题。IP 地址分为`网络号`和`主机号`，由`子网掩码`划分。私有 IP（如 192.168.x.x）只能在局域网内部使用，通过 `NAT` 转换与公网通信。客户端一般使用动态 IP（DHCP 分配），服务器常用静态 IP。定位主机还需配合`端口`（transport layer 的 port）区分同一主机上的不同服务。每个数据包携带源 IP 与目的 IP，路由器据此转发。",
-      "formula": "",
-      "aiConnection": "调用云端 GPU 服务器或 LLM API 时，都是通过 IP 与端口定位到具体机器和服务。理解公网 IP、私有 IP 与 NAT，就能明白为什么本地训练集群的内网地址与公网 API 不同，也便于排查连接超时、防火墙导致无法访问等问题。",
+      "aiConnection": "机器学习的工作，本质就是接手「规则写不出来」的那部分任务：垃圾邮件过滤没法用 if-else 写全，于是改成从几万封标注邮件里统计规律；图像识别没法手写「猫长什么样」的规则，于是让模型从几百万张图里自己学。这也解释了 AI 的固有毛病——它给出的是概率上最像的答案，不是逻辑上必然正确的答案，所以大模型会「一本正经地胡说」（幻觉），会随采样随机性给出不同回复。做算法岗要时刻记住：能用规则确定解决的，就别上模型；该上模型的地方，必须用数据量和评测指标来兜住不确定性。",
       "codeExample": {
         "lang": "bash",
-        "filename": "ip.sh",
-        "code": "#!/bin/bash\n# 查看本机网络接口与 IP 地址\nip a          # Linux 查看全部接口\n# 或使用 ifconfig（部分系统）\n# ifconfig\n# 测试与目标 IP 的连通性\nping -c 3 8.8.8.8\n# 查看本机对外公网 IP（需联网）\ncurl -s ifconfig.me"
+        "filename": "what-computers-cant-do.sh",
+        "code": "# 在 macOS 的「终端」里逐行敲，亲手验证「擅长」和「不擅长」的边界。\n\n# 【擅长的】精确计算、海量重复：这条命令让计算机做一百万次加法。\n# 输出：500000500000\nawk 'BEGIN{s=0; for(i=1;i<=1000000;i++) s=s+i; print s}'\n\n# 【不擅长的】精确表示小数：它连 0.1 + 0.2 都算不准。\n# 输出：0.30000000000000004\npython3 -c \"print(0.1 + 0.2)\"\n\n# 【不擅长的】位数太多的整数会丢精度：64 位浮点只有约 15-16 位有效数字，\n# 2 的 53 次方加 1 应该多出 1，但它存不下这个 1，结果被舍掉了。\n# 输出：9007199254740992.0（末尾那个 1 被吃掉了）\npython3 -c \"print(float(2**53) + 1)\"\n\n# 【擅长的】确定性：同一条命令跑一百次，结果一模一样，不会时好时坏。\n# 输出：永远是 500000500000\nawk 'BEGIN{s=0; for(i=1;i<=1000000;i++) s=s+i; print s}'\n\n# 【不擅长的】理解含义：下面这句话在计算机眼里只是 3 个字节，\n# 它不知道这是夸奖还是讽刺——这类判断得靠人，或者靠从数据里学规律的模型。\n# 输出：00000000: e5a5bd                                  .\nprintf '好' | xxd\n\n# 【擅长的】速度：同样一百万个数的加法，人类用笔算要几天。\n# time 会打印真实耗时，输出示例：real 0m0.03s\ntime awk 'BEGIN{s=0; for(i=1;i<=1000000;i++) s=s+i}'"
       },
       "mistakes": [
-        "把 IP 地址和 MAC 地址混为一谈，前者是逻辑地址、后者是物理地址",
-        "以为私有 IP 能在公网直接访问，实际上需经 NAT",
-        "混淆 IP 地址与端口，IP 定位主机、端口定位服务",
-        "以为 IP 是永久不变的，客户端多为动态分配"
+        "以为计算机算得准——整数加法确实准，但小数是近似存放的，会累积误差",
+        "以为计算机「懂」文字含义——编码（把文字映射成数字）后它只看到数字，含义靠人解释",
+        "以为算力够强就能解决一切——像停机问题这类任务是理论上不可能用程序解决的",
+        "在规则能写清楚的地方硬上机器学习，结果又慢又不准，还不如几句 if-else"
       ],
       "interviewPoints": [
-        "「IP 和端口分别解决什么问题？」要答到网络层定位主机、传输层区分服务，说明调用 LLM API 时 base_url 与端口的关系",
-        "「私有 IP 为什么不能直接从公网访问？」要答到 NAT 转换与地址复用，解释本地训练集群内网地址与公网 API 地址的差别",
-        "「IP 和 MAC 地址有什么区别？」要答到逻辑地址与物理地址、可路由与同一链路内寻址，并提到 DHCP 动态分配"
+        "别人问「计算机擅长什么、不擅长什么」，你就答：擅长规则明确、海量重复、要求精确的任务；不擅长理解含义、处理模糊、做价值判断，因为没有可写出的判定规则",
+        "别人问「为什么需要机器学习」，你就答：有些任务的规则根本写不出来（比如识别猫、判断垃圾邮件），只能让模型从大量数据里自己总结规律",
+        "别人问「大模型为什么会胡说」，你就答：它学的是「下一个词最可能是什么」的概率规律，给的是概率上最像的答案，不是逻辑上必然正确的答案"
       ],
-      "resources": [],
-      "quiz": [
+      "resources": [
         {
-          "id": "ip-q1",
-          "type": "choice",
-          "prompt": "IPv4 地址的位数是？",
-          "options": [
-            "16 位",
-            "32 位",
-            "64 位",
-            "128 位"
-          ],
-          "answerIndex": 1,
-          "explanation": "IPv4 使用 32 位地址，通常写成四个 0-255 的数字；IPv6 才是 128 位。"
+          "title": "维基百科：停机问题",
+          "url": "https://zh.wikipedia.org/wiki/%E5%81%9C%E6%9C%BA%E9%97%AE%E9%A2%98"
         },
         {
-          "id": "ip-q2",
-          "type": "short",
-          "prompt": "IP 地址和端口分别用来干什么？",
-          "answer": "IP 地址在网络层用来定位网络中某一台主机；端口在传输层用来区分同一台主机上的不同应用/服务。两者结合（IP:port）才能精确定位到某个具体的网络服务。",
-          "keywords": [
-            "ip",
-            "端口",
-            "主机"
-          ],
-          "explanation": "IP 定主机、端口定应用服务。"
-        },
-        {
-          "id": "ip-q3",
-          "type": "code",
-          "prompt": "使用 bash 补全：先查看所有网络接口信息，再 ping 一下 8.8.8.8 测试连通性。",
-          "starterCode": "#!/bin/bash\n# 查看网络接口\n",
-          "solution": "#!/bin/bash\nip a\nping -c 3 8.8.8.8",
-          "checks": [
-            "ip a",
-            "ping"
-          ],
-          "explanation": "ip a 查看接口，ping 测试连通。"
+          "title": "维基百科：图灵测试",
+          "url": "https://zh.wikipedia.org/wiki/%E5%9B%BE%E7%81%B5%E6%B5%8B%E8%AF%95"
         }
-      ]
-    },
-    {
-      "slug": "http",
-      "title": "HTTP",
-      "order": 10,
-      "module": "文件与网络",
-      "difficulty": "基础",
-      "estimatedMinutes": 21,
-      "summary": "HTTP 是客户端与服务端之间的请求-响应协议，由方法、状态码与消息头组成，是 Web 世界的基础。",
-      "intuition": "HTTP 就像你在餐厅点餐：你（客户端）说'我要一份宫保鸡丁'（请求），服务员（服务器）去后厨做好端上来（响应）。整个过程你只管点餐和收菜，不用关心后厨怎么做。每一顿饭都有菜名（URL）、要点（请求方法）和结果（状态码，比如 200 表示'搞定'，404 表示'没有这道菜'）。",
-      "formal": "HTTP（HyperText Transfer Protocol）是无状态、基于请求-响应模式的应用层协议。请求由`请求行`（方法+URL+版本）、`请求头`和可选的`请求体`组成；响应由`状态行`（状态码+原因短语）、`响应头`和`响应体`组成。常用方法有 `GET`（获取资源）、`POST`（提交数据）、`PUT`（更新）等。常见状态码：`200` 成功、`301/302` 重定向、`400` 请求错误、`404` 找不到、`500` 服务器内部错误。HTTP 无状态，因此用 `Cookie` 和 `Session` 维持会话状态。`HTTPS` 在 HTTP 之上增加 TLS 加密，保证传输安全。",
-      "formula": "",
-      "aiConnection": "调用大模型 API（如 OpenAI、DeepSeek）就是通过 HTTP POST 请求发送 prompt，服务器返回生成的文本。理解 HTTP 方法、状态码与请求头（如 auth token、content-type），是正确调用 LLM API、排查 401/429/500 等错误的基础。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "http.py",
-        "code": "import urllib.request\nimport json\n\n# 发起 HTTP GET 请求并读取响应\ndef http_get(url):\n    req = urllib.request.Request(url, headers={\"User-Agent\": \"Python\"})\n    with urllib.request.urlopen(req) as resp:\n        print(\"状态码:\", resp.status)\n        return resp.read().decode(\"utf-8\")\n\n\nbody = http_get(\"https://httpbin.org/json\")\nprint(body[:100])"
-      },
-      "mistakes": [
-        "混淆 GET 与 POST，GET 一般用于获取且参数在 URL，POST 一般提交数据",
-        "对不同状态码含义记混，尤其 4xx 客户端错误与 5xx 服务器错误",
-        "以为 HTTP 有状态，其实它无状态，靠 Cookie/Session 维持会话",
-        "忽视 HTTPS 的加密必要性，明文传输敏感信息"
       ],
-      "interviewPoints": [
-        "「HTTP 无状态，登录怎么保持状态？」要答到 Cookie 与 Session，说明 LLM API 为何用 token 鉴权",
-        "「调模型 API 遇到 401、429、500 分别说明什么？」要答到鉴权失败、限流与服务器错误，以及重试与指数退避该怎么写",
-        "「流式响应是怎么实现的？」要答到 chunked 传输与 SSE 长连接，说明流式输出为何能显著改善首 token 延迟的体感"
-      ],
-      "resources": [],
       "quiz": [
         {
-          "id": "http-q1",
+          "id": "what-computers-cant-do-q1",
           "type": "choice",
-          "prompt": "下列哪个状态码表示'服务器内部出错'？",
+          "prompt": "下面哪件事是计算机「天生不擅长」的？",
           "options": [
-            "200",
-            "404",
-            "500",
-            "301"
+            "把一亿个数字加起来，并保证结果精确",
+            "把十万个文件按修改时间从早到晚排好序",
+            "判断一句玩笑话到底该不该当真、是否得体",
+            "把同一个计算任务重复执行一百万次，每次结果都一样"
           ],
           "answerIndex": 2,
-          "explanation": "500 表示服务器内部错误；200 成功、404 找不到资源、301 重定向。"
+          "explanation": "判断玩笑是否得体需要语境、常识和价值取舍，没有可写清楚的判定规则，因此计算机不擅长。A、B、D 都是规则明确、可精确描述、重复性强的任务，正是计算机最擅长的三类事。"
         },
         {
-          "id": "http-q2",
+          "id": "what-computers-cant-do-q2",
           "type": "short",
-          "prompt": "HTTP 是无状态协议，它靠什么维持用户会话？",
-          "answer": "由于 HTTP 无状态，服务器不会记住之前的请求。通常用 Cookie 在客户端保存会话标识，服务端用 Session 保存会话数据，客户端每次请求带上 Cookie，从而在多次请求间维持登录等状态。",
+          "prompt": "为什么「垃圾邮件过滤」这类任务很难用 if-else 规则写好，而要用机器学习来做？",
+          "answer": "参考回答：因为垃圾邮件的特征太模糊、变化太快，无法列出穷尽所有情况的规则——写「含发票两字就是垃圾」，正常邮件会被误判；写得太细又漏掉大量变体，发件人一改措辞就失效。机器学习换了个思路：从几万封人工标注的邮件里统计哪些词更常出现在垃圾邮件中，自动学出判据。代价是需要大量标注数据。",
           "keywords": [
-            "cookie",
-            "session",
-            "无状态"
+            "规则写不出来",
+            "从数据里学",
+            "概率判断",
+            "需要标注数据"
           ],
-          "explanation": "用 Cookie/Session 在无状态 HTTP 上模拟出会话状态。"
+          "explanation": "得分点在于说清「规则无法穷尽」这个根本困难，以及机器学习用数据统计替代人工规则的思路与代价。"
         },
         {
-          "id": "http-q3",
+          "id": "what-computers-cant-do-q3",
           "type": "code",
-          "prompt": "写一个函数 http_get(url)，用 urllib 发送 GET 请求并返回状态码和响应体前 100 字符。",
-          "starterCode": "import urllib.request\n\ndef http_get(url):\n    pass",
-          "solution": "import urllib.request\n\ndef http_get(url):\n    req = urllib.request.Request(url, headers={\"User-Agent\": \"Python\"})\n    with urllib.request.urlopen(req) as resp:\n        return resp.status, resp.read().decode(\"utf-8\")[:100]\n\nprint(http_get(\"https://httpbin.org/json\"))",
+          "prompt": "在 macOS 的「终端」里做两个实验：让计算机算 0.1 + 0.2 看结果是否精确，再让它做一百万次加法并计时。写出命令与输出。",
+          "starterCode": "# 实验 1：小数加法是否精确\n# 实验 2：一百万次加法 + 计时\n",
+          "solution": "# 实验 1：小数在计算机里是近似存放的，结果不精确\npython3 -c \"print(0.1 + 0.2)\"\n# 输出：0.30000000000000004\n\n# 实验 2：一百万次加法，计算机几乎瞬间完成\nawk 'BEGIN{s=0; for(i=1;i<=1000000;i++) s=s+i; print s}'\n# 输出：500000500000\n\n# 加上 time 看真实耗时\n# 输出示例：real 0m0.03s\ntime awk 'BEGIN{s=0; for(i=1;i<=1000000;i++) s=s+i}'",
           "checks": [
-            "urllib.request.urlopen",
-            "status"
+            "0.1 + 0.2",
+            "1000000",
+            "time"
           ],
-          "explanation": "用 urlopen 发起请求并读取状态码与响应体。"
-        }
-      ]
-    },
-    {
-      "slug": "api",
-      "title": "API",
-      "order": 11,
-      "module": "文件与网络",
-      "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "API 是软件之间约定的调用接口，封装内部实现，通过请求与响应交换数据。",
-      "intuition": "API 就像餐厅的服务窗口：你不需要走进后厨看他们怎么做菜，只要在窗口说出想点的（请求），他们就会按标准做法端给你（响应）。只要窗口规矩不变，后厨怎么改进你都不用管。API 把复杂内部逻辑藏起来，只暴露一套清晰、稳定的调用方式。",
-      "formal": "API（Application Programming Interface，应用程序编程接口）是不同程序或模块之间交互的契约。`RESTful API` 基于 HTTP，用资源（URL）和方法（GET/POST/PUT/DELETE）表达操作，通常返回 `JSON` 数据，用状态码表示结果。一个 API 定义包括`endpoint`（接口地址）、方法、请求参数、返回结构与错误格式。API 设计注重`版本化`（如 /v1/）、`鉴权`（API key、OAuth token）与`文档`。好的 API 应具备一致性、幂等性、明确错误信息。调用方不需要关心服务端实现语言与架构，只看接口契约。",
-      "formula": "",
-      "aiConnection": "几乎所有 LLM 能力都以 API 形式开放，如 OpenAI、Anthropic、DeepSeek 等。你把 prompt、参数（temperature、max_tokens）作为请求发送到 API endpoint，模型返回生成的文本。理解 API 的请求结构、鉴权与错误码，是编写真实 AI 应用的第一步。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "api.py",
-        "code": "import urllib.request\nimport json\n\n# 模拟调用一个 REST API：将输入数据作为 JSON 请求发送\ndef call_api(url, payload):\n    data = json.dumps(payload).encode(\"utf-8\")\n    req = urllib.request.Request(url, data=data, headers={\"Content-Type\": \"application/json\"})\n    with urllib.request.urlopen(req) as resp:\n        return resp.status, resp.read().decode(\"utf-8\")\n\n\nstatus, body = call_api(\"https://httpbin.org/post\", {\"name\": \"AI\"})\nprint(\"状态码:\", status)\nprint(\"返回:\", body[:80])"
-      },
-      "mistakes": [
-        "把 API 当作具体库函数，它是一种服务/接口的调用契约",
-        "忽略鉴权与错误处理，直接假设请求一定成功",
-        "误解 HTTP 方法与语义，用 GET 去做有副作用的写操作",
-        "不读接口文档，参数名称、类型、结构对不上导致 400"
-      ],
-      "interviewPoints": [
-        "「RESTful API 的设计要点是什么？」要答到资源化 URL、HTTP 方法语义、状态码与幂等性，并联系模型服务的接口版本化",
-        "「调用大模型 API 要注意什么？」要答到鉴权 header、content-type、超时重试与 temperature 等参数",
-        "「为什么 API 要做版本化和限流？」要答到契约兼容、灰度升级与配额保护，说明模型升级时 /v1 路径为何不能随便改"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "api-q1",
-          "type": "choice",
-          "prompt": "REST API 中通常用哪个 HTTP 方法创建资源？",
-          "options": [
-            "GET",
-            "POST",
-            "DELETE",
-            "HEAD"
-          ],
-          "answerIndex": 1,
-          "explanation": "POST 常用于创建资源；GET 获取、PUT 更新、DELETE 删除资源。"
-        },
-        {
-          "id": "api-q2",
-          "type": "short",
-          "prompt": "什么是 API 接口契约？好的 API 应该具备哪些特点？",
-          "answer": "API 接口契约是请求与响应的格式约定，包括 endpoint、方法、参数、返回结构及错误格式。好的 API 应具备一致性、清晰的错误信息、版本化和鉴权机制，让调用方无需了解服务端实现即可稳定调用。",
-          "keywords": [
-            "契约",
-            "endpoint",
-            "参数"
-          ],
-          "explanation": "契约定义了交互格式；一致性、版本化、鉴权、清晰错误是好 API 的关键。"
-        },
-        {
-          "id": "api-q3",
-          "type": "code",
-          "prompt": "写一个函数 call_api(url, payload)，把 payload 作为 JSON 通过 POST 发送，并返回状态码与响应体。",
-          "starterCode": "import urllib.request\nimport json\n\ndef call_api(url, payload):\n    pass",
-          "solution": "import urllib.request\nimport json\n\ndef call_api(url, payload):\n    data = json.dumps(payload).encode(\"utf-8\")\n    req = urllib.request.Request(url, data=data, headers={\"Content-Type\": \"application/json\"})\n    with urllib.request.urlopen(req) as resp:\n        return resp.status, resp.read().decode(\"utf-8\")\n\nprint(call_api(\"https://httpbin.org/post\", {\"x\": 1}))",
-          "checks": [
-            "json.dumps",
-            "urllib.request.urlopen",
-            "status"
-          ],
-          "explanation": "把 Python 对象序列化为 JSON 后作为请求体发送，读取响应。"
-        }
-      ]
-    },
-    {
-      "slug": "json",
-      "title": "JSON",
-      "order": 12,
-      "module": "数据格式",
-      "difficulty": "基础",
-      "estimatedMinutes": 22,
-      "summary": "JSON 是一种轻量的文本数据交换格式，用键值对与数组表达结构化数据，广泛用于 API 与配置文件。",
-      "intuition": "JSON 就像是程序界通用的'表格填写单'。它用大括号括起来的'键: 值'来描述信息，比如{'name': '小明', 'age': 18}。任何人都能一眼看懂，而且几乎每种编程语言都能轻松读写它。因为简单、直观、跨语言，它成了互联网上交换数据的'世界语'。",
-      "formal": "JSON（JavaScript Object Notation）是一种基于文本的数据交换格式，主要结构有两种：`object`（对象）用花括号 `{ }` 包含一组键值对，`array`（数组）用方括号 `[ ]` 表示有序列表。值（value）的类型包括字符串、数字、布尔值（true/false）、null、对象和数组。JSON 键必须是字符串，字符串用双引号。JSON 不能直接携带 Python 的集合、元组或自定义对象，因此语言间转换常有差异：Python 的 `dict` ↔ JSON object，`list` ↔ JSON array。标准库 `json` 提供 `dumps`（序列化）与 `loads`（反序列化）。JSON 优点是可读、轻量、跨语言；缺点是没有注释、不支持日期等类型。",
-      "formula": "",
-      "aiConnection": "LLM API 的输入输出基本都是 JSON：请求里 {model, messages, temperature}，返回里 {choices, message}。训练数据的常用格式、配置文件和工具调用（function calling）也大量使用 JSON。理解 JSON 结构是解析模型输出、组装请求和做数据处理的必备技能。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "json.py",
-        "code": "import json\n\n# 构造一个 JSON 对象（dict）\ndata = {\"name\": \"AI\", \"tags\": [\"llm\", \"agent\"], \"is_active\": True, \"score\": 95.5}\n\n# 序列化为 JSON 字符串（ensure_ascii=False 保留中文）\njson_str = json.dumps(data, ensure_ascii=False, indent=2)\nprint(\"序列化:\\n\", json_str)\n\n# 反序列化回 Python 对象\nback = json.loads(json_str)\nprint(\"反序列化后 name:\", back[\"name\"])"
-      },
-      "mistakes": [
-        "JSON 必须用双引号，单引号不是合法 JSON",
-        "用 Python 字典直接当 JSON，丢失了序列化/反序列化步骤",
-        "在 JSON 里写注释、日期对象或 undefined，这些都不是合法 JSON",
-        "混淆 JSON 与字典，JSON 是文本，dict 是 Python 对象"
-      ],
-      "interviewPoints": [
-        "「JSON 和 Python dict 有什么区别？」要答到 JSON 是文本序列化格式、dict 是内存对象，以及双引号与类型的限制",
-        "「怎么稳定解析大模型的 JSON 输出？」要答到 json.loads 容错、模型常带多余文本，用 function calling 约束",
-        "「JSON 不适合哪些场景？」要答到无注释、无日期类型、大数字精度与体积开销，说明模型权重为何用二进制格式存"
-      ],
-      "resources": [],
-      "quiz": [
-        {
-          "id": "json-q1",
-          "type": "choice",
-          "prompt": "下列哪个是合法的 JSON 字符串？",
-          "options": [
-            "{'name': 'Tom'}",
-            "{'name': \"Tom\"}",
-            "{\"name\": \"Tom\"}",
-            "{name: 'Tom'}"
-          ],
-          "answerIndex": 2,
-          "explanation": "JSON 的键和字符串必须用双引号。前三个都用了单引号或未加引号的键，非法。"
-        },
-        {
-          "id": "json-q2",
-          "type": "short",
-          "prompt": "JSON 支持哪些数据类型？它与 Python 字典有何区别？",
-          "answer": "JSON 支持字符串、数字、布尔值、null、对象和数组。Python 字典是内存中的一个数据结构，而 JSON 是序列化后的文本字符串；两者通过 json.dumps/loads 转换。",
-          "keywords": [
-            "字符串",
-            "数组",
-            "对象"
-          ],
-          "explanation": "JSON 类型限定且为文本，Python dict 是内存对象。"
-        },
-        {
-          "id": "json-q3",
-          "type": "code",
-          "prompt": "写一个函数 json_roundtrip(data)，把 data 序列化为 JSON 字符串再反序列化回来并返回。",
-          "starterCode": "import json\n\ndef json_roundtrip(data):\n    pass",
-          "solution": "import json\n\ndef json_roundtrip(data):\n    s = json.dumps(data, ensure_ascii=False)\n    return json.loads(s)\n\nprint(json_roundtrip({\"a\": 1, \"b\": [1, 2]}))",
-          "checks": [
-            "json.dumps",
-            "json.loads"
-          ],
-          "explanation": "dumps 序列化文本，loads 反序列化回对象。"
+          "explanation": "考察是否亲手验证了「精确的小数算不准、海量的整数加法又快又准」这一对反差，并能读懂 time 打印的耗时。"
         }
       ]
     }

@@ -1,17 +1,24 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DifficultyChip, StatusChip } from './ui';
-import { STAGES, STATUS_LABEL } from '../lib/content';
+import { STAGES, STATUS_LABEL, TRACK_LABEL, TRACK_STYLE } from '../lib/content';
 import { useStore } from '../lib/store';
 
 const STATUS_OPTIONS = ['not-started', 'learning', 'review', 'mastered'] as const;
 
 /** 列表视图：沿用原「知识点清单」的批量筛选与状态编辑能力 */
-export function ChecklistTable({ initialStage = 'all' }: { initialStage?: string }) {
+export function ChecklistTable({
+  initialStage = 'all',
+  trackFilter = 'all',
+}: {
+  initialStage?: string;
+  trackFilter?: 'all' | 'main' | 'side';
+}) {
   const { progress, setStatus, bookmarks } = useStore();
   const [stageFilter, setStageFilter] = useState(initialStage);
   const [statusFilter, setStatusFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [trackLocal, setTrackLocal] = useState<'all' | 'main' | 'side'>('all');
   const [query, setQuery] = useState('');
   const [onlyBookmarked, setOnlyBookmarked] = useState(false);
 
@@ -32,7 +39,10 @@ export function ChecklistTable({ initialStage = 'all' }: { initialStage?: string
     [progress, stageFilter],
   );
 
+  const effectiveTrack = trackFilter !== 'all' ? trackFilter : trackLocal;
+
   const filtered = rows.filter((row) => {
+    if (effectiveTrack !== 'all' && row.lesson.track !== effectiveTrack) return false;
     if (statusFilter !== 'all' && row.status !== statusFilter) return false;
     if (difficultyFilter !== 'all' && row.lesson.difficulty !== difficultyFilter) return false;
     if (onlyBookmarked && !bookmarks.has(row.key)) return false;
@@ -84,6 +94,17 @@ export function ChecklistTable({ initialStage = 'all' }: { initialStage?: string
           <option value="进阶">进阶</option>
           <option value="高阶">高阶</option>
         </select>
+        {trackFilter === 'all' ? (
+          <select
+            className="field max-w-[120px]"
+            value={trackLocal}
+            onChange={(e) => setTrackLocal(e.target.value as 'all' | 'main' | 'side')}
+          >
+            <option value="all">主线 + 支线</option>
+            <option value="main">只看主线</option>
+            <option value="side">只看支线</option>
+          </select>
+        ) : null}
         <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-slate-400">
           <input
             type="checkbox"
@@ -110,6 +131,7 @@ export function ChecklistTable({ initialStage = 'all' }: { initialStage?: string
               <th className="px-4 py-2.5 text-left font-medium">知识点</th>
               <th className="hidden px-3 py-2.5 text-left font-medium md:table-cell">模块</th>
               <th className="hidden px-3 py-2.5 text-left font-medium sm:table-cell">难度</th>
+              <th className="hidden px-3 py-2.5 text-left font-medium xl:table-cell">主线</th>
               <th className="hidden px-3 py-2.5 text-left font-medium lg:table-cell">正确率</th>
               <th className="px-3 py-2.5 text-left font-medium">状态</th>
             </tr>
@@ -129,6 +151,9 @@ export function ChecklistTable({ initialStage = 'all' }: { initialStage?: string
                 <td className="hidden px-3 py-2.5 text-xs text-slate-400 md:table-cell">{lesson.module}</td>
                 <td className="hidden px-3 py-2.5 sm:table-cell">
                   <DifficultyChip difficulty={lesson.difficulty} />
+                </td>
+                <td className="hidden px-3 py-2.5 xl:table-cell">
+                  <span className={`chip ${TRACK_STYLE[lesson.track]}`}>{TRACK_LABEL[lesson.track]}</span>
                 </td>
                 <td className="hidden px-3 py-2.5 font-mono text-xs lg:table-cell">
                   {accuracy === null ? (

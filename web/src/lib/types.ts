@@ -41,6 +41,8 @@ export type Lesson = {
   order: number;
   module: string;
   difficulty: string;
+  /** main = 主线必学；side = 支线按需 */
+  track: 'main' | 'side';
   estimatedMinutes: number;
   summary: string;
   intuition: string;
@@ -60,6 +62,9 @@ export type Stage = {
   stageTitle: string;
   stageEmoji: string;
   stageDesc: string;
+  /** 所属幕，1-7 */
+  act: number;
+  actName: string;
   category: string;
   lessons: Lesson[];
 };
@@ -111,6 +116,8 @@ export type TutorConfig = {
   source?: 'database' | 'env' | 'none';
 };
 
+export type PlanConfig = { weeklyHours: number; startDate: string };
+
 export type AppState = {
   progress: ProgressRow[];
   attempts: AttemptRow[];
@@ -119,4 +126,5 @@ export type AppState = {
   projectTasks: ProjectTask[];
   bookmarks: string[];
   tutor: TutorConfig;
+  plan: PlanConfig;
 };

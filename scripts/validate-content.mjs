@@ -18,17 +18,28 @@ const LESSON_STRING_FIELDS = [
   'title',
   'module',
   'difficulty',
+  'track',
   'summary',
   'intuition',
   'formal',
   'aiConnection',
 ];
 const DIFFICULTIES = new Set(['基础', '进阶', '高阶']);
+const TRACKS = new Set(['main', 'side']);
 const CATEGORIES = new Set(['基础', '进阶', '算法岗核心']);
+const ACT_NAMES = {
+  1: '第一幕 · 起步',
+  2: '第二幕 · 编程入门',
+  3: '第三幕 · 计算机科学基础',
+  4: '第四幕 · 数学',
+  5: '第五幕 · 数据与经典机器学习',
+  6: '第六幕 · 深度学习与大模型',
+  7: '第七幕 · 算法岗进阶',
+};
 
 const errors = [];
 const warnings = [];
-const stats = { stages: 0, lessons: 0, quizzes: 0, codeExamples: 0, resources: 0 };
+const stats = { stages: 0, lessons: 0, quizzes: 0, codeExamples: 0, resources: 0, main: 0, side: 0 };
 
 function fail(where, message) {
   errors.push(`${where}: ${message}`);
@@ -43,6 +54,15 @@ function checkLesson(stageFile, stage, lesson, index) {
   }
   if (!DIFFICULTIES.has(lesson.difficulty)) {
     fail(where, `difficulty 非法：${lesson.difficulty}`);
+  }
+  if (!TRACKS.has(lesson.track)) {
+    fail(where, `track 非法：${lesson.track}`);
+  } else {
+    stats[lesson.track] += 1;
+    // 主线阶段里的高阶课应为支线，保持"主线 = 打地基"的口径
+    if (lesson.track === 'main' && lesson.difficulty === '高阶') {
+      warnings.push(`${where}: 主线里的高阶课，建议标为 side`);
+    }
   }
   if (lesson.order !== index + 1) {
     fail(where, `order 应为 ${index + 1}，实际 ${lesson.order}`);
@@ -134,13 +154,20 @@ function main() {
       continue;
     }
     stats.stages += 1;
-    if (typeof doc.stage !== 'number') fail(file, 'stage 必须是数字');
+    if (typeof doc.stage !== 'number' || doc.stage < 1 || doc.stage > 22) {
+      fail(file, `stage 必须是 1-22 的整数，实际 ${doc.stage}`);
+    }
     if (seenStages.has(doc.stage)) fail(file, `stage ${doc.stage} 与 ${seenStages.get(doc.stage)} 重复`);
     seenStages.set(doc.stage, file);
     const expectedFile = `stage-${doc.stage}.json`;
     if (file !== expectedFile) fail(file, `文件名与 stage 不一致，应为 ${expectedFile}`);
-    for (const field of ['stageSlug', 'stageTitle', 'stageEmoji', 'stageDesc', 'category']) {
+    for (const field of ['stageSlug', 'stageTitle', 'stageEmoji', 'stageDesc', 'actName', 'category']) {
       if (typeof doc[field] !== 'string' || !doc[field].trim()) fail(file, `顶层字段 ${field} 缺失`);
+    }
+    if (!ACT_NAMES[doc.act]) {
+      fail(file, `act 非法：${doc.act}（应为 1-7）`);
+    } else if (doc.actName !== ACT_NAMES[doc.act]) {
+      fail(file, `actName 与 act 不匹配：act=${doc.act} 应为「${ACT_NAMES[doc.act]}」，实际「${doc.actName}」`);
     }
     if (!CATEGORIES.has(doc.category)) fail(file, `category 非法：${doc.category}`);
     if (!Array.isArray(doc.lessons) || doc.lessons.length < 5) {
@@ -173,7 +200,9 @@ function main() {
   if (asJson) {
     console.log(JSON.stringify({ summary, errors, warnings }, null, 2));
   } else {
-    console.log(`阶段 ${stats.stages} 个 · 知识点 ${stats.lessons} 节 · 习题 ${stats.quizzes} 道 · 代码示例 ${stats.codeExamples} 个 · 外部资源 ${stats.resources} 条`);
+    console.log(
+      `阶段 ${stats.stages} 个 · 知识点 ${stats.lessons} 节（主线 ${stats.main} / 支线 ${stats.side}）· 习题 ${stats.quizzes} 道 · 代码示例 ${stats.codeExamples} 个 · 外部资源 ${stats.resources} 条`,
+    );
     if (warnings.length) {
       console.log(`\n⚠ 警告 ${warnings.length} 条：`);
       warnings.slice(0, 12).forEach((w) => console.log(`  - ${w}`));

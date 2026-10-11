@@ -1,1201 +1,772 @@
 {
   "stage": 11,
-  "stageSlug": "dsa",
-  "stageTitle": "数据结构与算法",
-  "stageEmoji": "🧩",
-  "stageDesc": "算法岗笔试面试第一关：复杂度、线性与树形结构、经典算法范式与高频题单",
-  "category": "算法岗核心",
+  "stageSlug": "mathematics",
+  "stageTitle": "数学基础",
+  "stageEmoji": "📐",
+  "stageDesc": "线性代数、微积分与概率统计：读懂模型公式的最小数学集",
+  "act": 4,
+  "actName": "第四幕 · 数学",
+  "category": "基础",
   "lessons": [
     {
-      "slug": "big-o-complexity",
-      "title": "复杂度分析 Big-O",
+      "slug": "vector",
+      "title": "Vector 向量",
       "order": 1,
-      "module": "复杂度与思维",
+      "module": "线性代数",
       "difficulty": "基础",
-      "estimatedMinutes": 35,
-      "summary": "用渐进记号刻画算法开销随输入规模的增长趋势，是一切算法讨论与工程容量估算的共同语言。",
-      "intuition": "在 100 万条样本里找一个人：逐条比对要 100 万次，先按 id 建好索引只要 1 次。数据量小的时候两者都是「一眨眼」，但涨到 1 亿条，前者要等几分钟，后者还是 1 次。复杂度分析就是回答「数据量翻 10 倍，耗时翻几倍」的工具：它不看常数、不看机器，只看增长趋势。面试里你写完代码，面试官的第一句追问几乎一定是「复杂度是多少」，因为这句话能区分「碰巧写对」和「知道自己为什么这么写」。练到看见一段双层循环就能条件反射说出 O(n²)，是这一节的唯一目标。",
-      "formal": "设 T(n) 为规模 n 下的基本操作次数。若存在常数 c>0 与 n0，使所有 n≥n0 满足 T(n) ≤ c·f(n)，记 T(n)=O(f(n))，f 是渐进上界；同理 Ω 为下界、Θ 为紧确界。计算时只保留最高阶项、丢弃常数系数：3n²+100n+7=O(n²)。三条规则：顺序语句相加取最大，嵌套循环相乘，分支按最坏路径计。均摊分析处理「偶尔很贵、长期很便宜」的操作，如动态数组扩容：连续 n 次 append 总拷贝量 1+2+4+…+n<2n，单次均摊 O(1)，但触发扩容的那一次确实是 O(n)。递归式用主定理：T(n)=2T(n/2)+O(n) 得 O(n log n)。空间复杂度要额外算递归栈深度 O(h) 与显式开辟的数组。",
-      "formula": "T(n)=O(f(n)) \\iff \\exists c>0,\\ n_0,\\ \\forall n \\ge n_0:\\ T(n) \\le c\\,f(n)",
-      "aiConnection": "训练与推理的容量估算全靠这套语言。自注意力时间 O(n²d)、显存 O(n²)：序列从 2K 涨到 8K，注意力矩阵元素数从 4×10⁶ 涨到 6.4×10⁷，这就是长上下文昂贵的根因，滑窗注意力把它压到 O(nwd)。全连接层是 O(b·n·d²)，b=32、n=512、d=4096 时单层前向约 2.7×10¹¹ FLOPs，反向约为前向的 2 倍。会算这些量级，才能判断某个 batch size 会不会 OOM、要不要上梯度累积或 ZeRO。",
+      "estimatedMinutes": 21,
+      "summary": "向量是一组按顺序排列的数字，是描述方向与大小的基本工具，也是机器学习中表示单个样本的标准方式。",
+      "intuition": "你可以把向量想象成坐标轴上的一支箭头：它既有长度也有方向。在机器学习里，一个学生有多门课的成绩、一首歌有不同的特征，都可以打包成一个向量。当我们说\"这个样本是一个 10 维向量\"时，意思是它由 10 个数字组成，计算机就能用统一的方式去处理它。",
+      "formal": "一个向量可以写成列向量 $\\mathbf{x} = [x_1, x_2, \\dots, x_n]^T$。向量加法是逐元素相加：$\\mathbf{x} + \\mathbf{y} = [x_1+y_1, \\dots, x_n+y_n]$。数乘是每个元素乘以同一个标量。向量在机器学习中常表示单个数据样本（特征向量），一组样本排成矩阵后一次运算即可处理整批数据。",
+      "formula": "\\mathbf{x} = \\begin{bmatrix} x_1 \\\\ x_2 \\\\ \\vdots \\\\ x_n \\end{bmatrix}, \\quad \\mathbf{x} + \\mathbf{y} = \\begin{bmatrix} x_1 + y_1 \\\\ \\vdots \\\\ x_n + y_n \\end{bmatrix}, \\quad c\\mathbf{x} = \\begin{bmatrix} c x_1 \\\\ \\vdots \\\\ c x_n \\end{bmatrix}",
+      "aiConnection": "大模型把每个 token 都表示成一个高维向量（embedding），方向相近的向量在语义上也相近。理解\"数字列表 = 样本\"的视角，是理解 embedding、相似度检索和注意力机制的基础。",
       "codeExample": {
         "lang": "python",
-        "filename": "big_o.py",
-        "code": "import time\n\n\ndef count_ops_linear(n):\n    ops = 0\n    for _ in range(n):\n        ops += 1\n    return ops\n\n\ndef count_ops_quadratic(n):\n    ops = 0\n    for _ in range(n):\n        for _ in range(n):\n            ops += 1\n    return ops\n\n\nfor n in (10, 100, 1000, 10000):\n    print('n=%5d  O(n)=%6d  O(n^2)=%9d' % (n, count_ops_linear(n), count_ops_quadratic(n)))\n\ndata = list(range(20000))\nt0 = time.perf_counter()\nfor _ in range(1000):\n    _ = 19999 in data\nt1 = time.perf_counter()\nlookup = set(data)\nfor _ in range(1000):\n    _ = 19999 in lookup\nt2 = time.perf_counter()\nprint('list 1000 次查找 %.4f s' % (t1 - t0))\nprint('set  1000 次查找 %.5f s, 快 %.0f 倍' % (t2 - t1, (t1 - t0) / (t2 - t1)))"
+        "filename": "vector.py",
+        "code": "import numpy as np\n\n# 两个样本向量\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n\n# 向量加法（逐元素）\nprint('x + y =', x + y)      # [5 7 9]\n\n# 数乘\nprint('2x =', 2 * x)         # [2 4 6]\n\n# 向量的模（长度）\nprint('len(x) =', np.linalg.norm(x))  # sqrt(14)\n\n# 一个\"样本\"由多个特征组成\nsample = np.array([70.5, 165, 25])  # 体重/身高/年龄\nprint('sample =', sample)"
       },
       "mistakes": [
-        "只背 O(1)、O(n) 的名字却分不清均摊与最坏，把哈希表说成「永远 O(1)」",
-        "只看复杂度不看常数：O(n) 的 Python 循环可能比 O(n log n) 的 C 实现更慢",
-        "忽略内置代价：list.insert(0,x)、pop(0) 是 O(n)，队列应改用 deque",
-        "分析递归只数循环层数，忘了递归栈空间 O(h)，也忘了朴素递归可能因重叠子问题退化到 O(2^n)"
+        "把向量相加写成把所有元素求和（得到一个标量），而是逐元素相加",
+        "混淆向量与标量，把向量当成单个数字直接做运算",
+        "忘记用 numpy array 而不是 Python list，导致不支持逐元素算术"
       ],
       "interviewPoints": [
-        "「O(n) 和 O(2n) 有区别吗？」要答到渐进分析忽略常数系数与低阶项、两者同为 Θ(n)；但工程上常数因子决定实际快慢，缓存命中、SIMD 向量化、Python 解释器开销能让同复杂度实现差几十倍。",
-        "「什么是均摊复杂度？举一个例子。」要答到动态数组 append 均摊 O(1)：容量按 2 倍增长，n 次操作总拷贝量 1+2+4+…+n<2n，所以单次最坏 O(n) 而均摊 O(1)。",
-        "「归并排序的复杂度怎么推？」要答到写出 T(n)=2T(n/2)+O(n)，用递归树或主定理得 O(n log n)，额外空间 O(n)；对比快排平均 O(n log n)、最坏 O(n²)。",
-        "「训练一个大模型的时间怎么估？」要答到 FLOPs≈6·N·D（N 参数量、D 训练 token 数，前向 2ND、反向 4ND），再除以 GPU 峰值算力与实际利用率（A100 BF16 峰值 312 TFLOPS，实测算子利用率常见 30%-50%）。"
+        "「为什么样本要用向量表示？」要答到统一维度与批量矩阵运算，说明 embedding 把 token 映射成高维向量后为何能算相似度",
+        "「向量加法和数乘有什么几何意义？」要答到平移与缩放、线性组合，说明特征归一化与权重缩放对模型的影响",
+        "「向量的长度和方向哪个更重要？」要答到范数衡量大小、方向承载语义，说明检索时为何常先归一化再比相似度"
       ],
-      "resources": [
-        {
-          "title": "MIT 6.006 Introduction to Algorithms (OCW)",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
-        },
-        {
-          "title": "Python Wiki: TimeComplexity（各内置操作的真实复杂度）",
-          "url": "https://wiki.python.org/moin/TimeComplexity"
-        },
-        {
-          "title": "Introduction to Algorithms（CLRS）",
-          "url": "https://en.wikipedia.org/wiki/Introduction_to_Algorithms"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "big-o-complexity-q1",
+          "id": "vector-q1",
           "type": "choice",
-          "prompt": "关于时间复杂度，下列说法正确的是？",
+          "prompt": "向量 x=[1,2,3] 与 y=[4,5,6] 相加的结果是？",
           "options": [
-            "O(2n) 与 O(n) 属于不同的复杂度类，前者慢一倍",
-            "均摊 O(1) 意味着每一次操作都一定在常数时间内完成",
-            "哈希表查找平均 O(1)，最坏情况下会退化到 O(n)",
-            "O(log n) 的算法在任何输入规模下都比 O(n) 的算法快"
-          ],
-          "answerIndex": 2,
-          "explanation": "哈希表在极端冲突下所有 key 落到同一桶，查找退化为遍历链表即 O(n)，所以平均 O(1)、最坏 O(n) 并不矛盾。A 错在忽略常数系数，O(2n) 仍是 Θ(n)；B 错在均摊描述的是长期平均，单次扩容仍是 O(n)；D 错在小规模时低阶项与常数占主导，log n 算法完全可能更慢。"
-        },
-        {
-          "id": "big-o-complexity-q2",
-          "type": "short",
-          "prompt": "什么是均摊复杂度？请以动态数组 append 为例说明。",
-          "answer": "参考回答：均摊复杂度是把一串操作的总代价平摊到每次操作上得到的平均上界。动态数组容量满时按 2 倍扩容并整体拷贝，第 i 次扩容拷贝 2^i 个元素，n 次 append 的总拷贝量为 1+2+4+…+n<2n，除以 n 仍是常数，所以单次 append 均摊 O(1)，而触发扩容的那一次最坏为 O(n)。",
-          "keywords": [
-            "总代价平摊",
-            "2 倍扩容",
-            "拷贝总量小于 2n",
-            "单次最坏 O(n)"
-          ],
-          "explanation": "得分点是「总代价/n」这个思路，以及用 2 倍扩容的等比数列证明总拷贝量 O(n)，只说「平均一下」不得分。"
-        },
-        {
-          "id": "big-o-complexity-q3",
-          "type": "code",
-          "prompt": "实现 dedup_keep_order(nums)：在保持首次出现顺序的前提下去重，要求平均时间复杂度 O(n)、空间 O(n)，返回新列表。例如输入 [3, 1, 3, 2, 1] 返回 [3, 1, 2]。",
-          "starterCode": "def dedup_keep_order(nums):\n    pass\n",
-          "solution": "def dedup_keep_order(nums):\n    seen = set()\n    result = []\n    for x in nums:\n        if x not in seen:\n            seen.add(x)\n            result.append(x)\n    return result\n\n\nprint(dedup_keep_order([3, 1, 3, 2, 1]))\n",
-          "checks": [
-            "set()",
-            "not in seen",
-            "append"
-          ],
-          "explanation": "用 set 做 O(1) 成员判断，列表负责保序；若用 `x not in result` 判断则退化为 O(n²)。"
-        }
-      ]
-    },
-    {
-      "slug": "array-string",
-      "title": "数组与字符串",
-      "order": 2,
-      "module": "复杂度与思维",
-      "difficulty": "基础",
-      "estimatedMinutes": 35,
-      "summary": "数组是最贴近硬件的结构：连续内存换来 O(1) 随机访问，代价是中间插入删除 O(n)；字符串本质是字符数组，在 Python 里还多一层不可变约束。",
-      "intuition": "数组像电影院里连号的一排座位：想知道第 5 个座位坐的是谁，直接走过去就行，不用一个个问；但要在中间插进一个人，后面所有人都得往右挪一格。字符串是「贴好的瓷砖」，你不能单独换掉第 3 块，只能整面重贴——这就是 Python 里字符串不可变的含义。理解了「连续 + 可随机访问 + 中间改动贵」这三点，你就能预判每道数组题的代价在哪里，也就能解释为什么工程上处理长文本时宁可先转成 list 或数组再一次 join 回去。",
-      "formal": "数组把同类型元素放在一段连续内存里，第 i 个元素的地址为 base+i×sizeof(T)，因此随机访问 O(1)。尾部追加在容量足够时 O(1)，容量满则按倍数扩容，均摊 O(1)；在位置 i 插入或删除需要搬移 n-i 个元素，最坏 O(n)；无序数组查找是 O(n)，有序数组可用二分降到 O(log n)。Python 的 list 是动态数组，但存的是 PyObject 指针（8 字节），比 C 数组多一次间接寻址；str 不可变，任何「修改」都是新建对象，循环里 s=s+c 的总代价是 O(n²)，正确写法是收集到 list 后 ''.join(parts)，一次分配 O(n)。二维数组按行优先存储，CPU cache line 为 64 字节，所以按行遍历的空间局部性远好于按列遍历。",
-      "formula": "\\text{addr}(A[i]) = \\text{base} + i \\times \\text{sizeof}(T), \\qquad \\sum_{k=0}^{\\lceil \\log_2 n \\rceil} 2^k < 2n",
-      "aiConnection": "深度学习张量就是「连续内存 + shape + strides」：转置、切片、reshape 大多只改 strides 不搬数据，是 view；一旦不连续就触发 copy，显存翻倍，改 a[0:3] 就是改原数组。另一处高频使用是数据流水线：tokenizer 把文本变成 id 数组，长文本切块并 padding，padding 比例直接吃吞吐——按长度分桶再组 batch 能把 padding 从 50% 降到 5% 左右。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "array_string.py",
-        "code": "import time\n\n\ndef reverse_words(s):\n    return ' '.join(reversed(s.split()))\n\n\ndef dedup_sorted_inplace(nums):\n    # 有序数组原地去重: 快慢指针, O(n) 时间 O(1) 空间\n    if not nums:\n        return 0\n    slow = 0\n    for fast in range(1, len(nums)):\n        if nums[fast] != nums[slow]:\n            slow += 1\n            nums[slow] = nums[fast]\n    return slow + 1\n\n\nprint(reverse_words('  the sky   is blue '))\n\nnums = [1, 1, 2, 2, 3, 5, 5]\nk = dedup_sorted_inplace(nums)\nprint('去重后长度', k, '前缀', nums[:k])\n\n# 字符串拼接: s = s + c 每次新建对象, 总代价 O(n^2); join 一次分配 O(n)\nn = 20000\nt0 = time.perf_counter()\ns = ''\nfor _ in range(n):\n    s = s + 'x'\nt1 = time.perf_counter()\ns2 = ''.join(['x'] * n)\nt2 = time.perf_counter()\nprint('s = s + c  %.4f s' % (t1 - t0))\nprint(\"''.join     %.5f s\" % (t2 - t1))"
-      },
-      "mistakes": [
-        "循环里用 s = s + c 拼字符串，n 次总代价 O(n²)，应先收集到 list 再 ''.join 一次性拼接",
-        "边遍历边删元素导致索引错位漏删，应倒序遍历或用双指针原地覆盖",
-        "用 [[0]*n]*m 建二维数组会让各行共享同一列表，应逐行用列表推导创建",
-        "把 numpy 切片当副本使用，实际是共享内存的 view，改切片会污染原数组，需要显式 .copy()"
-      ],
-      "interviewPoints": [
-        "「Python 的 list 和 C 数组有什么区别？」要答到 list 是动态数组且元素存的是对象指针（8 字节），append 均摊 O(1)，而 insert(0, x)、pop(0) 是 O(n)，这类队列语义要用 collections.deque。",
-        "「为什么按行遍历二维数组比按列遍历快？」要答到行优先存储与 CPU cache line 64 字节的空间局部性：按列访问每步跨越一整行，cache miss 率高，大矩阵实测可差 5-10 倍。",
-        "「字符串拼接为什么推荐 join？」要答到不可变对象每次拼接都新建并整体拷贝，n 次共 O(n²)；join 先求总长一次分配，O(n)。可补充 CPython 对引用计数为 1 的 s += c 有原地扩容优化，但语义上仍是 O(n²)，不能依赖。",
-        "「numpy 的 view 和 copy 什么时候踩坑？」要答到切片、reshape、transpose、广播多为 view，改 view 会改原数组，可通过 arr.base is not None 判断，写数据前要 copy 避免污染上游张量。"
-      ],
-      "resources": [
-        {
-          "title": "Python 官方教程：More on Lists / Strings",
-          "url": "https://docs.python.org/3/tutorial/datastructures.html"
-        },
-        {
-          "title": "NumPy 内部实现：ndarray 的内存布局与 strides",
-          "url": "https://numpy.org/doc/stable/dev/internals.html"
-        },
-        {
-          "title": "Dynamic array（动态数组与均摊扩容）",
-          "url": "https://en.wikipedia.org/wiki/Dynamic_array"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "array-string-q1",
-          "type": "choice",
-          "prompt": "在长度为 n 的 Python 列表上执行下列操作，哪一组的时间复杂度描述正确？",
-          "options": [
-            "lst[i] 是 O(1)，lst.append(x) 均摊 O(1)，lst.insert(0, x) 是 O(n)",
-            "lst[i] 是 O(n)，lst.append(x) 是 O(1)，lst.pop() 是 O(n)",
-            "lst.append(x) 最坏 O(n)，均摊也是 O(n)",
-            "lst.insert(0, x) 是 O(1)，因为只改一个位置"
+            "[5,7,9]",
+            "21",
+            "[4,10,18]",
+            "[1,2,3,4,5,6]"
           ],
           "answerIndex": 0,
-          "explanation": "连续内存使随机访问 O(1)；尾部追加在容量足够时 O(1)，扩容那一次 O(n)，均摊 O(1)；在头部插入要搬移全部 n 个元素，是 O(n)。B 把随机访问说成 O(n)，C 混淆了最坏与均摊，D 忽略了搬移代价。"
+          "explanation": "向量加法是逐元素相加：1+4=5, 2+5=7, 3+6=9，得到 [5,7,9]。"
         },
         {
-          "id": "array-string-q2",
+          "id": "vector-q2",
           "type": "short",
-          "prompt": "为什么在 Python 循环里用 s = s + c 拼接字符串很慢？正确写法是什么？",
-          "answer": "参考回答：Python 的 str 不可变，每次 s = s + c 都会新建一个字符串并把旧内容整体拷贝，第 i 次拷贝 i 个字符，n 次总代价为 1+2+…+n=O(n²)。正确做法是把所有片段 append 到 list，最后用 ''.join(parts) 一次计算总长并分配，总代价 O(n)。",
+          "prompt": "说说在机器学习中，为什么我们常用向量来表示一个数据样本？",
+          "answer": "参考回答：因为一个样本通常有多个特征（如身高、体重、年龄等），可以按固定顺序放入一个向量，从而用统一的数学运算（加法、数乘、点积）来批量处理和分析这些样本，同时 embedding 也让文本等非数值数据能被机器处理。",
           "keywords": [
-            "str 不可变",
-            "每次新建并拷贝",
-            "O(n²)",
-            "join 一次分配"
+            "向量",
+            "特征",
+            "样本"
           ],
-          "explanation": "要点是「不可变导致每次整体拷贝」并算出平方级代价，能给出 join 或 io.StringIO 方案才算完整。"
+          "explanation": "关键在于\"多个特征打包成一个有序数字组\"，这样便于统一计算并支撑 embedding 表示。"
         },
         {
-          "id": "array-string-q3",
+          "id": "vector-q3",
           "type": "code",
-          "prompt": "实现 move_zeroes(nums)：原地把所有 0 移到数组末尾，保持非零元素的相对顺序，要求 O(n) 时间、O(1) 额外空间。例如 [0,1,0,3,12] 变为 [1,3,12,0,0]。",
-          "starterCode": "def move_zeroes(nums):\n    pass\n",
-          "solution": "def move_zeroes(nums):\n    slow = 0\n    for fast in range(len(nums)):\n        if nums[fast] != 0:\n            nums[slow], nums[fast] = nums[fast], nums[slow]\n            slow += 1\n    return nums\n\n\nprint(move_zeroes([0, 1, 0, 3, 12]))\n",
+          "prompt": "用 numpy 创建向量 a=[1,2,3]、b=[4,5,6]，计算它们的逐元素相加并打印结果。",
+          "starterCode": "import numpy as np\n\na = np.array([1, 2, 3])\nb = np.array([4, 5, 6])\n",
+          "solution": "import numpy as np\n\na = np.array([1, 2, 3])\nb = np.array([4, 5, 6])\n\nprint(a + b)",
           "checks": [
-            "slow",
-            "for fast in range(len(nums))",
-            "nums[slow], nums[fast] = nums[fast], nums[slow]"
+            "np.array",
+            "+"
           ],
-          "explanation": "快指针扫全部元素，慢指针指向下一个待填的非零位置，交换即可保证非零元素相对顺序不变且零全部被换到后面。"
+          "explanation": "用 np.array 构造向量，用 + 做逐元素相加并打印。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "linked-list",
-      "title": "链表",
+      "slug": "matrix",
+      "title": "Matrix 矩阵",
+      "order": 2,
+      "module": "线性代数",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "矩阵是按行和列排列的数字表格，可表示一组数据，也可表示对向量的线性变换。",
+      "intuition": "如果说向量是一行数据，那么矩阵就是很多行数据叠在一起，或是一次对空间中所有点做同一种\"操作\"。想象把一张表格里的每行都做同样的处理，矩阵乘法就是在高效地一举完成这件事。",
+      "formal": "矩阵 $\\mathbf{A} \\in \\mathbb{R}^{m \\times n}$ 有 $m$ 行、$n$ 列。矩阵与向量相乘 $\\mathbf{A}\\mathbf{x}$ 把向量线性变换到新空间。两个矩阵相乘时，结果 $\\mathbf{C} = \\mathbf{A}\\mathbf{B}$ 的第 $(i,j)$ 项是 $\\mathbf{A}$ 第 $i$ 行与 $\\mathbf{B}$ 第 $j$ 列的点积，故要求 $\\mathbf{A}$ 的列数等于 $\\mathbf{B}$ 的行数。在机器学习中，$X$ 常攒多条样本，$W$ 是权重矩阵，前向传播即一次矩阵乘。",
+      "formula": "\\mathbf{C} = \\mathbf{A}\\mathbf{B}, \\quad c_{ij} = \\sum_{k} a_{ik} b_{kj} \\\\ \\mathbf{y} = \\mathbf{W}\\mathbf{x} + \\mathbf{b}, \\quad \\mathbf{W}\\in\\mathbb{R}^{m\\times n}",
+      "aiConnection": "神经网络的每一层本质上就是一个矩阵乘法 + 偏置 + 非线性激活。一次前向传播把整批样本一次性通过权重矩阵变换，GPU 之所以擅长这类计算，正是因为矩阵乘法可以被高度并行化。",
+      "codeExample": {
+        "lang": "python",
+        "filename": "matrix.py",
+        "code": "import numpy as np\n\n# 2x3 权重矩阵 和 3维向量\nW = np.array([[1, 2, 3],\n              [4, 5, 6]])\nx = np.array([1, 1, 1])\n\n# 矩阵乘向量：结果维度 = (2,) 即 2 行\nprint('W @ x =', W @ x)  # [ 6 15]\n\n# 多条样本排成矩阵，一次算完\nX = np.array([[1, 1, 1],\n              [2, 0, 0]])\nprint('W @ X =', W @ X.T)  # 2x2\n\n# 形状要求：A 的列数 == B 的行数\nprint('W shape =', W.shape, 'x shape =', x.shape)"
+      },
+      "mistakes": [
+        "忽略维度匹配：A 的列数必须等于 B 的行数，否则报错",
+        "用 * 做矩阵乘法（那是逐元素乘），应该用 @ 或 np.dot",
+        "忘记矩阵乘法不满足交换律，A@B 与 B@A 通常不同"
+      ],
+      "interviewPoints": [
+        "「矩阵乘法的维度规则是什么？」要答到内维必须相等、结果形状由外维决定，说明 shape 报错时该怎么定位",
+        "「为什么神经网络一层就是矩阵乘法？」要答到线性变换语义与批量样本并行处理，说明 GPU 为何擅长这类运算",
+        "「* 和 @ 有什么区别？」要答到逐元素乘与矩阵乘，说明广播机制导致的静默错误以及维度检查的习惯"
+      ],
+      "resources": [],
+      "quiz": [
+        {
+          "id": "matrix-q1",
+          "type": "choice",
+          "prompt": "矩阵 A 形状为 (m, n)，要与 B 相乘得到 A@B，B 的行数应当是？",
+          "options": [
+            "m",
+            "n",
+            "任意",
+            "m×n"
+          ],
+          "answerIndex": 1,
+          "explanation": "矩阵乘法要求 A 的列数等于 B 的行数，即 B 的行数必须为 n。"
+        },
+        {
+          "id": "matrix-q2",
+          "type": "short",
+          "prompt": "为什么神经网络的每一层可以用一次矩阵乘法来表示？",
+          "answer": "参考回答：因为一层中的每个输出神经元都是对输入向量做一次加权求和（点积），并把所有权重组装成矩阵 W，再加上偏置 b，就能用 y = Wx + b 一次完成对所有神经元的计算，也便于并行和批量处理。",
+          "keywords": [
+            "矩阵",
+            "权重",
+            "点积"
+          ],
+          "explanation": "核心是把每个神经元的加权求和写成矩阵乘，用 Wx+b 一次表达整层变换。"
+        },
+        {
+          "id": "matrix-q3",
+          "type": "code",
+          "prompt": "用 numpy 定义矩阵 A=[[1,2],[3,4]] 和向量 x=[1,0]，计算 A@x 并打印形状。",
+          "starterCode": "import numpy as np\n\nA = np.array([[1, 2], [3, 4]])\nx = np.array([1, 0])\n",
+          "solution": "import numpy as np\n\nA = np.array([[1, 2], [3, 4]])\nx = np.array([1, 0])\n\nprint(A @ x)\nprint((A @ x).shape)",
+          "checks": [
+            "@",
+            "shape"
+          ],
+          "explanation": "用 @ 做矩阵乘，A@x 结果为一维向量，形状为 (2,)。"
+        }
+      ],
+      "track": "main"
+    },
+    {
+      "slug": "dot-product",
+      "title": "Dot Product 点积",
       "order": 3,
-      "module": "线性结构",
+      "module": "线性代数",
       "difficulty": "基础",
-      "estimatedMinutes": 35,
-      "summary": "链表用指针把散落的内存串成序列：已知前驱时插入删除 O(1)，但访问第 k 个元素必须 O(n)；dummy 节点与快慢指针是必须条件反射的两大套路。",
-      "intuition": "链表像一场寻宝游戏：每张纸条上写着下一张纸条藏在哪。要在中间塞进一张新纸条，只要改两张纸条上的地址；而数组要挪动后面所有人。代价是「第 100 张纸条在哪」这个问题，链表必须从第一张开始一张张走。所以链表适合「频繁在已知位置增删」的场景，不适合「频繁按下标随机访问」的场景。面试里链表题的难点从来不是逻辑，而是边界：头节点被删、尾节点被删、只有一个节点、空链表——dummy 头节点这一招就是专门用来消灭前两类边界的。",
-      "formal": "单链表节点包含 val 与 next，访问第 k 个节点 O(k)、头部插入 O(1)、已知前驱时删除 O(1)、查找某值 O(n)。双链表多一个 prev，可 O(1) 删除任意已知节点（LRU 缓存的关键）。Floyd 判环：快指针每次走 2 步、慢指针走 1 步，若有环必然相遇，时间 O(n)、空间 O(1)；设头到环入口距离 a、入口到相遇点距离 b、环长 L，则相遇时满足 a+b≡0 (mod L)，此时让一个指针回到头节点，两指针同速前进，必在环入口相遇。反转链表用三指针迭代 O(n)/O(1)，递归写法虽简洁但占 O(n) 栈空间。Python 中每个节点对象约 56 字节加指针开销，缓存局部性差，所以工程代码更常用 list 或 deque，链表结构主要出现在 LRU、内存池等需要 O(1) 摘除节点的场合。",
-      "formula": "\\text{fast} = 2 \\times \\text{slow},\\qquad a + b \\equiv 0 \\pmod{L}",
-      "aiConnection": "LRU Cache（哈希表 + 双向链表）是推理服务里 KV cache 淘汰、embedding 缓存、特征缓存的标配结构：哈希给 O(1) 定位，双链表给 O(1) 摘除与移到队首。PyTorch 的 autograd 计算图本质是带分支的链表（DAG），反向传播按拓扑序遍历，因此中间张量必须保存到反向时才释放。CUDA caching allocator 的空闲块管理也用链式 free list 串起不同大小的内存块，避免数组式搬移的 O(n) 开销。",
+      "estimatedMinutes": 22,
+      "summary": "点积把两个同长向量映射成一个标量，度量它们方向上的相似程度，是相似度与注意力的核心运算。",
+      "intuition": "点积回答\"这两个向量有多像\"。如果两个向量方向一致，点积很大；如果互相垂直，点积为 0；如果方向相反，点积为负。把两个 embedding 向量做点积，就能得到一个表示语义相似程度的分数，这正是注意力和向量检索背后的引擎。",
+      "formal": "两个 $n$ 维向量的点积为 $\\mathbf{x}\\cdot\\mathbf{y} = \\sum_{i=1}^{n} x_i y_i = \\mathbf{x}^T\\mathbf{y}$。点积与夹角有关：$\\mathbf{x}\\cdot\\mathbf{y} = \\|\\mathbf{x}\\|\\|\\mathbf{y}\\|\\cos\\theta$。因此余弦相似度为 $\\cos\\theta = \\frac{\\mathbf{x}\\cdot\\mathbf{y}}{\\|\\mathbf{x}\\|\\|\\mathbf{y}\\|}$，它只关心方向而忽略长度，常用于文本向量相似度比较。",
+      "formula": "\\mathbf{x}\\cdot\\mathbf{y} = \\sum_{i=1}^{n} x_i y_i = \\|\\mathbf{x}\\|\\|\\mathbf{y}\\|\\cos\\theta, \\quad \\cos\\theta = \\frac{\\mathbf{x}\\cdot\\mathbf{y}}{\\|\\mathbf{x}\\|\\|\\mathbf{y}\\|}",
+      "aiConnection": "Transformer 的注意力分数就是 query 向量与 key 向量的点积（再除以 $\\sqrt{d_k}$ 归一化）。向量数据库检索相似内容时，也常常用 embedding 的点积或余弦相似度来排序。",
       "codeExample": {
         "lang": "python",
-        "filename": "linked_list.py",
-        "code": "class ListNode:\n    def __init__(self, val=0, nxt=None):\n        self.val = val\n        self.next = nxt\n\ndef build(values):\n    head = None\n    for v in reversed(values):\n        head = ListNode(v, head)\n    return head\n\ndef to_list(head):\n    out = []\n    while head:\n        out.append(head.val)\n        head = head.next\n    return out\n\ndef reverse(head):\n    prev = None\n    while head:\n        head.next, prev, head = prev, head, head.next\n    return prev\n\ndef cycle_entry(head):\n    slow = fast = head\n    while fast and fast.next:\n        slow, fast = slow.next, fast.next.next\n        if slow is fast:\n            while head is not slow:\n                head, slow = head.next, slow.next\n            return head\n    return None\n\nhead = build([1, 2, 3, 4, 5])\nprint('原链表', to_list(head), '反转后', to_list(reverse(head)))\ncyclic = build([1, 2, 3, 4])\ncyclic.next.next.next.next = cyclic.next\nprint('环入口值', cycle_entry(cyclic).val)"
+        "filename": "dot_product.py",
+        "code": "import numpy as np\n\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n\n# 点积\nprint('dot =', np.dot(x, y))         # 32\nprint('x @ y =', x @ y)             # 32\n\n# 余弦相似度\ncos = np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y))\nprint('cosine =', round(cos, 4))\n\n# 两个完全相同的向量相似度为 1\nprint('self cos =', np.dot(x, x) / np.linalg.norm(x) ** 2)\n\n# 垂直向量点积为 0\na = np.array([1, 0])\nb = np.array([0, 1])\nprint('orthogonal dot =', np.dot(a, b))"
       },
       "mistakes": [
-        "不设 dummy 头节点，删除头节点或合并链表时要写一堆 if head is None 的特判，极易漏分支",
-        "反转链表时先改 next 再保存后继，指针断链后找不到后续节点，必须先存 next 再改指向",
-        "快慢指针循环条件漏写 fast.next，偶数长度链表会在 None 上抛异常",
-        "判环后直接返回相遇点当作环入口，忘了「一个指针回头节点再同速前进」这一步"
+        "把点积当作逐元素乘（那是 *），点积得到的是标量",
+        "混淆点积与余弦相似度，余弦相似度额外除以各自长度",
+        "用长度不同的向量做点积，导致不匹配或错误"
       ],
       "interviewPoints": [
-        "「怎么判断链表有环并找到入口？」要答到 Floyd 快慢指针相遇即有环，再让一个指针回到头节点同速前进，相遇点就是入口，并给出 a+b≡0 (mod L) 的说明，时间 O(n)、空间 O(1)。",
-        "「为什么习惯加 dummy 头节点？」要答到把「删除/插入头节点」这一特殊情况统一成一般情况，减少边界分支；返回时取 dummy.next。",
-        "「递归反转链表的代价是什么？」要答到时间同为 O(n)，但递归栈深度 n 带来 O(n) 空间，n=10⁵ 时 Python 默认递归上限 1000 会直接 RecursionError，工程上应写迭代版。",
-        "「工程代码里为什么很少用链表？」要答到每个节点是独立对象、指针跳转导致 cache miss、内存开销约为数组的 3-4 倍，只有在需要 O(1) 摘除已知节点（如 LRU）时才值得。"
+        "「点积为什么能衡量相似度？」要答到投影与夹角余弦、模长带来的影响，说明余弦相似度为何要先做归一化",
+        "「注意力里的点积是怎么算的？」要答到 QK^T 得到分数矩阵、除以 sqrt(d_k) 防止梯度消失，以及 softmax 归一化",
+        "「点积和逐元素乘有什么区别？」要答到一个得标量一个得向量、维度必须相同，说明两者在代码里的不同写法"
       ],
-      "resources": [
-        {
-          "title": "Cycle detection（Floyd 判圈算法）",
-          "url": "https://en.wikipedia.org/wiki/Cycle_detection"
-        },
-        {
-          "title": "PyTorch autograd 机制：动态计算图与反向遍历",
-          "url": "https://pytorch.org/docs/stable/notes/autograd.html"
-        },
-        {
-          "title": "LeetCode 206. Reverse Linked List",
-          "url": "https://leetcode.com/problems/reverse-linked-list/"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "linked-list-q1",
+          "id": "dot-product-q1",
           "type": "choice",
-          "prompt": "长度为 n 的单链表中，下列操作的时间复杂度哪一项正确？",
+          "prompt": "向量 x=[1,2,3] 与 y=[4,5,6] 的点积是多少？",
           "options": [
-            "访问第 k 个节点是 O(1)，因为节点连续存放",
-            "在已知前驱节点 p 后插入新节点是 O(1)",
-            "删除尾节点是 O(1)，只要知道尾指针",
-            "查找值为 x 的节点是 O(log n)，可用二分"
+            "32",
+            "15",
+            "96",
+            "21"
           ],
-          "answerIndex": 1,
-          "explanation": "链表节点靠指针链接、内存不连续，插入只需改两条指针所以是 O(1)。A 错在把链表当数组；C 错在单链表删尾节点仍需 O(n) 找到前驱（双链表才 O(1)）；D 错在链表不支持随机访问，二分无从下手。"
+          "answerIndex": 0,
+          "explanation": "点积 = 1*4 + 2*5 + 3*6 = 4 + 10 + 18 = 32。"
         },
         {
-          "id": "linked-list-q2",
+          "id": "dot-product-q2",
           "type": "short",
-          "prompt": "如何用 O(1) 额外空间判断链表是否有环，并找到环的入口节点？",
-          "answer": "参考回答：用快慢指针，慢指针每次走 1 步、快指针每次走 2 步，若两者相遇说明有环；此时把一个指针移回头节点，两个指针都改为每次走 1 步，再次相遇的位置就是环入口。设头到入口距离 a、入口到相遇点 b、环长 L，相遇时满足 a+b≡0 (mod L)，故从头走 a 步与从相遇点走 L-b 步会同时到达入口。",
+          "prompt": "两个互相垂直（正交）的向量的点积是多少？这说明什么？",
+          "answer": "参考回答：点积为 0。因为点积为 |x||y|cosθ，且 cos90°=0。这说明点积为零意味着两个向量方向完全不相关（正交），常用于特征去相关性或\"无关\"语义的表示。",
           "keywords": [
-            "快慢指针",
-            "相遇即有环",
-            "指针回头节点",
-            "a+b≡0 mod L"
+            "0",
+            "正交",
+            "垂直"
           ],
-          "explanation": "必须答出「相遇后一个指针回头节点再同速前进」这一关键步骤，只说快慢指针相遇只能判有环、不能定位入口。"
+          "explanation": "正交向量点积为 0，反映了它们方向上的独立性。"
         },
         {
-          "id": "linked-list-q3",
+          "id": "dot-product-q3",
           "type": "code",
-          "prompt": "实现 merge_two_lists(l1, l2)：合并两个升序单链表为一个新的升序链表并返回头节点（节点复用原节点即可）。",
-          "starterCode": "class ListNode:\n    def __init__(self, val=0, nxt=None):\n        self.val = val\n        self.next = nxt\n\n\ndef merge_two_lists(l1, l2):\n    pass\n",
-          "solution": "class ListNode:\n    def __init__(self, val=0, nxt=None):\n        self.val = val\n        self.next = nxt\n\n\ndef merge_two_lists(l1, l2):\n    dummy = ListNode()\n    cur = dummy\n    while l1 and l2:\n        if l1.val <= l2.val:\n            cur.next, l1 = l1, l1.next\n        else:\n            cur.next, l2 = l2, l2.next\n        cur = cur.next\n    cur.next = l1 or l2\n    return dummy.next\n\n\ndef build(values):\n    dummy = ListNode()\n    cur = dummy\n    for v in values:\n        cur.next = ListNode(v)\n        cur = cur.next\n    return dummy.next\n\n\ndef to_list(head):\n    out = []\n    while head:\n        out.append(head.val)\n        head = head.next\n    return out\n\n\nprint(to_list(merge_two_lists(build([1, 2, 4]), build([1, 3, 4]))))\n",
+          "prompt": "用 numpy 计算 x=[1,2,3] 与 y=[4,5,6] 的点积，并计算其余弦相似度。",
+          "starterCode": "import numpy as np\n\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n",
+          "solution": "import numpy as np\n\nx = np.array([1, 2, 3])\ny = np.array([4, 5, 6])\n\ndot = np.dot(x, y)\ncos = dot / (np.linalg.norm(x) * np.linalg.norm(y))\nprint(dot)\nprint(round(cos, 4))",
           "checks": [
-            "dummy",
-            "while l1 and l2",
-            "cur.next = l1 or l2"
+            "np.dot",
+            "norm"
           ],
-          "explanation": "dummy 节点省去「谁当新头」的判断；循环结束后把未走完的那条链整段接上，无需再逐节点遍历。"
+          "explanation": "用 np.dot 求点积，再用向量模长归一化得到余弦相似度。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "stack-queue",
-      "title": "栈与队列",
+      "slug": "eigenvalue",
+      "title": "Eigenvalue 特征值",
       "order": 4,
-      "module": "线性结构",
+      "module": "线性代数",
       "difficulty": "基础",
-      "estimatedMinutes": 35,
-      "summary": "栈是后进先出、队列是先进先出，两者把「处理顺序」变成可控资源；单调栈能把 O(n²) 的「找下一个更大元素」压到 O(n)。",
-      "intuition": "栈像一摞盘子，只能从最上面取：浏览器后退、编辑器撤销、函数调用栈都是它。队列像奶茶店排队，先来先服务：打印任务、消息队列、请求排队都是它。它们的价值在于「把暂时用不上的信息存起来，等合适时机再取」——括号匹配要记住最近的左括号，每日温度要记住还没等到更高温的那些天。真正拉开差距的是单调栈：当你要为每个元素找左/右第一个更大或更小的元素时，把栈里那些「已经不可能成为答案」的元素提前弹掉，每个元素最多进出栈一次，总代价就从 O(n²) 降到 O(n)。",
-      "formal": "栈与队列的 push/pop/peek 都是 O(1)。Python 里用 list 的 append/pop 当栈，用 collections.deque 的 append/popleft 当队列；list.pop(0) 需要搬移全部元素，是 O(n)，绝不能当队列用。单调栈的不变量是栈内元素保持单调：新元素入栈前弹出所有破坏单调性的元素，被弹出的元素其「下一个更大元素」正是当前元素，因此每个元素入栈一次、出栈一次，总时间 O(n)、空间 O(n)。用两个栈可实现队列：入队压入 in 栈，出队时若 out 栈为空就把 in 栈全部倒入 out 栈，每个元素最多被倒一次，均摊 O(1)。n 对括号的合法序列数为卡特兰数，约 4^n/n^{1.5}，这也是回溯枚举括号问题的规模来源。",
-      "formula": "C_n = \\frac{1}{n+1}\\binom{2n}{n}, \\qquad \\sum_{i=1}^{n}\\big(\\text{push}_i + \\text{pop}_i\\big) = 2n",
-      "aiConnection": "解码阶段用优先队列维护 beam search 的候选：每步弹出概率最高的 k 条路径，堆操作 O(log k)，beam=8、词表 5 万时每步只比较 8×50000 个候选。DFS 遍历计算图时用显式栈替代递归，避免 Python 默认递归上限 1000 在深图上爆栈。推理服务用 FIFO 队列加优先级队列做 continuous batching，新请求随时插入正在运行的 batch。KV cache 则是典型的 FIFO 环形缓冲，滑出窗口的历史 token 直接丢弃。",
+      "estimatedMinutes": 22,
+      "summary": "特征值和特征向量刻画一个线性变换在特定方向上的放大倍数与不变方向，用于降维与数据主成分分析。",
+      "intuition": "想象矩阵是一种\"拉伸\"操作。大多数方向被拉伸后方向都会改变，但某些特殊方向被拉伸时方向保持不变，只是长度变了——那个缩放倍数就是特征值，那个方向就是特征向量。找到这些特殊方向，就能理解变换的本质。",
+      "formal": "对矩阵 $\\mathbf{A}$，若存在非零向量 $\\mathbf{v}$ 与标量 $\\lambda$ 使得 $\\mathbf{A}\\mathbf{v} = \\lambda\\mathbf{v}$，则 $\\lambda$ 是特征值，$\\mathbf{v}$ 是对应特征向量。特征值由特征多项式 $\\det(\\mathbf{A} - \\lambda\\mathbf{I}) = 0$ 求得。在 PCA 中，数据协方差矩阵的特征向量给出主成分方向，特征值大小表示该方向上的方差（信息量）。",
+      "formula": "\\mathbf{A}\\mathbf{v} = \\lambda\\mathbf{v}, \\quad \\det(\\mathbf{A} - \\lambda\\mathbf{I}) = 0",
+      "aiConnection": "PCA 用协方差矩阵的特征分解找出数据方差最大的方向来降维，是模型训练前常见的特征压缩手段。理解特征值大小 = 信息量，能帮你判断该保留几个主成分。",
       "codeExample": {
         "lang": "python",
-        "filename": "stack_queue.py",
-        "code": "from collections import deque\n\ndef daily_temperatures(temps):\n    # 单调递减栈存下标, O(n)\n    res = [0] * len(temps)\n    stack = []\n    for i, t in enumerate(temps):\n        while stack and temps[stack[-1]] < t:\n            j = stack.pop()\n            res[j] = i - j\n        stack.append(i)\n    return res\n\ndef is_valid(s):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for ch in s:\n        if ch in '([{':\n            stack.append(ch)\n        elif not stack or stack.pop() != pairs[ch]:\n            return False\n    return not stack\n\nclass QueueWithStacks:\n    def __init__(self):\n        self.inbox, self.outbox = [], []\n\n    def push(self, x):\n        self.inbox.append(x)\n\n    def pop(self):\n        if not self.outbox:\n            self.outbox, self.inbox = self.inbox[::-1], []\n        return self.outbox.pop()\n\nprint('每日温度', daily_temperatures([73, 74, 75, 71, 69, 72, 76, 73]))\nprint('括号合法', is_valid('{[()]}'), is_valid('([)]'))\nq = QueueWithStacks()\nfor v in (1, 2, 3): q.push(v)\nprint('两栈队列出队', q.pop(), q.pop())"
+        "filename": "eigenvalue.py",
+        "code": "import numpy as np\n\nA = np.array([[2, 1],\n              [1, 2]])\n\n# 特征值分解\nw, v = np.linalg.eig(A)\n\nprint('特征值:', np.round(w, 3))   # [3. 1.]\nprint('特征向量(每列):')\nprint(np.round(v, 3))\n\n# 验证 Av = lambda * v\nfor i in range(len(w)):\n    lhs = A @ v[:, i]\n    rhs = w[i] * v[:, i]\n    print('check', i, np.allclose(lhs, rhs))\n\n# 用特征值排序可近似降维\nprint('largest eig =', np.max(w))"
       },
       "mistakes": [
-        "用 list.pop(0) 当出队，每次 O(n) 使整体退化到 O(n²)，应用 deque",
-        "单调栈里存元素值而不是下标，无法计算「距离多少天」这类位置差",
-        "括号匹配只统计左右括号数量相等，不检查类型与嵌套顺序，([)] 会被误判为合法",
-        "用两个栈实现队列时出队不判断 out 栈是否为空就倒栈，导致元素顺序错乱"
+        "把 np.linalg.eig 返回的 v 的每一列当成特征向量，而非每行",
+        "混淆特征值与特征向量，误以为它们是同一个矩阵的属性",
+        "用非方阵做特征分解（只有方阵才有标准特征值）"
       ],
       "interviewPoints": [
-        "「单调栈为什么是 O(n)？」要答到每个下标最多入栈一次、出栈一次，while 循环总执行次数不超过 n，所以内层循环虽然看着嵌套但总代价是线性的。",
-        "「用两个栈实现队列，出队复杂度是多少？」要答到单次最坏 O(n)（需要整体倒栈），但每个元素一生只被倒入 out 栈一次，均摊 O(1)。",
-        "「怎么设计一个 O(1) 取最小值的栈？」要答到同步维护一个辅助栈存「到当前为止的最小值」，或存差值，push/pop 时同步更新；不能只存一个全局最小值，因为弹出后会丢失历史最小值。",
-        "「Python 里栈和队列分别用什么实现？」要答到栈用 list（append/pop 都是 O(1) 且缓存友好），队列用 deque（append/popleft 都是 O(1)），并指出 list.pop(0) 是 O(n)。"
+        "「特征值和特征向量的几何意义？」要答到变换中方向不变、只被缩放的向量，缩放倍数就是特征值",
+        "「PCA 为什么用特征分解？」要答到协方差矩阵、特征值代表方差即信息量，说明保留几个主成分的判断依据",
+        "「特征值在模型稳定性里有什么用？」要答到正定性与 Hessian 特征值决定曲率，说明学习率过大为何导致震荡发散"
       ],
-      "resources": [
-        {
-          "title": "Python 官方文档：collections.deque",
-          "url": "https://docs.python.org/3/library/collections.html#collections.deque"
-        },
-        {
-          "title": "LeetCode 739. Daily Temperatures（单调栈经典）",
-          "url": "https://leetcode.com/problems/daily-temperatures/"
-        },
-        {
-          "title": "Catalan number（卡特兰数）",
-          "url": "https://en.wikipedia.org/wiki/Catalan_number"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "stack-queue-q1",
+          "id": "eigenvalue-q1",
           "type": "choice",
-          "prompt": "在 Python 中把 list 当作队列使用（入队在尾、出队在头），时间复杂度是？",
+          "prompt": "对矩阵 A 和特征向量 v，满足关系的等式是？",
           "options": [
-            "入队 O(1)、出队 O(1)，总代价 O(n)",
-            "入队 O(1)、出队 O(n)，总代价 O(n²)",
-            "入队 O(n)、出队 O(1)，总代价 O(n²)",
-            "入队 O(1)、出队 O(log n)，总代价 O(n log n)"
+            "Av = λv",
+            "Av = v",
+            "A·v = 0",
+            "Av = λ·v⁻¹"
           ],
-          "answerIndex": 1,
-          "explanation": "list.append 均摊 O(1)，但 list.pop(0) 要把后面 n-1 个元素整体前移，是 O(n)，n 次出队累计 O(n²)。正确做法是用 collections.deque，popleft 是 O(1)。"
+          "answerIndex": 0,
+          "explanation": "特征向量的定义是 A·v = λ·v，即变换后方向不变、长度缩放 λ 倍。"
         },
         {
-          "id": "stack-queue-q2",
+          "id": "eigenvalue-q2",
           "type": "short",
-          "prompt": "给定数组，如何用单调栈在 O(n) 时间内求出每个元素右边第一个更大元素的距离？",
-          "answer": "参考回答：维护一个存下标的栈，保证栈内下标对应的值单调递减。遍历数组，当当前元素大于栈顶下标对应的值时，说明当前元素就是栈顶元素右边第一个更大元素，弹出栈顶并记录距离 i-j；重复直到栈空或栈顶值不小于当前值，再把当前下标入栈。每个下标最多入栈一次、出栈一次，总时间 O(n)，空间 O(n)。",
+          "prompt": "在 PCA 中，特征值的大小代表什么含义？",
+          "answer": "参考回答：特征值大小代表对应特征向量方向上的方差（信息量）。特征值越大，说明数据在该主成分方向上的变化越显著，因此应优先保留特征值大的方向实现降维。",
           "keywords": [
-            "存下标",
-            "栈内单调递减",
-            "弹出并记录 i-j",
-            "每个元素进出栈一次"
+            "方差",
+            "信息",
+            "降维"
           ],
-          "explanation": "关键两点：栈里存的是下标（才能算距离），以及用「每个元素只进出栈一次」论证总复杂度 O(n)。"
+          "explanation": "特征值 = 该主成分方向上保留的方差/信息量，越大越值得保留。"
         },
         {
-          "id": "stack-queue-q3",
+          "id": "eigenvalue-q3",
           "type": "code",
-          "prompt": "实现 MinStack 类，支持 push(x)、pop()、top()、get_min() 四个操作，要求每个操作都是 O(1)。",
-          "starterCode": "class MinStack:\n    def __init__(self):\n        pass\n\n    def push(self, x):\n        pass\n\n    def pop(self):\n        pass\n\n    def top(self):\n        pass\n\n    def get_min(self):\n        pass\n",
-          "solution": "class MinStack:\n    def __init__(self):\n        self.data = []\n        self.mins = []\n\n    def push(self, x):\n        self.data.append(x)\n        self.mins.append(x if not self.mins else min(x, self.mins[-1]))\n\n    def pop(self):\n        self.mins.pop()\n        return self.data.pop()\n\n    def top(self):\n        return self.data[-1]\n\n    def get_min(self):\n        return self.mins[-1]\n\n\ns = MinStack()\nfor v in (5, 3, 7, 2):\n    s.push(v)\nprint(s.get_min(), s.top())\ns.pop()\ns.pop()\nprint(s.get_min(), s.top())\n",
+          "prompt": "对矩阵 A=[[2,1],[1,2]] 用 numpy 求特征值与特征向量并打印。",
+          "starterCode": "import numpy as np\n\nA = np.array([[2, 1], [1, 2]])\n",
+          "solution": "import numpy as np\n\nA = np.array([[2, 1], [1, 2]])\n\nw, v = np.linalg.eig(A)\nprint(w)\nprint(v)",
           "checks": [
-            "self.mins",
-            "min(x, self.mins[-1])",
-            "self.mins.pop()"
+            "np.linalg.eig",
+            "w, v"
           ],
-          "explanation": "辅助栈与数据栈同步进出，栈顶永远保存「当前栈内最小值」，这样弹出元素后最小值能自动回退到历史值。"
+          "explanation": "用 np.linalg.eig(A) 返回特征值数组 w 与特征向量矩阵 v。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "hash-table",
-      "title": "哈希表",
+      "slug": "derivative",
+      "title": "Derivative 导数",
       "order": 5,
-      "module": "线性结构",
+      "module": "微积分",
       "difficulty": "基础",
-      "estimatedMinutes": 40,
-      "summary": "哈希表用哈希函数把 key 直接映射到桶，平均 O(1) 完成查找、插入、删除，代价是最坏 O(n)、不保序与额外的内存开销。",
-      "intuition": "图书馆按书名首字母分区，找书时直接走到对应书架，而不是从第一本翻起，哈希函数就是这个「分区规则」。冲突不可避免：不同 key 可能落到同一个桶，于是桶里挂一条链表（链地址法），或者继续往后找空位（开放寻址）。桶快满时冲突变多，就在负载因子约 0.75 时扩容 rehash：容量翻倍并把所有元素重新分配。这一次很贵，是 O(n)，但均摊到每次插入仍是 O(1)。所以「哈希表平均 O(1)」这句话里，藏着哈希函数、冲突处理、扩容三件事，面试问的就是这三件。",
-      "formal": "哈希表用 h(k) 把 key 映射到 m 个桶之一，负载因子 α=n/m。链地址法下，查找的期望代价是 Θ(1+α)：α=0.75 时平均只需比较约 1.4 个元素；开放寻址（线性探测）在 α→1 时急剧恶化，成功查找期望约 (1+1/(1-α))/2，所以负载因子必须压在 0.75 以下。Python 的 dict 用开放寻址加扰动函数，容量小于 50000 项时超过 2/3 负载即扩容 4 倍，并缓存 key 的哈希值以加速比较；3.7 起保证插入顺序。key 必须可哈希：__hash__ 稳定且与 __eq__ 一致，所以 list、dict、set 不能做 key，tuple 可以（其元素也必须可哈希）。最坏情况所有 key 落进同一个桶，查找退化为 O(n) 的链表遍历，这是「哈希表被构造数据攻击」的原理（如大量哈希值相同的字符串）。",
-      "formula": "\\alpha = \\frac{n}{m}, \\qquad E[\\text{search}] = \\Theta(1 + \\alpha)",
-      "aiConnection": "训练流水线里出现频率最高的结构。其一，去重：10⁸ 量级的 user_id 用 set 去重，比 list 的 O(n) 判断快上千倍。其二，embedding 查表：vocab 的 token→index 映射就是哈希表，每次前向要查 b×n 次（b=32、n=512 时约 1.6 万次），O(1) 是吞吐前提。其三，高基数特征用 hashing trick 映射到 2²⁰≈100 万桶。其四，统计 n-gram、建倒排索引、RAG 文档去重与 chunk 映射也依赖它。",
+      "estimatedMinutes": 22,
+      "summary": "导数衡量函数在某一点的瞬时变化率，是梯度下降更新权重的基础。",
+      "intuition": "把函数想成一座山坡，导数就是某一点的山坡有多陡。为负时往下走，为正时往上走，越陡变化越快。训练模型时我们想知道：稍微改一点权重，损失会变大还是变小？导数正好给出这个答案。",
+      "formal": "函数 $f(x)$ 在 $x_0$ 处的导数定义为 $f'(x_0) = \\lim_{h\\to 0}\\frac{f(x_0+h)-f(x_0)}{h}$。常用规则：$\\frac{d}{dx}x^n=nx^{n-1}$、$\\frac{d}{dx}\\sin x=\\cos x$、$\\frac{d}{dx}\\ln x=\\frac{1}{x}$。导数为 0 且符号变化的地方是极值点。在机器学习中用梯度下降，权重更新 $w \\leftarrow w - \\eta\\,\\nabla L$，负号表示向损失下降方向走。",
+      "formula": "f'(x) = \\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}, \\quad \\frac{d}{dx}x^n = nx^{n-1}, \\quad w \\leftarrow w - \\eta\\frac{\\partial L}{\\partial w}",
+      "aiConnection": "模型的训练过程就是反复计算损失对每个权重的导数（梯度），然后反向更新。解释机器学习为何能\"学会\"，最核心的就是导数告诉我们往哪个方向调参能减小误差。",
       "codeExample": {
         "lang": "python",
-        "filename": "hash_table.py",
-        "code": "class ChainedHashTable:\n    def __init__(self, capacity=8):\n        self.capacity = capacity\n        self.buckets = [[] for _ in range(capacity)]\n        self.size = 0\n        self.collisions = 0\n\n    def put(self, key, value):\n        bucket = self.buckets[hash(key) % self.capacity]\n        if bucket:\n            self.collisions += 1\n        for i, (k, _) in enumerate(bucket):\n            if k == key:\n                bucket[i] = (key, value)\n                return\n        bucket.append((key, value))\n        self.size += 1\n        if self.size / self.capacity > 0.75:\n            self._rehash()\n\n    def get(self, key, default=None):\n        for k, v in self.buckets[hash(key) % self.capacity]:\n            if k == key:\n                return v\n        return default\n\n    def _rehash(self):\n        items = [it for b in self.buckets for it in b]\n        self.capacity *= 2\n        self.buckets = [[] for _ in range(self.capacity)]\n        self.size = 0\n        for k, v in items:\n            self.put(k, v)\n\ntable = ChainedHashTable()\nfor i in range(20):\n    table.put('feat_%d' % i, i * i)\nprint('容量', table.capacity, '元素数', table.size, '冲突次数', table.collisions)\nprint('查 feat_13 ->', table.get('feat_13'))\nprint('查缺失 key ->', table.get('feat_999', 'MISSING'))"
+        "filename": "derivative.py",
+        "code": "import numpy as np\n\n# 用中心差分数值求导逼近 f'(x)\ndef f(x):\n    return x ** 2  # f'(x) = 2x\n\ndef numerical_derivative(f, x, h=1e-6):\n    return (f(x + h) - f(x - h)) / (2 * h)\n\nprint('f\\'(2) ≈', numerical_derivative(f, 2))  # ≈ 4\nprint('f\\'(3) ≈', numerical_derivative(f, 3))  # ≈ 6\n\n# 用导数做一步梯度下降找最小值\nx = 5.0\neta = 0.1\nfor _ in range(10):\n    x = x - eta * numerical_derivative(f, x)\nprint('min at x ≈', round(x, 3))  # 接近 0"
       },
       "mistakes": [
-        "用 list/dict 作 dict 的 key 会报 unhashable，应改用 tuple 等不可变类型",
-        "自定义类没有实现 __hash__ 与 __eq__，两个内容相同的对象互相查不到，导致去重失效",
-        "遍历 dict 时增删 key 会抛 RuntimeError，应先取 list(d) 快照再改",
-        "把 dict 的插入有序当成「按 key 排序」，需要排序时应显式 sorted(d.items())"
+        "把导数的符号弄反，导致梯度下降反而推向损失变大的方向",
+        "把导数当作函数值本身，而不是变化率",
+        "数值求导时步长 h 取太大导致近似不准确"
       ],
       "interviewPoints": [
-        "「为什么哈希表平均 O(1) 而最坏 O(n)？」要答到平均情况下每个桶期望元素数 α=1+负载因子级别；最坏情况所有 key 哈希值相同或碰撞攻击，全部落进同一个桶，查找退化成遍历长度为 n 的链表。",
-        "「哈希冲突怎么解决？两种方案怎么取舍？」要答到链地址法（桶挂链表/红黑树，Java HashMap 在链表长度 8 时转树）与开放寻址（线性探测、二次探测、双重哈希）；开放寻址缓存友好、无指针开销但删除要用墓碑标记，链地址法实现简单、负载因子可以更高。",
-        "「负载因子与 rehash 的代价？」要答到 α=n/m 超过阈值（常见 0.75，Python 是 2/3）就扩容并把所有元素重新插入，单次 O(n) 但均摊 O(1)；扩容按 2 倍而非 +1 是为了让均摊成立。",
-        "「为什么 key 必须可哈希/不可变？」要答到哈希值必须在生命周期内稳定，否则元素放进桶后再改内容就再也找不到；list 可变所以不可哈希，tuple 元素不可变所以可以。"
+        "「导数为什么能指导参数更新？」要答到变化率、符号决定下降方向与负梯度更新公式，说明学习率的作用",
+        "「导数为 0 就一定是极值点吗？」要答到驻点与拐点、二阶导判断，说明深度学习中鞍点比局部极小更常见",
+        "「数值求导和解析求导有什么区别？」要答到差分近似与误差、精度和速度的权衡，说明梯度检查为何用中心差分"
       ],
-      "resources": [
-        {
-          "title": "Hash table（冲突处理与负载因子）",
-          "url": "https://en.wikipedia.org/wiki/Hash_table"
-        },
-        {
-          "title": "Feature hashing（hashing trick）",
-          "url": "https://en.wikipedia.org/wiki/Feature_hashing"
-        },
-        {
-          "title": "Python 官方教程：Dictionaries",
-          "url": "https://docs.python.org/3/tutorial/datastructures.html#dictionaries"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "hash-table-q1",
+          "id": "derivative-q1",
           "type": "choice",
-          "prompt": "关于哈希表，下列说法正确的是？",
+          "prompt": "函数 f(x)=x² 的导数是？",
           "options": [
-            "只要哈希函数足够好，查找就一定是 O(1)，不存在最坏情况",
-            "负载因子越高，开放寻址法的探测次数越少",
-            "扩容 rehash 单次代价 O(n)，但均摊到每次插入仍是 O(1)",
-            "Python 的 dict 会按 key 的字典序自动排序"
+            "x",
+            "2x",
+            "x²",
+            "2"
           ],
-          "answerIndex": 2,
-          "explanation": "扩容需要把所有元素重新插入，单次 O(n)，但因为按倍数扩容，均摊每次插入 O(1)。A 忽略了冲突与碰撞攻击；B 说反了，负载因子越高冲突越多；D 混淆了插入有序与按 key 排序，dict 只保证插入顺序。"
+          "answerIndex": 1,
+          "explanation": "由幂法则 d/dx x^n = n·x^(n-1)，f'(x) = 2x。"
         },
         {
-          "id": "hash-table-q2",
+          "id": "derivative-q2",
           "type": "short",
-          "prompt": "哈希表的负载因子是什么？为什么需要扩容？",
-          "answer": "参考回答：负载因子 α=n/m，是已存元素数与桶数的比值。α 越大桶内冲突越多，链地址法要遍历更长的链、开放寻址法探测次数急剧上升，因此要在 α 超过阈值（通常 0.75）时把容量翻倍并 rehash 所有元素。扩容单次 O(n)，但因为按倍数增长，均摊到每次插入是 O(1)。",
+          "prompt": "在梯度下降里，为什么要用权重的导数来决定更新方向？",
+          "answer": "参考回答：因为导数（梯度）指示了损失随权重变化的瞬时方向与快慢，损失函数在当前点的梯度指向增长最快的方向，因此我们朝梯度的反方向移动（w ← w - η·∇L）就能减小损失。",
           "keywords": [
-            "α=n/m",
-            "冲突变多",
-            "0.75 阈值",
-            "均摊 O(1)"
+            "梯度",
+            "损失",
+            "反方向"
           ],
-          "explanation": "要同时答出定义、阈值触发的原因（冲突导致退化）和均摊结论，只背 0.75 这个数字不得分。"
+          "explanation": "导数给出最陡上升方向，取反则是下降方向，故用 w-η∇L 更新。"
         },
         {
-          "id": "hash-table-q3",
+          "id": "derivative-q3",
           "type": "code",
-          "prompt": "实现 two_sum(nums, target)：返回两个下标 i<j 使 nums[i]+nums[j]==target（保证恰有一组解），要求平均 O(n) 时间。",
-          "starterCode": "def two_sum(nums, target):\n    pass\n",
-          "solution": "def two_sum(nums, target):\n    seen = {}\n    for i, x in enumerate(nums):\n        need = target - x\n        if need in seen:\n            return [seen[need], i]\n        seen[x] = i\n    return []\n\n\nprint(two_sum([2, 7, 11, 15], 9))\nprint(two_sum([3, 2, 4], 6))\n",
+          "prompt": "用中心差分数值求 f(x)=x² 在 x=2 处的导数并打印结果。",
+          "starterCode": "def f(x):\n    return x ** 2\n\ndef numerical_derivative(f, x, h=1e-6):\n    pass\n",
+          "solution": "def f(x):\n    return x ** 2\n\ndef numerical_derivative(f, x, h=1e-6):\n    return (f(x + h) - f(x - h)) / (2 * h)\n\nprint(numerical_derivative(f, 2))",
           "checks": [
-            "seen = {}",
-            "target - x",
-            "seen[x] = i"
+            "numerical_derivative",
+            "2 * h"
           ],
-          "explanation": "一遍扫描：哈希表存「值→下标」，查补数是否出现过即可，避免双重循环的 O(n²)。注意先查后存，防止同一个元素用两次。"
+          "explanation": "用中心差分 (f(x+h)-f(x-h))/(2h) 求近似导数。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "binary-tree-traversal",
-      "title": "二叉树与遍历",
+      "slug": "gradient",
+      "title": "Gradient 梯度",
       "order": 6,
-      "module": "树与堆",
+      "module": "微积分",
       "difficulty": "基础",
-      "estimatedMinutes": 40,
-      "summary": "二叉树把线性查找的 O(n) 换成按层决策的 O(log n)；前中后序与层序是访问它的四种基本顺序，递归与迭代写法都要掌握。",
-      "intuition": "二叉树像「二十问」游戏：每问一个问题就把候选砍一半，100 万个元素只要 20 层。遍历顺序决定了你「什么时候处理当前节点」：前序是先处理自己再管孩子，适合复制树、打印结构；中序是左-自己-右，在搜索树上直接得到有序序列；后序是先管孩子再处理自己，适合统计子树大小、释放内存；层序按层扫描，适合求宽度、右视图、按层聚合。写树题的第一步永远是问自己「我需要先拿到孩子的结果，还是先处理自己」，答案决定用哪种序。",
-      "formal": "n 个节点的二叉树有 n-1 条边，任何遍历都恰好访问每个节点一次，时间 O(n)。递归遍历的额外空间是栈深度 O(h)：平衡树 h=log₂n，退化成链表时 h=n，这是「树题最坏情况」的常见来源。迭代版前序用一个栈（先压右孩子再压左孩子，弹出即访问）；中序用「一路向左压栈，弹出后转向右子树」；后序可用「根-右-左」的前序变体再整体反转。层序用 deque，每轮先记录当前队列长度就能按层输出。Morris 遍历利用叶子节点的空右指针建立临时线索，达到 O(n) 时间、O(1) 空间。前序+中序或后序+中序可以唯一确定一棵二叉树（中序负责划分左右子树），但前序+后序不能唯一确定。",
-      "formula": "h_{\\text{balanced}} = \\lfloor \\log_2 n \\rfloor, \\qquad T(n) = T(k) + T(n-1-k) + O(1) = O(n)",
-      "aiConnection": "表达式树与语法树（AST）是 prompt 模板引擎、代码解析、代码大模型 repo 级分析的底层结构，遍历顺序直接决定求值顺序与依赖收集。GBDT/XGBoost 的每一棵树在推理时就是从根到叶的一条路径，深度通常 6-8 层，一次预测只需十几次比较，因此树模型在 CPU 上的延迟远低于同精度的神经网络。beam search 的搜索树按层展开，层序遍历正好对应「逐 token 扩展候选」。模型配置文件（描述层结构的 JSON/YAML）本身就是一棵树，递归解析是最自然的写法。",
+      "estimatedMinutes": 23,
+      "summary": "梯度是多元函数在每个自变量方向上的偏导数组成的向量，指向函数增长最快的方向。",
+      "intuition": "一元函数有导数，多元函数把每个方向的导数排成一个向量就是梯度。想象你站在一座浓雾里的山上，梯度向量指着最陡的上坡方向。训练时我们偏要反着走（朝梯度反方向），因为那样损失下降最快。",
+      "formal": "对 $f:\\mathbb{R}^n\\to\\mathbb{R}$，梯度为 $\\nabla f = \\left[\\frac{\\partial f}{\\partial x_1}, \\dots, \\frac{\\partial f}{\\partial x_n}\\right]^T$。梯度指向函数上升最快的方向，其反方向指向下降最快的方向，因此梯度下降更新为 $\\mathbf{w} \\leftarrow \\mathbf{w} - \\eta\\,\\nabla_{\\mathbf{w}} L$。每一步移动的幅度是学习率 $\\eta$。在神经网络中，梯度向量的每个分量表示某个权重对损失的贡献，反向传播高效算出梯度。",
+      "formula": "\\nabla f = \\begin{bmatrix} \\frac{\\partial f}{\\partial x_1} \\\\ \\vdots \\\\ \\frac{\\partial f}{\\partial x_n} \\end{bmatrix}, \\quad \\mathbf{w} \\leftarrow \\mathbf{w} - \\eta\\,\\nabla_{\\mathbf{w}} L",
+      "aiConnection": "训练大规模模型时，反向传播专门高效地算出损失相对每个参数的梯度，再用梯度下降更新。学习率过大会震荡不收敛，过小则训练极慢，这正是实践中调参的核心。",
       "codeExample": {
         "lang": "python",
-        "filename": "tree_traversal.py",
-        "code": "from collections import deque\n\nclass TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val, self.left, self.right = val, left, right\n\ndef preorder(node, out):\n    if node:\n        out.append(node.val)\n        preorder(node.left, out)\n        preorder(node.right, out)\n    return out\n\ndef inorder_iterative(root):\n    out, stack, cur = [], [], root\n    while cur or stack:\n        while cur:\n            stack.append(cur)\n            cur = cur.left\n        cur = stack.pop()\n        out.append(cur.val)\n        cur = cur.right\n    return out\n\ndef level_order(root):\n    if not root:\n        return []\n    res, q = [], deque([root])\n    while q:\n        level = []\n        for _ in range(len(q)):\n            node = q.popleft()\n            level.append(node.val)\n            q.extend(c for c in (node.left, node.right) if c)\n        res.append(level)\n    return res\nroot = TreeNode(1, TreeNode(2, TreeNode(4), TreeNode(5)), TreeNode(3, None, TreeNode(6)))\nprint('前序(递归)', preorder(root, []))\nprint('中序(迭代)', inorder_iterative(root))\nprint('层序(按层)', level_order(root))"
+        "filename": "gradient.py",
+        "code": "import numpy as np\n\n# 损失函数 L(w) = (w - 3)^2，梯度为 2*(w-3)\ndef loss(w):\n    return (w - 3) ** 2\n\ndef grad(w):\n    return 2 * (w - 3)\n\n# 梯度下降\nw = 0.0\neta = 0.1\nhistory = []\nfor i in range(20):\n    g = grad(w)\n    w = w - eta * g\n    history.append(round(w, 3))\n\nprint('w after 20 steps =', w)  # 接近 3\nprint('first few:', history[:5])\n\n# 用数值梯度做对比\nh = 1e-6\nnumerical = (loss(w + h) - loss(w - h)) / (2 * h)\nprint('numerical grad ≈', numerical)"
       },
       "mistakes": [
-        "中序迭代弹出节点后忘记 cur = cur.right，导致在同一棵子树里死循环",
-        "层序遍历不记录当前层长度，无法区分层级，做右视图、最大宽度这类题直接失效",
-        "递归函数没有终止条件或把 None 当成节点访问 .val，抛 AttributeError",
-        "以为前序+后序能唯一重建二叉树，实际必须要有中序才能划分左右子树"
+        "把梯度方向当成下降方向，实际应取负梯度才是下降",
+        "学习率设置过大导致发散或震荡，过小导致收敛慢",
+        "把梯度（向量）与偏导数（单个标量）混为一谈"
       ],
       "interviewPoints": [
-        "「递归遍历怎么改成迭代？」要答到用显式栈模拟调用栈：前序压栈时先右后左；中序一路向左压栈、弹出后转右子树；后序可用根-右-左变体再反转，或用 last_visited 指针判断右子树是否已处理。",
-        "「Morris 遍历怎么做到 O(1) 空间？」要答到利用叶子节点的空右指针指向中序后继建立线索，访问完再断开恢复原树，时间仍是 O(n)（每条边最多走两次），空间 O(1)，代价是过程中会临时修改树结构。",
-        "「前序+中序能否唯一确定二叉树？前序+后序呢？」要答到前序给出根、中序划分左右子树，因此能唯一确定；前序+后序无法区分只有一个孩子时该孩子在左还是在右，所以不唯一。",
-        "「层序遍历怎么按层输出或求最大宽度？」要答到用 deque，并在每轮循环开始时固定 len(q) 作为本层节点数；求宽度时用带下标的完全二叉树编号，每层最右减最左加一。"
+        "「梯度指向哪个方向？」要答到函数增长最快的方向、负梯度下降最快，说明更新为何是 w 减去学习率乘梯度",
+        "「学习率太大或太小会怎样？」要答到震荡发散与收敛过慢，说明 warmup 与学习率调度为何必要",
+        "「梯度消失和爆炸是什么原因？」要答到连乘导致指数衰减或放大、深层网络与激活函数选择，说明残差连接与梯度裁剪"
       ],
-      "resources": [
-        {
-          "title": "Tree traversal（前中后序与层序）",
-          "url": "https://en.wikipedia.org/wiki/Tree_traversal"
-        },
-        {
-          "title": "LeetCode 94. Binary Tree Inorder Traversal",
-          "url": "https://leetcode.com/problems/binary-tree-inorder-traversal/"
-        },
-        {
-          "title": "LeetCode 102. Binary Tree Level Order Traversal",
-          "url": "https://leetcode.com/problems/binary-tree-level-order-traversal/"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "binary-tree-traversal-q1",
+          "id": "gradient-q1",
           "type": "choice",
-          "prompt": "对二叉搜索树做哪种遍历可以直接得到升序序列？",
+          "prompt": "梯度向量∇L 指向的是哪个方向？",
           "options": [
-            "前序遍历",
-            "中序遍历",
-            "后序遍历",
-            "层序遍历"
+            "函数下降最快方向",
+            "函数上升最快方向",
+            "函数值恒定的方向",
+            "随机方向"
           ],
           "answerIndex": 1,
-          "explanation": "BST 满足左子树所有值小于根、右子树所有值大于根，中序的「左-根-右」顺序恰好把元素按从小到大输出。前序、后序、层序都不具备这个性质。"
+          "explanation": "梯度指向函数上升最快的方向，因此下降要取负梯度方向。"
         },
         {
-          "id": "binary-tree-traversal-q2",
+          "id": "gradient-q2",
           "type": "short",
-          "prompt": "二叉树递归遍历的空间复杂度是多少？什么情况下会退化？",
-          "answer": "参考回答：递归遍历的额外空间是调用栈深度，等于树高 h，因此是 O(h)。平衡二叉树 h=log₂n，空间 O(log n)；当树退化成一条链（例如有序数据依次插入 BST）时 h=n，空间退化为 O(n)，此时应改写成显式栈迭代。",
+          "prompt": "梯度下降中把学习率设得太大或太小各自会怎样？",
+          "answer": "参考回答：学习率过大会导致每次更新跨过最低点，在最优解附近震荡甚至发散；学习率过小会让收敛非常缓慢，需要很多步才能接近最优解。",
           "keywords": [
-            "栈深度等于树高",
-            "平衡树 O(log n)",
-            "退化成链 O(n)",
-            "递归上限 1000"
+            "震荡",
+            "收敛",
+            "学习率"
           ],
-          "explanation": "必须把「空间 = 树高」和「退化情况」两点都答到，能补充 Python 递归上限与迭代改写更完整。"
+          "explanation": "大学习率易震荡发散，小学习率收敛慢，需要折中并配合调度。"
         },
         {
-          "id": "binary-tree-traversal-q3",
+          "id": "gradient-q3",
           "type": "code",
-          "prompt": "实现 max_depth(root)：返回二叉树的最大深度（根节点深度为 1，空树为 0），要求递归实现。",
-          "starterCode": "class TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n\n\ndef max_depth(root):\n    pass\n",
-          "solution": "class TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n\n\ndef max_depth(root):\n    if root is None:\n        return 0\n    return 1 + max(max_depth(root.left), max_depth(root.right))\n\n\nroot = TreeNode(1, TreeNode(2, TreeNode(4)), TreeNode(3))\nprint(max_depth(root))\nprint(max_depth(None))\n",
+          "prompt": "对损失 L(w)=(w-3)²，其梯度为 2*(w-3)，实现一次 10 步、学习率 0.1 的梯度下降。",
+          "starterCode": "def grad(w):\n    return 2 * (w - 3)\n\nw = 0.0\neta = 0.1\n",
+          "solution": "def grad(w):\n    return 2 * (w - 3)\n\nw = 0.0\neta = 0.1\nfor _ in range(10):\n    w = w - eta * grad(w)\nprint(w)",
           "checks": [
-            "if root is None",
-            "max(max_depth(root.left), max_depth(root.right))",
-            "1 +"
+            "eta",
+            "grad"
           ],
-          "explanation": "后序思路：先拿到左右子树深度，取较大者加一；空节点返回 0 是递归的终止条件。"
+          "explanation": "循环中用 w = w - eta*grad(w) 更新，10 步后接近 3。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "bst-heap",
-      "title": "二叉搜索树与堆",
+      "slug": "chain-rule",
+      "title": "Chain Rule 链式法则",
       "order": 7,
-      "module": "树与堆",
-      "difficulty": "进阶",
-      "estimatedMinutes": 45,
-      "summary": "BST 用「左小右大」把查找压到 O(h)，堆用「父不大于子」把取最值压到 O(1)；求 Top-K 时用大小为 k 的堆只要 O(n log k)。",
-      "intuition": "BST 像一本按拼音排好的字典，每次比较都能排除一半候选；但如果按 1,2,3,…,n 的顺序插入，它会退化成一条链，查找变回 O(n)——所以工程库用红黑树/AVL 自动平衡，把树高锁在 O(log n)。堆则主动放弃「全部有序」，只保证「根是最小值」：插入弹出 O(log n)，取最小值 O(1)。这个取舍在检索场景极其划算：要 1 亿个候选里的 top-10，不必全排序（O(n log n)），只要维护一个大小为 10 的最小堆，每个候选和堆顶比一次，总代价 O(n log 10)≈3.3n 次比较，额外内存只有 10 个元素。",
-      "formal": "BST 的性质是任意节点的左子树全部小于它、右子树全部大于它，中序遍历即升序序列；查找、插入、删除的代价都是 O(h)，平衡时 h=log₂n，退化成链时 h=n。红黑树用颜色约束保证最长路径不超过最短路径的 2 倍，即 h≤2log₂(n+1)，插入删除只需 O(1) 次旋转，C++ map 与 Java TreeMap 都用它；AVL 更严格但删除旋转次数更多，适合读多写少。堆是完全二叉树，用数组存无需指针：下标 i 的父节点是 ⌊(i-1)/2⌋，左右孩子是 2i+1 与 2i+2。sift up/sift down 均为 O(log n)；自底向上建堆的总代价是 O(n)，因为高度 h 的节点最多 n/2^{h+1} 个，Σ h/2^{h+1} 收敛到常数。堆只有偏序，查找任意元素不是 O(log n)，删除任意元素要靠懒惰删除加索引表。",
-      "formula": "\\text{parent}(i)=\\lfloor (i-1)/2 \\rfloor,\\quad \\text{left}(i)=2i+1,\\quad \\text{right}(i)=2i+2;\\qquad \\sum_{h\\ge 0}\\frac{n}{2^{h+1}}O(h)=O(n)",
-      "aiConnection": "Top-K 检索是推荐与 RAG 的日常：向量召回 top-100、重排取 top-20，用最小堆把 O(n log n) 降到 O(n log k)；n=10⁸、k=100 时比较次数从约 2.7×10⁹ 降到 6.6×10⁸，内存从 10⁸ 个元素降到 100 个。beam search 每步要从 beam×vocab 个候选里取前 k，堆是关键实现。优先经验回放按 TD 误差建堆采样，调度器按优先级取 batch。红黑树则用于特征索引与按时间戳有序的范围查询。",
+      "module": "微积分",
+      "difficulty": "基础",
+      "estimatedMinutes": 23,
+      "summary": "链式法则给出复合函数求导的方法，是反向传播算法从输出层逐层回传梯度的数学原理。",
+      "intuition": "模型是一层套一层的函数组合：输入经过很多层才得到输出。链式法则告诉我们，想求最外层对最内层输入的导数，就把一路上每一段的导数乘起来。反向传播正是从误差出发，一路乘回去，算出每个权重的梯度。",
+      "formal": "若 $y = f(g(x))$，则 $\\frac{dy}{dx} = \\frac{dy}{du}\\cdot\\frac{du}{dx}$，其中 $u = g(x)$。对多层复合 $L = f_N(\\dots f_1(x))$，梯度按链式逐层累计：$\\frac{\\partial L}{\\partial x_i} = \\frac{\\partial L}{\\partial x_{i+1}}\\frac{\\partial x_{i+1}}{\\partial x_i}$。反向传播用动态规划从最后一层往前，避免重复计算，这正是它能高效训练深层网络的数学基础。",
+      "formula": "\\frac{dy}{dx} = \\frac{dy}{du}\\cdot\\frac{du}{dx}, \\quad \\frac{\\partial L}{\\partial w_1} = \\frac{\\partial L}{\\partial x_2}\\cdot\\frac{\\partial x_2}{\\partial w_1}",
+      "aiConnection": "神经网络反向传播就是链式法则的工程化：从损失层回传，逐层乘上局部导数，高效得到所有权重的梯度。理解链式法则是理解为什么深层网络能训练、以及为什么需要自动求导框架（如 PyTorch autograd）的关键。",
       "codeExample": {
         "lang": "python",
-        "filename": "heap_topk.py",
-        "code": "import heapq\n\n\ndef top_k_heap(nums, k):\n    # 维护大小为 k 的最小堆: 堆顶是当前 k 个里最小的\n    if k <= 0:\n        return []\n    heap = nums[:k]\n    heapq.heapify(heap)\n    for x in nums[k:]:\n        if x > heap[0]:\n            heapq.heapreplace(heap, x)\n    return sorted(heap, reverse=True)\n\n\ndef sift_down(arr, i, n):\n    while 2 * i + 1 < n:\n        child = 2 * i + 1\n        if child + 1 < n and arr[child + 1] < arr[child]:\n            child += 1\n        if arr[i] <= arr[child]:\n            break\n        arr[i], arr[child] = arr[child], arr[i]\n        i = child\n\n\ndef build_heap(arr):\n    # 自底向上建堆, 总代价 O(n)\n    for i in range(len(arr) // 2 - 1, -1, -1):\n        sift_down(arr, i, len(arr))\n    return arr\n\n\ndata = [3, 1, 5, 12, 2, 11, 7, 9, 4]\nprint('Top-3 (堆)', top_k_heap(data, 3))\nprint('Top-3 (全排序)', sorted(data, reverse=True)[:3])\nprint('建堆后数组', build_heap(data[:]))"
+        "filename": "chain_rule.py",
+        "code": "# 用数值微分验证链式法则\n# y = f(g(x)), f(u)=u^2, g(x)=2x+1\ndef g(x):\n    return 2 * x + 1\n\ndef f(u):\n    return u ** 2\n\n# 由链式法则 dy/dx = f'(g(x)) * g'(x) = 2*g(x) * 2\ndef chain_derivative(x):\n    return 2 * g(x) * 2\n\n# 数值验证\ndef numeric(fn, x, h=1e-6):\n    return (fn(x + h) - fn(x - h)) / (2 * h)\n\ndef full(x):\n    return f(g(x))\n\nx = 3.0\nprint('chain =', chain_derivative(x))   # 2*(7)*2 = 28\nprint('numeric =', round(numeric(full, x), 6))  # ≈ 28"
       },
       "mistakes": [
-        "求最大的 k 个元素却建大小为 k 的最大堆，堆顶成了候选里最大的，新元素永远无法进入，结果错误",
-        "用全排序做 Top-K，白付 O(n log n) 与 O(n) 内存，应用大小为 k 的堆",
-        "用 heapq 实现最大堆时存负数，取出后忘记再取负，得到全负的结果",
-        "验证 BST 时只比较父子节点，没有给子树传上下界，[5,1,4,null,null,3,6] 这类树会被误判为合法"
+        "把复合函数当成单层直接求导，漏掉中间层导数",
+        "记反内外层，把 f'(g(x)) 和 g'(x) 的顺序搞错",
+        "误以为链式法则只适用于单变量，不理解它在层间传播的含义"
       ],
       "interviewPoints": [
-        "「建堆为什么是 O(n) 而不是 O(n log n)？」要答到自底向上从最后一个非叶节点开始 sift down，高度为 h 的节点约有 n/2^{h+1} 个、每个下沉代价 O(h)，求和 Σ n·h/2^{h+1}=O(n)；逐个插入建堆才是 O(n log n)。",
-        "「Top-K 用最大堆还是最小堆？」要答到求最大的 k 个用大小为 k 的最小堆：堆顶是当前候选里最小的，新元素只要大于堆顶就替换，时间 O(n log k)、空间 O(k)；求最小的 k 个则反过来用最大堆。",
-        "「BST 最坏 O(n)，为什么工程上用红黑树而不是 AVL？」要答到红黑树放宽平衡条件（h≤2log₂(n+1)），插入删除的旋转次数是 O(1)，AVL 更平衡但删除可能旋转 O(log n) 次，写多读少时红黑树整体更快。",
-        "「Python 的 heapq 怎么实现最大堆、怎么删除任意元素？」要答到存相反数或用 (priority, count, task) 三元组；删除任意元素用懒惰删除（先标记失效，弹出时再丢弃），因为堆不支持 O(log n) 定位任意元素。"
+        "「链式法则和反向传播是什么关系？」要答到复合函数逐层求导连乘、从后往前复用中间结果，说明动态规划为何高效",
+        "「为什么深层网络需要自动求导？」要答到手工推导易错、计算图记录算子，说明 PyTorch autograd 的 backward 机制",
+        "「梯度消失和链式法则有什么关系？」要答到连乘中小于 1 的因子指数衰减，说明激活函数与归一化层的作用"
       ],
-      "resources": [
-        {
-          "title": "Python 官方文档：heapq — 堆队列算法",
-          "url": "https://docs.python.org/3/library/heapq.html"
-        },
-        {
-          "title": "Binary heap（数组表示与建堆复杂度）",
-          "url": "https://en.wikipedia.org/wiki/Binary_heap"
-        },
-        {
-          "title": "Red–black tree（红黑树的平衡性质）",
-          "url": "https://en.wikipedia.org/wiki/Red%E2%80%93black_tree"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "bst-heap-q1",
+          "id": "chain-rule-q1",
           "type": "choice",
-          "prompt": "从 n 个元素中找出最大的 k 个（k 远小于 n），时空复杂度最优的做法是？",
+          "prompt": "y=f(g(x))，则 dy/dx 等于？",
           "options": [
-            "全部排序后取前 k 个，O(n log n) 时间、O(n) 空间",
-            "维护大小为 k 的最小堆，O(n log k) 时间、O(k) 空间",
-            "维护大小为 k 的最大堆，O(n log k) 时间、O(k) 空间",
-            "维护大小为 n 的最大堆，O(n) 时间、O(n) 空间"
+            "f'(x)·g'(x)",
+            "f'(g(x))·g'(x)",
+            "f(g(x))·g'(x)",
+            "f'(g'(x))"
           ],
           "answerIndex": 1,
-          "explanation": "最小堆的堆顶是当前 k 个候选中最小者，新元素只需与堆顶比较，大于它就替换并下沉，代价 O(log k)，总共 O(n log k) 且只需 k 个额外空间。最大堆的堆顶是最大值，无法判断新元素是否该进入候选集；全排序多付了 log n/log k 的因子。"
+          "explanation": "链式法则 dy/dx = f'(g(x)) * g'(x)，先对外层求导、代入内层，再乘内层导数。"
         },
         {
-          "id": "bst-heap-q2",
+          "id": "chain-rule-q2",
           "type": "short",
-          "prompt": "为什么自底向上建堆的时间复杂度是 O(n)？",
-          "answer": "参考回答：建堆从最后一个非叶节点开始向前对每个节点做 sift down。高度为 h 的节点最多有 n/2^{h+1} 个，每个节点下沉代价为 O(h)，总代价是 Σ(n/2^{h+1})·h，这个级数收敛到常数 2，所以总和是 O(n)。而逐个插入建堆每次 O(log n)，总计 O(n log n)。",
+          "prompt": "为什么说反向传播就是链式法则的工程应用？",
+          "answer": "参考回答：因为神经网络是层层复合函数，损失对某层权重的梯度需要由链式法则逐层累计求得；反向传播从最后一层往前、复用已算梯度，高效地对每层应用链式法则，从而得到所有权重的梯度。",
           "keywords": [
-            "自底向上 sift down",
-            "高度 h 的节点数 n/2^{h+1}",
-            "级数收敛",
-            "O(n)"
+            "链式",
+            "逐层",
+            "梯度"
           ],
-          "explanation": "关键在于「大多数节点都在底层、下沉代价很小」，能写出 n/2^{h+1}·h 的求和并说明收敛即可得满分。"
+          "explanation": "反向传播自后向前逐层乘局部导数，正是链式法则的体现。"
         },
         {
-          "id": "bst-heap-q3",
+          "id": "chain-rule-q3",
           "type": "code",
-          "prompt": "实现 kth_largest(nums, k)：返回数组中第 k 大的元素（k 从 1 开始计数），要求平均 O(n)。提示：可用大小为 k 的堆。",
-          "starterCode": "def kth_largest(nums, k):\n    pass\n",
-          "solution": "import heapq\n\n\ndef kth_largest(nums, k):\n    heap = nums[:k]\n    heapq.heapify(heap)\n    for x in nums[k:]:\n        if x > heap[0]:\n            heapq.heapreplace(heap, x)\n    return heap[0]\n\n\nprint(kth_largest([3, 2, 1, 5, 6, 4], 2))\nprint(kth_largest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4))\n",
+          "prompt": "设 g(x)=2x+1，f(u)=u²，用链式法则求 y=f(g(x)) 在 x=3 处的导数。",
+          "starterCode": "def g(x):\n    return 2 * x + 1\n\ndef f(u):\n    return u ** 2\n\nx = 3.0\n",
+          "solution": "def g(x):\n    return 2 * x + 1\n\ndef f(u):\n    return u ** 2\n\nx = 3.0\n# dy/dx = f'(g(x)) * g'(x) = 2*g(x) * 2\nprint(2 * g(x) * 2)",
           "checks": [
-            "heapify",
-            "heap[0]",
-            "heapreplace"
+            "g(x)",
+            "2"
           ],
-          "explanation": "维持大小为 k 的最小堆，遍历结束后堆顶就是第 k 大；时间复杂度 O(n log k)，若用快速选择可做到平均 O(n)。"
+          "explanation": "链式法则得到 2·g(x)·g'(x)，g'(x)=2，x=3 时结果为 28。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "graph-search",
-      "title": "图与搜索 BFS-DFS",
+      "slug": "distribution",
+      "title": "Distribution 分布",
       "order": 8,
-      "module": "图与高级结构",
-      "difficulty": "进阶",
-      "estimatedMinutes": 50,
-      "summary": "图用邻接表描述「谁连着谁」：BFS 求无权最短路，DFS 求连通性与环，拓扑排序决定依赖顺序，Dijkstra 处理非负权最短路。",
-      "intuition": "社交网络里「你和某人隔几个人」是 BFS；「这些模块能不能编译」是拓扑排序；「地图上最快的路线」是 Dijkstra。三者共用同一个骨架：从起点沿边一层层扩散，只是扩散顺序不同——BFS 用队列，先近后远；DFS 用栈，一条路走到黑；Dijkstra 用优先队列，先处理当前累计代价最小的点。把「用什么容器决定访问顺序」这句话记住，图论的一大半题目就归位了。剩下的难点是边界：有向还是无向、有没有环、边权是否非负、图是否连通。",
-      "formal": "图 G=(V,E) 用邻接表存储空间 O(V+E)，用邻接矩阵是 O(V²)，稀疏图（E≈V）必须用邻接表。BFS 逐层扩展，第一次到达某点的层数就是无权最短路长度，时间 O(V+E)、空间 O(V)；DFS 时间相同，可求连通分量、判环、生成拓扑序，递归深度等于最长路径，深图要改迭代。拓扑排序只存在于有向无环图（DAG）：Kahn 算法反复取出入度为 0 的节点，若最终输出少于 V 个说明存在环；DFS 后序反转也能得到拓扑序，递归中遇到「正在访问」的节点即判环。Dijkstra 用二叉堆实现是 O((V+E)log V)，它要求边权非负——算法假设「出队的点最短距离已最终确定」，负权会破坏这一前提，此时要用 Bellman-Ford O(VE) 或 SPFA。并查集用路径压缩加按秩合并，单次操作近似 O(α(n))，α(n) 在 n<10⁸⁰⁰ 时不超过 4，可当常数。",
-      "formula": "O(V+E)\\ \\text{(BFS/DFS)},\\qquad O((V+E)\\log V)\\ \\text{(Dijkstra)},\\qquad \\alpha(n)\\le 4",
-      "aiConnection": "计算图调度就是 DAG 的拓扑排序：PyTorch/TensorFlow 按依赖顺序决定算子执行次序，同时做显存复用（谁的生命周期结束就立刻释放），反向传播则是反向拓扑序。分布式训练的通信依赖、流水线并行的 stage 划分也靠拓扑分析。推荐系统在 user-item 二部图上做多跳 BFS 或随机游走召回（「看过相似商品的人还看过」本质是二跳邻居扩展），知识图谱多跳问答同样如此。数据血缘与特征依赖排期（哪些表必须先算完）是拓扑排序最直接的生产应用。",
+      "module": "概率统计",
+      "difficulty": "基础",
+      "estimatedMinutes": 24,
+      "summary": "分布描述随机变量取各个值（或落在某个区间）的概率，是理解数据来源与生成模型的基石。",
+      "intuition": "分布就是\"数据可能怎么出现\"的说明书。它告诉你哪个结果更常见、哪些很少见。抛硬币是二项分布，身高近似正态分布。在语言模型里，下一个词会按什么概率出现，也叫一个概率分布，模型输出常常就是这个分布。",
+      "formal": "离散随机变量用概率质量函数 $P(X=x)$，连续随机变量用概率密度函数 $f(x)$，满足归一化 $\\sum_x P(X=x)=1$ 或 $\\int f(x)dx=1$。常见分布：均匀、伯努利、二项、正态 $N(\\mu,\\sigma^2)$、泊松等。正态分布密度 $f(x)=\\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-(x-\\mu)^2/(2\\sigma^2)}$。语言模型的输出层是一个离散概率分布。",
+      "formula": "\\sum_x P(X=x)=1, \\quad \\int_{-\\infty}^{\\infty} f(x)dx=1, \\quad f(x)=\\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}",
+      "aiConnection": "大模型输出层 softmax 会产生一个词表上的概率分布，采样/解码就是从该分布里挑词。理解分布帮助我们解释\"模型在预测概率\"，也用于生成、评估困惑度等任务。",
       "codeExample": {
         "lang": "python",
-        "filename": "graph_search.py",
-        "code": "from collections import deque\n\n\ndef bfs_shortest(graph, start, target):\n    dist = {start: 0}\n    q = deque([start])\n    while q:\n        node = q.popleft()\n        if node == target:\n            return dist[node]\n        for nxt in graph[node]:\n            if nxt not in dist:\n                dist[nxt] = dist[node] + 1\n                q.append(nxt)\n    return -1\n\n\ndef topo_sort(n, edges):\n    graph = [[] for _ in range(n)]\n    indegree = [0] * n\n    for u, v in edges:\n        graph[u].append(v)\n        indegree[v] += 1\n    q = deque([i for i in range(n) if indegree[i] == 0])\n    order = []\n    while q:\n        u = q.popleft()\n        order.append(u)\n        for v in graph[u]:\n            indegree[v] -= 1\n            if indegree[v] == 0:\n                q.append(v)\n    return order if len(order) == n else None\n\n\ngraph = {0: [1, 2], 1: [3], 2: [3, 4], 3: [5], 4: [5], 5: []}\nprint('0 到 5 的最短边数', bfs_shortest(graph, 0, 5))\nprint('拓扑序', topo_sort(6, [(0, 1), (0, 2), (1, 3), (2, 3), (2, 4), (3, 5), (4, 5)]))\nprint('有环图返回', topo_sort(3, [(0, 1), (1, 2), (2, 0)]))"
+        "filename": "distribution.py",
+        "code": "import numpy as np\n\nnp.random.seed(0)\n\n# 采样：正态分布 N(mean=0, std=1)\nsamples = np.random.normal(0, 1, size=100000)\nprint('mean ≈', round(samples.mean(), 3))    # ≈ 0\nprint('std ≈', round(samples.std(), 3))      # ≈ 1\n\n# 均匀分布 [0,1)\nuni = np.random.uniform(0, 1, 100000)\nprint('uniform mean ≈', round(uni.mean(), 3))\n\n# 模拟抛硬币（伯努利）\ncoin = np.random.binomial(1, 0.5, 100000)\nprint('P(heads) ≈', round(coin.mean(), 3))   # ≈ 0.5\n\n# 归一化的\"概率分布\"：softmax 的输出和为 1\nlogits = np.array([2.0, 1.0, 0.1])\nexp = np.exp(logits - logits.max())\nprobs = exp / exp.sum()\nprint('prob sum =', round(probs.sum(), 6))\nprint('probs =', np.round(probs, 3))"
       },
       "mistakes": [
-        "用邻接矩阵存稀疏图，10⁵ 个节点就要 10¹⁰ 个布尔位，内存直接爆掉，应改用邻接表",
-        "BFS 在入队时不标记已访问，只在弹出时标记，同一节点被重复入队导致队列指数膨胀",
-        "拓扑排序不检查输出节点数是否等于 V，有环时静默返回残缺顺序",
-        "Dijkstra 用普通队列或忘了比较 dist 就标记 visited，旧版本节点覆盖了新版本的最短距离"
+        "混淆概率质量函数（离散）与概率密度函数（连续）",
+        "忘记概率密度可 >1（密度不是概率），而离散概率必须 ≤1",
+        "把采样得到的经验分布直接当成精确理论分布"
       ],
       "interviewPoints": [
-        "「BFS 为什么能求无权最短路，带权就不行？」要答到 BFS 按层扩展，第一次到达某点时的层数就是最少边数；带权时边数少不代表总代价小，必须用 Dijkstra 按累计代价扩展，或 Bellman-Ford 处理负权。",
-        "「拓扑排序有哪两种写法？怎么判环？」要答到 Kahn 算法（入度表加队列，最终输出节点数小于 V 即有环）与 DFS 后序反转（递归栈中遇到灰色节点即有环）；前者还能顺便给出字典序最小的拓扑序。",
-        "「Dijkstra 为什么不能有负权边？负权怎么办？」要答到算法一旦出队就认为最短距离已定，而负权边可能在之后提供更短路径，贪心前提被破坏；负权场景用 Bellman-Ford O(VE) 或 SPFA，存在负权环时最短路无定义。",
-        "「邻接表和邻接矩阵怎么选？」要答到按 E 与 V² 的量级比较：稀疏图（E≈V，如社交网络）用邻接表 O(V+E)；稠密图或需要 O(1) 判断两点是否有边时用矩阵 O(V²)。"
+        "「大模型的输出为什么是概率分布？」要答到 softmax 归一化到词表、概率和为 1，说明采样与解码策略都基于它",
+        "「概率密度可以大于 1 吗？」要答到密度不是概率、必须积分才得概率，说明连续与离散分布的区别",
+        "「temperature 是怎么改变分布的？」要答到对 logits 缩放后再 softmax，说明高温更随机、低温更确定的原因"
       ],
-      "resources": [
-        {
-          "title": "Topological sorting（Kahn 算法与 DFS 写法）",
-          "url": "https://en.wikipedia.org/wiki/Topological_sorting"
-        },
-        {
-          "title": "Dijkstra's algorithm（非负权最短路）",
-          "url": "https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm"
-        },
-        {
-          "title": "Disjoint-set data structure（并查集与 α(n)）",
-          "url": "https://en.wikipedia.org/wiki/Disjoint-set_data_structure"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "graph-search-q1",
+          "id": "distribution-q1",
           "type": "choice",
-          "prompt": "BFS 能求出最短路径长度的前提是？",
+          "prompt": "关于概率分布的归一化条件，正确说法是？",
           "options": [
-            "图必须是连通的",
-            "所有边的权重相同（或图为无权图）",
-            "图必须是有向无环图",
-            "必须使用邻接矩阵存储"
+            "离散概率之和必须为 1",
+            "连续密度可以为任意值无需归一化",
+            "概率值都可以大于 1",
+            "只有正态分布需要归一化"
           ],
-          "answerIndex": 1,
-          "explanation": "BFS 按层扩展，第一次到达某点的层数等于最少边数，这只有在每条边代价相同时才等价于最小总代价。图不连通只影响能否到达；有向无环只是拓扑排序的前提；存储方式不影响正确性。"
+          "answerIndex": 0,
+          "explanation": "所有概率分布都要满足求和（离散）或积分（连续）等于 1 的归一化。"
         },
         {
-          "id": "graph-search-q2",
+          "id": "distribution-q2",
           "type": "short",
-          "prompt": "如何用 Kahn 算法做拓扑排序，并判断图中是否有环？",
-          "answer": "参考回答：先统计每个节点的入度，把所有入度为 0 的节点入队；每次出队一个节点加入结果序列，并把它的所有邻居入度减 1，减到 0 的邻居入队。循环结束后若结果序列长度等于节点总数 V，说明得到了合法拓扑序；若小于 V，说明剩下的节点互相依赖、入度都不为 0，即图中存在环。时间 O(V+E)。",
+          "prompt": "为什么说大模型的输出可以看成一个概率分布？",
+          "answer": "参考回答：模型在词表上给每个词一个分数，经 softmax 归一化后得到一组和为 1 的概率，表示每个词作为下一个词的可能性，因此输出可视为一个离散概率分布，解码就是从这个分布中选取词。",
           "keywords": [
-            "统计入度",
-            "入度为 0 入队",
-            "邻居入度减 1",
-            "输出长度小于 V 即有环"
+            "softmax",
+            "概率",
+            "归一化"
           ],
-          "explanation": "判环的关键是最后比较输出长度与 V，只说「入度减一」而没有这个检查就拿不到判环这一分。"
+          "explanation": "softmax 把词表分数转成和为 1 的概率，即一个离散概率分布。"
         },
         {
-          "id": "graph-search-q3",
+          "id": "distribution-q3",
           "type": "code",
-          "prompt": "实现 can_finish(num_courses, prerequisites)：共 num_courses 门课，prerequisites[i]=[a,b] 表示修 a 之前必须先修 b，判断能否修完所有课程（即判断有向图是否有环）。",
-          "starterCode": "def can_finish(num_courses, prerequisites):\n    pass\n",
-          "solution": "from collections import deque\n\n\ndef can_finish(num_courses, prerequisites):\n    graph = [[] for _ in range(num_courses)]\n    indegree = [0] * num_courses\n    for a, b in prerequisites:\n        graph[b].append(a)\n        indegree[a] += 1\n    q = deque([i for i in range(num_courses) if indegree[i] == 0])\n    done = 0\n    while q:\n        u = q.popleft()\n        done += 1\n        for v in graph[u]:\n            indegree[v] -= 1\n            if indegree[v] == 0:\n                q.append(v)\n    return done == num_courses\n\n\nprint(can_finish(2, [[1, 0]]))\nprint(can_finish(2, [[1, 0], [0, 1]]))\n",
+          "prompt": "用 numpy 生成 10000 个 N(0,1) 正态样本，打印它们的均值与标准差。",
+          "starterCode": "import numpy as np\n\nnp.random.seed(0)\n",
+          "solution": "import numpy as np\n\nnp.random.seed(0)\nsamples = np.random.normal(0, 1, size=10000)\nprint(samples.mean())\nprint(samples.std())",
           "checks": [
-            "indegree",
-            "deque",
-            "done == num_courses"
+            "np.random.normal",
+            "mean",
+            "std"
           ],
-          "explanation": "Kahn 拓扑排序：能拓扑排序完的图无环，反之有环；注意边方向是 b→a（先修课指向后续课）。"
+          "explanation": "用 np.random.normal(0,1,size=10000) 采样，再用 .mean() 与 .std() 打印统计量。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "sorting",
-      "title": "排序算法",
+      "slug": "expectation",
+      "title": "Expectation 期望",
       "order": 9,
-      "module": "算法范式",
-      "difficulty": "进阶",
-      "estimatedMinutes": 45,
-      "summary": "比较排序的下界是 Ω(n log n)；快排平均 O(n log n) 且原地，归并稳定但费 O(n) 空间，计数/基数排序在值域小时能到 O(n)。",
-      "intuition": "排序是「把无序变有序」的通用前置步骤：有序之后才能二分、才能双指针、才能归并去重。快排像整理扑克牌：随便抽一张当基准，小的扔左边、大的扔右边，再对两堆重复，平均很快且不用额外空间；归并像把两摞已经排好的牌合成一摞，稳定、最坏也有保证，代价是需要另一摞空间。工程里最常用的其实不是手写快排，而是 Python 的 sorted——Timsort 会先找出已经有序的片段再合并，面对基本有序的数据接近 O(n)，而且稳定，所以「先按次要关键字排一遍、再按主要关键字排一遍」就能得到正确的多关键字排序。",
-      "formal": "任何基于比较的排序，其判定树有 n! 个叶子、高度至少 log₂(n!)，由斯特林公式 log₂(n!)≈n log₂n-1.44n，得下界 Ω(n log n)。快排平均 O(n log n)（随机选基准或三数取中后，最坏 O(n²) 出现的概率可忽略），原地排序、递归栈 O(log n)、不稳定；归并排序最坏也是 O(n log n)、稳定，需要 O(n) 额外空间，是外部排序与链表排序的首选；堆排序 O(n log n)、原地、不稳定，常数比快排大 2-3 倍但最坏有保证，适合对延迟有硬要求的场景。非比较排序靠利用值的分布突破下界：计数排序 O(n+k)、基数排序 O(d(n+k))，k 是值域、d 是位数，k 远大于 n 时反而更慢。Timsort 结合插入排序与归并，最好 O(n)、最坏 O(n log n)、稳定，是 Python 与 Java 对象排序的默认实现。",
-      "formula": "\\log_2(n!) = \\sum_{i=1}^{n}\\log_2 i \\ge \\frac{n}{2}\\log_2\\frac{n}{2} \\Rightarrow \\Omega(n\\log n)",
-      "aiConnection": "训练数据管道里最实用的一招是按长度排序后分桶组 batch：把长度接近的样本放进同一个 batch，padding 比例从约 50% 降到 5%，等效吞吐接近翻倍，Megatron/DeepSpeed 的数据加载器都这么做。Top-K 采样、检索结果重排依赖排序或部分排序。语料超过内存时用外部排序：分块排序写回磁盘，再做 k 路归并，把随机 I/O 变成顺序 I/O，10⁹ 条样本也能在有限内存里排完。评测阶段按分数排序计算 AUC、NDCG 也是同一套操作。",
+      "module": "概率统计",
+      "difficulty": "基础",
+      "estimatedMinutes": 22,
+      "summary": "期望是随机变量取值的加权平均，权重为对应概率，描述\"平均而言会发生什么\"。",
+      "intuition": "期望就是\"长期平均\"。今天可能得 1 块，明天得 5 块，但机会有多大概率，平均下来是多少？期望就是把每个可能结果乘以它发生的概率，再全部加起来。它不等于是最可能出现的结果，而是平均表现。",
+      "formal": "离散随机变量期望为 $E[X]=\\sum_x x\\,P(X=x)$；连续为 $E[X]=\\int x f(x)dx$。期望是线性的：$E[aX+b]=aE[X]+b$，$E[X+Y]=E[X]+E[Y]$，但一般 $E[XY]\\ne E[X]E[Y]$（仅当独立时成立）。样本均值 $\\bar{x}=\\frac{1}{n}\\sum x_i$ 是期望的无偏估计。在机器学习中，损失的风险常取期望。",
+      "formula": "E[X] = \\sum_x x\\,P(X=x) = \\int x f(x)\\,dx, \\quad E[aX+b] = aE[X]+b, \\quad E[X+Y] = E[X]+E[Y]",
+      "aiConnection": "评估一个模型/策略的好坏常看期望性能：预期损失、期望奖励等。强化学习中的回报、决策的预期收益都建立在期望之上；训练时的批内平均损失也是期望的一种经验估计。",
       "codeExample": {
         "lang": "python",
-        "filename": "sorting.py",
-        "code": "import random\n\n\ndef quicksort(nums):\n    if len(nums) <= 1:\n        return nums\n    pivot = random.choice(nums)\n    left = [x for x in nums if x < pivot]\n    mid = [x for x in nums if x == pivot]\n    right = [x for x in nums if x > pivot]\n    return quicksort(left) + mid + quicksort(right)\n\n\ndef merge_sort(nums):\n    if len(nums) <= 1:\n        return nums\n    mid = len(nums) // 2\n    left, right = merge_sort(nums[:mid]), merge_sort(nums[mid:])\n    out, i, j = [], 0, 0\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            out.append(left[i])\n            i += 1\n        else:\n            out.append(right[j])\n            j += 1\n    return out + left[i:] + right[j:]\n\n\ndef length_bucketed_batches(lengths, batch_size=4):\n    # 按长度排序后分桶: 同 batch 内长度接近, padding 浪费大幅下降\n    ordered = sorted(lengths)\n    return [(ordered[i:i + batch_size], max(ordered[i:i + batch_size]))\n            for i in range(0, len(ordered), batch_size)]\n\n\ndata = [5, 2, 9, 1, 5, 6]\nprint('快排', quicksort(data), '归并', merge_sort(data))\nfor chunk, pad_to in length_bucketed_batches([12, 800, 15, 780, 20, 810, 9, 799]):\n    print('batch', chunk, 'pad 到', pad_to, '浪费 token', sum(pad_to - x for x in chunk))"
+        "filename": "expectation.py",
+        "code": "import numpy as np\n\n# 掷公平骰子的期望 E[X] = (1+2+3+4+5+6)/6 = 3.5\nvalues = np.array([1, 2, 3, 4, 5, 6])\nprobs = np.full(6, 1 / 6)\nexp = np.sum(values * probs)\nprint('骰子期望 =', exp)\n\n# 用大量采样逼近期望\nnp.random.seed(1)\nrolls = np.random.choice(values, size=100000, p=probs)\nprint('采样均值 ≈', round(rolls.mean(), 3))\n\n# 线性性质 E[aX+b] = a*E[X] + b\na, b = 3, 5\nprint('E[3X+5] =', a * exp + b)\n\n# 模拟不均匀(作弊)骰子\np2 = np.array([0.4, 0.1, 0.1, 0.1, 0.1, 0.2])\nprint('偏置骰子期望 =', round(np.sum(values * p2), 3))"
       },
       "mistakes": [
-        "快排固定取第一个元素当基准，遇到已有序数组退化成 O(n²) 并可能栈溢出，应随机取基准或三数取中",
-        "以为堆排序稳定，多关键字排序时会打乱次要关键字顺序，需要稳定性应选归并或 Timsort",
-        "把「非比较排序更快」当普适结论，值域 k 远大于 n 时计数排序 O(n+k) 反而比快排慢很多",
-        "Python 里还自己写比较函数 cmp，3.x 已移除该参数，应该用 key 提取排序依据"
+        "把期望等同于最可能出现的值（众数）",
+        "误以为 E[XY] 恒等于 E[X]E[Y]，其实仅独立时成立",
+        "用样本均值时未考虑是否为无偏/有偏估计"
       ],
       "interviewPoints": [
-        "「为什么比较排序的下界是 Ω(n log n)？」要答到 n 个元素有 n! 种排列，判定树的叶子必须覆盖全部排列，二叉判定树高度至少 log₂(n!)=Θ(n log n)，所以只靠比较的算法突破不了这个下界。",
-        "「快排最坏情况什么时候出现，怎么避免？」要答到基准每次取到最值（如对已排序数组固定取首元素）导致划分极不平衡、递归深度 n、时间 O(n²)；随机化基准或三数取中可以避免，也可以在小数组上切换到插入排序。",
-        "「哪些排序是稳定的？稳定性为什么重要？」要答到归并、插入、冒泡、Timsort 稳定，快排、堆排、选择排序不稳定；多关键字排序时先按次要键排、再按主要键做稳定排序即可得到正确结果。",
-        "「1 亿条数据内存放不下怎么排？」要答到外部排序：先分块读入内存排序并写回磁盘，再做 k 路归并（用大小为 k 的最小堆选当前最小），把随机 I/O 转成顺序 I/O，总时间 O(n log n) 但只需 O(k) 内存。"
+        "「期望和平均值有什么区别？」要答到理论加权平均与样本估计，说明批内平均损失为何是期望的经验近似",
+        "「期望的线性性质有什么用？」要答到 E[aX+b] 与 E[X+Y] 可以拆开，说明它不要求独立而 E[XY] 才需要",
+        "「为什么用期望来评估模型？」要答到风险即期望损失、单次结果波动大，说明交叉验证取平均的意义"
       ],
-      "resources": [
-        {
-          "title": "Timsort（Python 与 Java 的默认排序）",
-          "url": "https://en.wikipedia.org/wiki/Timsort"
-        },
-        {
-          "title": "Quicksort（划分与最坏情况）",
-          "url": "https://en.wikipedia.org/wiki/Quicksort"
-        },
-        {
-          "title": "Python 官方排序指南：Sorting HOW TO",
-          "url": "https://docs.python.org/3/howto/sorting.html"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "sorting-q1",
+          "id": "expectation-q1",
           "type": "choice",
-          "prompt": "下列排序算法中，既稳定又保证最坏 O(n log n) 的是？",
+          "prompt": "偶数个均匀骰子（点数为 1..6）的期望值是多少？",
           "options": [
-            "快速排序",
-            "归并排序",
-            "堆排序",
-            "选择排序"
+            "3",
+            "3.5",
+            "6",
+            "2.5"
           ],
           "answerIndex": 1,
-          "explanation": "归并排序最坏与平均都是 O(n log n)，合并时相等元素优先取左边即可保持稳定，代价是 O(n) 额外空间。快排不稳定且最坏 O(n²)；堆排序最坏 O(n log n) 但不稳定；选择排序是 O(n²) 且不稳定。"
+          "explanation": "E = (1+2+3+4+5+6)/6 = 3.5，是各点数按 1/6 概率的加权平均。"
         },
         {
-          "id": "sorting-q2",
+          "id": "expectation-q2",
           "type": "short",
-          "prompt": "为什么基于比较的排序算法不可能快于 O(n log n)？",
-          "answer": "参考回答：n 个元素的排列共有 n! 种，任何比较排序都必须区分所有情况，因此判定树至少有 n! 个叶子。高度为 h 的二叉树最多有 2^h 个叶子，故 2^h≥n!，h≥log₂(n!)，由斯特林公式得下界 Ω(n log n)。非比较排序能更快是因为它利用值的分布而不是比较。",
+          "prompt": "期望的线性性质是什么？E[aX+b] 等于什么？",
+          "answer": "参考回答：期望是线性的，E[aX+b] = a·E[X] + b。常数可以提出来，加上一个常数 b 只会让期望偏移 b。特别地，一般情况下 E[XY] ≠ E[X]·E[Y]，仅在 X、Y 独立时成立。",
           "keywords": [
-            "n! 种排列",
-            "判定树",
-            "叶子数 2^h",
-            "斯特林公式"
+            "线性",
+            "aE",
+            "独立"
           ],
-          "explanation": "要点是「n! 个叶子 + 二叉树高度」这条判定树论证，并说明非比较排序绕开下界的方式。"
+          "explanation": "E[aX+b]=aE[X]+b；乘积仅在独立时等于二者期望之积。"
         },
         {
-          "id": "sorting-q3",
+          "id": "expectation-q3",
           "type": "code",
-          "prompt": "实现 merge_intervals(intervals)：合并所有重叠区间，输入 [[1,3],[2,6],[8,10],[15,18]] 输出 [[1,6],[8,10],[15,18]]。要求先按起点排序再线性扫描。",
-          "starterCode": "def merge_intervals(intervals):\n    pass\n",
-          "solution": "def merge_intervals(intervals):\n    intervals = sorted(intervals, key=lambda x: x[0])\n    merged = []\n    for start, end in intervals:\n        if merged and start <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], end)\n        else:\n            merged.append([start, end])\n    return merged\n\n\nprint(merge_intervals([[1, 3], [2, 6], [8, 10], [15, 18]]))\n",
+          "prompt": "用 numpy 计算骰子 [1..6] 等概率的期望，并抽样 100000 次逼近。",
+          "starterCode": "import numpy as np\n\nnp.random.seed(1)\nvalues = np.array([1, 2, 3, 4, 5, 6])\nprobs = np.full(6, 1 / 6)\n",
+          "solution": "import numpy as np\n\nnp.random.seed(1)\nvalues = np.array([1, 2, 3, 4, 5, 6])\nprobs = np.full(6, 1 / 6)\n\nprint(np.sum(values * probs))\nrolls = np.random.choice(values, size=100000, p=probs)\nprint(rolls.mean())",
           "checks": [
-            "sorted(",
-            "merged[-1][1]",
-            "max("
+            "np.sum",
+            "mean"
           ],
-          "explanation": "排序 O(n log n) 是主导代价，扫描只需 O(n)；判断重叠用 start <= 上一个区间的 end，合并时 end 取两者较大值。"
+          "explanation": "期望用 values*probs 求和，再用随机抽样 .mean() 逼近。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "binary-search",
-      "title": "二分查找",
+      "slug": "variance",
+      "title": "Variance 方差",
       "order": 10,
-      "module": "算法范式",
-      "difficulty": "进阶",
-      "estimatedMinutes": 40,
-      "summary": "二分把「有序」变成 O(log n)：n=10⁹ 只要 30 次比较；更通用的形式是二分答案——只要判定函数随答案单调，就能把最优化问题转成判定问题。",
-      "intuition": "猜数字 1-100：每猜一次「大了/小了」就砍掉一半候选，7 次必中（2⁷=128>100）。二分的本质不是「数组有序」，而是「能用一个判定把候选区间一刀切成两半，并且扔掉的那一半一定不含答案」。这个视角一旦建立，「运香蕉的最小速度」「D 天内送达的最小载重」这类看起来不像二分的题就都归位了：把「速度 v 下能否完成」写成 check(v)，而 check 关于 v 单调，于是二分 v 即可。写二分最容易错的从来不是思路，而是边界：区间开闭、循环条件、mid 取整方向，三者必须自洽。",
-      "formal": "标准二分维护左闭右开区间 [lo, hi)，循环条件 lo<hi，mid=lo+(hi-lo)//2 保证 mid<hi，每轮区间严格缩小一半，最多 ⌈log₂n⌉ 次迭代。n=10⁶ 需 20 次、n=10⁹ 需 30 次、n=10¹⁸ 需 60 次，这就是二分能处理极大值域的原因。lower_bound 求第一个 ≥ target 的位置，upper_bound 求第一个 > target 的位置，两者相减即等值元素个数；有重复元素时命中后绝不能直接返回，必须继续收缩边界。二分答案的适用条件是判定函数 check(x) 单调（通常 x 越大越容易满足），于是「最小化满足条件的 x」变成「二分找第一个 check 为真的 x」，每轮判定 O(n) 时总代价 O(n log V)，V 是答案值域。旋转数组要先判断哪一半有序再决定收缩方向；浮点二分用固定迭代 100 次代替相等比较。",
-      "formula": "T(n) = T(n/2) + O(1) = \\lceil \\log_2 n \\rceil,\\qquad n=10^9 \\Rightarrow 30",
-      "aiConnection": "超参搜索里，学习率、温度这类量在对数尺度上单调可控，二分约 17 次实验就能把 10⁻⁶~10⁻¹ 的范围定位到 1% 精度，远少于网格搜索的几十上百次。工程上更常见的是：分布式训练中二分出「不 OOM 的最大 batch size」（10 次实验内定位）；检索时按分数阈值截断，用 bisect 在有序分数数组上 O(log n) 定位；量化时二分搜 scale 让截断误差满足约束；numpy.searchsorted 把 10⁷ 个样本映射到 1000 个桶做直方图统计，本质也是二分。",
+      "module": "概率统计",
+      "difficulty": "基础",
+      "estimatedMinutes": 23,
+      "summary": "方差衡量随机变量取值围绕期望的波动程度，标准差是其平方根。",
+      "intuition": "期望告诉你平均在哪，方差告诉你\"漂移\"有多大。同样平均分 80 的班上，一个班人人都 80，另一个班一半 0 分一半 100 分，后者的方差大得多。训练数据、模型预测都有方差，理解它能帮你判断稳定与过拟合。",
+      "formal": "方差定义为 $\\text{Var}(X)=E[(X-E[X])^2]=E[X^2]-E[X]^2$，标准差 $\\sigma=\\sqrt{\\text{Var}(X)}$。方差性质：$\\text{Var}(aX+b)=a^2\\text{Var}(X)$（平移不变、缩放按平方），$\\text{Var}(X+Y)=\\text{Var}(X)+\\text{Var}(Y)$ 当且仅当 $X,Y$ 不相关。样本方差 $s^2=\\frac{1}{n-1}\\sum(x_i-\\bar{x})^2$ 是无偏估计（除以 $n-1$）。在偏差-方差权衡中，方差反映模型对训练数据的敏感度。",
+      "formula": "\\text{Var}(X) = E[(X-E[X])^2] = E[X^2]-E[X]^2, \\quad \\text{Var}(aX+b) = a^2\\text{Var}(X), \\quad \\text{Var}(X+Y)=\\text{Var}(X)+\\text{Var}(Y)",
+      "aiConnection": "统计学与机器学习常谈偏差-方差权衡：过大方差意味着模型对训练数据过拟合、泛化差。归一化（标准化）时除以标准差，正是为了让各特征方差一致，从而更稳定地训练。",
       "codeExample": {
         "lang": "python",
-        "filename": "binary_search.py",
-        "code": "import bisect\n\n\ndef lower_bound(nums, target):\n    # 第一个 >= target 的下标, 左闭右开区间\n    lo, hi = 0, len(nums)\n    while lo < hi:\n        mid = lo + (hi - lo) // 2\n        if nums[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid\n    return lo\n\n\ndef min_ship_capacity(weights, days):\n    # 二分答案: 载重越大所需天数越少, check 单调\n    def can_finish(cap):\n        used, cur = 1, 0\n        for w in weights:\n            if cur + w > cap:\n                used += 1\n                cur = 0\n            cur += w\n        return used <= days\n\n    lo, hi = max(weights), sum(weights)\n    while lo < hi:\n        mid = lo + (hi - lo) // 2\n        if can_finish(mid):\n            hi = mid\n        else:\n            lo = mid + 1\n    return lo\n\n\nnums = [1, 3, 3, 5, 8, 8, 8, 20]\nprint('第一个 >= 8 的下标', lower_bound(nums, 8), 'bisect_left 结果', bisect.bisect_left(nums, 8))\nprint('8 出现的次数', bisect.bisect_right(nums, 8) - bisect.bisect_left(nums, 8))\nprint('5 天内送达的最小载重', min_ship_capacity([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 5))"
+        "filename": "variance.py",
+        "code": "import numpy as np\n\n# 两组均值相同但离散度不同的数据\na = np.array([80, 80, 80, 80, 80])\nb = np.array([60, 70, 80, 90, 100])\n\nprint('a mean/std =', a.mean(), a.std())\nprint('b mean/std =', b.mean(), b.std())\n\n# numpy 默认方差是总体方差（除以 n），样本方差需 ddof=1\nx = np.array([1, 2, 3, 4, 5])\nprint('var (population) =', np.var(x))\nprint('var (sample)     =', np.var(x, ddof=1))\n\n# 标准化 (x - mean)/std\nstd_x = (x - x.mean()) / x.std()\nprint('standardized mean/std =', round(std_x.mean(), 6), round(std_x.std(), 6))\n\n# 常数平移不改变方差\nprint('var(x+10) =', np.var(x + 10))"
       },
       "mistakes": [
-        "C++/Java 里 (lo+hi)/2 可能溢出为负导致死循环，应写 lo+(hi-lo)/2",
-        "有重复元素时 nums[mid]==target 就 return，无法定位第一个或最后一个位置，必须继续收缩边界",
-        "区间开闭与循环条件不匹配，写 lo<=hi 却用 hi=mid 收缩，区间不再缩小直接死循环",
-        "二分答案没有先验证 check 的单调性，或在 lo/hi 初值上取错（如漏掉单个元素的下界 max(weights)）"
+        "混淆总体方差（除以 n）与样本方差（除以 n-1）",
+        "把标准差与方差混用，标准差是方差的平方根",
+        "误以为平移数据会改变方差（平移不变，缩放才改变）"
       ],
       "interviewPoints": [
-        "「while lo<hi 和 lo<=hi 有什么区别，怎么避免死循环？」要答到左闭右开 [lo,hi) 配 lo<hi、收缩用 hi=mid；闭区间配 lo<=hi、收缩用 hi=mid-1；核心是保证每轮区间严格变小（mid 不能等于 hi），并手算 lo=hi-1 的边界情况。",
-        "「有重复元素怎么找第一个/最后一个？」要答到 lower_bound：nums[mid]>=target 时令 hi=mid（命中也不返回），循环结束 lo 就是第一个 ≥ target 的位置；upper_bound 把条件换成 >，两者相减是等值个数。",
-        "「二分答案的适用条件是什么？」要答到存在单调的判定函数 check(x)（如「载重 x 能否在 D 天内送完」随 x 单调），且答案有确定的上下界；把最优化转成判定后每轮 O(n)，总代价 O(n log V)。",
-        "「n=10⁹ 的搜索空间二分要几次？」要答到 ⌈log₂10⁹⌉=30 次，n=10¹⁸ 也只需 60 次；所以二分能把极大值域的线性扫描压成对数级，这是它在超参搜索与容量探测里好用的原因。"
+        "「方差和标准差有什么区别？」要答到平方根关系与量纲，说明数据标准化时为什么要除以标准差",
+        "「偏差-方差权衡是什么？」要答到欠拟合与过拟合、模型复杂度的影响，说明正则化如何降低方差",
+        "「样本方差为什么除以 n-1？」要答到无偏估计与自由度，说明 ddof 参数写错会导致指标出现偏差"
       ],
-      "resources": [
-        {
-          "title": "Binary search algorithm（边界与变体）",
-          "url": "https://en.wikipedia.org/wiki/Binary_search_algorithm"
-        },
-        {
-          "title": "Python 官方文档：bisect — 数组二分查找",
-          "url": "https://docs.python.org/3/library/bisect.html"
-        },
-        {
-          "title": "LeetCode 875. Koko Eating Bananas（二分答案入门）",
-          "url": "https://leetcode.com/problems/koko-eating-bananas/"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "binary-search-q1",
+          "id": "variance-q1",
           "type": "choice",
-          "prompt": "在长度为 n 的有序数组中二分查找，最多需要多少次比较？",
+          "prompt": "关于方差，下列哪个说法正确？",
           "options": [
-            "约 n/2 次",
-            "⌈log₂n⌉ 次",
-            "n 次",
-            "√n 次"
+            "Var(aX+b) = a²Var(X)",
+            "Var(aX+b) = a·Var(X)",
+            "平移数据会改变方差",
+            "方差一定等于标准差"
           ],
-          "answerIndex": 1,
-          "explanation": "每次比较把候选区间减半，区间从 n 收缩到 1 需要 ⌈log₂n⌉ 次，例如 n=10⁹ 只要 30 次。这也是二分能处理极大值域的原因。"
+          "answerIndex": 0,
+          "explanation": "方差满足 Var(aX+b)=a²Var(X)：平移 b 不变，缩放按系数平方改变。"
         },
         {
-          "id": "binary-search-q2",
+          "id": "variance-q2",
           "type": "short",
-          "prompt": "什么是「二分答案」？它的适用条件是什么？",
-          "answer": "参考回答：二分答案是把最优化问题转成判定问题：不直接求最优解，而是写 check(x) 判断「答案为 x 时是否可行」，当 check 关于 x 单调（如载重越大所需天数越少）时，就二分 x 的值域找第一个使 check 为真的 x，总代价 O(n log V)。",
+          "prompt": "数据标准化 (x-mean)/std 的作用是什么？",
+          "answer": "参考回答：标准化让每个特征的均值变为 0、标准差变为 1，即方差归一到相同尺度，避免某个量纲大的特征主导训练，从而让模型更稳定、收敛更快，尤其在神经网络的梯度下降中很重要。",
           "keywords": [
-            "判定函数 check(x)",
-            "单调性",
-            "二分值域",
-            "O(n log V)"
+            "均值",
+            "标准差",
+            "尺度"
           ],
-          "explanation": "得分点是「把最优化转成判定」以及强调单调性是前提，只说「对答案二分」而没有 check 单调性不得分。"
+          "explanation": "标准化消除量纲差异，使各特征方差一致，利于稳定训练。"
         },
         {
-          "id": "binary-search-q3",
+          "id": "variance-q3",
           "type": "code",
-          "prompt": "实现 search_range(nums, target)：在非递减数组中返回 target 第一次和最后一次出现的下标，不存在返回 [-1, -1]。要求 O(log n)。",
-          "starterCode": "def search_range(nums, target):\n    pass\n",
-          "solution": "def search_range(nums, target):\n    def bound(t, first):\n        lo, hi, ans = 0, len(nums) - 1, -1\n        while lo <= hi:\n            mid = lo + (hi - lo) // 2\n            if nums[mid] > t or (first and nums[mid] == t):\n                if nums[mid] == t:\n                    ans = mid\n                hi = mid - 1\n            else:\n                if nums[mid] == t:\n                    ans = mid\n                lo = mid + 1\n        return ans\n\n    return [bound(target, True), bound(target, False)]\n\n\nprint(search_range([5, 7, 7, 8, 8, 10], 8))\nprint(search_range([5, 7, 7, 8, 8, 10], 6))\n",
+          "prompt": "用 numpy 计算数组 x=[1,2,3,4,5] 的样本方差（ddof=1）并打印。",
+          "starterCode": "import numpy as np\n\nx = np.array([1, 2, 3, 4, 5])\n",
+          "solution": "import numpy as np\n\nx = np.array([1, 2, 3, 4, 5])\nprint(np.var(x, ddof=1))",
           "checks": [
-            "while lo <= hi",
-            "hi = mid - 1",
-            "lo = mid + 1"
+            "np.var",
+            "ddof=1"
           ],
-          "explanation": "分别求左边界与右边界：命中后仍继续向一侧收缩并记录答案，两次二分都是 O(log n)，总复杂度 O(log n)。"
+          "explanation": "样本方差用 np.var(x, ddof=1)，即除以 n-1。"
         }
-      ]
+      ],
+      "track": "main"
     },
     {
-      "slug": "two-pointers-sliding-window",
-      "title": "双指针与滑动窗口",
+      "slug": "bayes",
+      "title": "Bayes 贝叶斯",
       "order": 11,
-      "module": "算法范式",
-      "difficulty": "进阶",
-      "estimatedMinutes": 45,
-      "summary": "双指针让两个下标同向或相向移动，把 O(n²) 的枚举压到 O(n)；滑动窗口是它的同向版本，靠窗口合法性的单调保证指针不回退。",
-      "intuition": "相向双指针像两个人从绳子两端往中间收：有序数组里和太大就右指针左移、太小就左指针右移，一次比较排除一整行可能性。同向滑动窗口像一只毛毛虫：右端先往前拱，把元素吃进来；一旦窗口不合法，左端就往前缩，直到重新合法。能这么做的关键是单调性——右端扩张只会让窗口更不满足条件，左端收缩只会让它更满足，所以两个指针都不用回头，总移动次数不超过 2n。判断一道题能不能用滑窗，就问自己这一句：窗口变大时约束是变好还是变坏？",
-      "formal": "相向双指针要求数组有序或具备单调性质，每次比较后必然移动其中一个指针，最多 2n 次移动，时间 O(n)、空间 O(1)；三数之和固定第一个数后对剩余部分做双指针，总代价 O(n²)（排序的 O(n log n) 被平方项吞掉），去重要求跳过与前一个相同的元素。滑动窗口维护 [left, right) 区间与窗口状态的计数（哈希表或定长数组），扩张时更新状态，不满足约束时收缩 left；每个元素最多被加入一次、移出一次，总时间 O(n)，空间 O(字符集大小)。注意窗口内最大值这类「缩窗无法 O(1) 还原」的统计量不能用普通滑动窗口，要用单调队列（均摊 O(1)）。滑动窗口与二分还能组合：当窗口合法性单调时，固定右端点可二分左端点，得到 O(n log n)。",
-      "formula": "\\sum_{r}\\Delta r = n,\\quad \\sum_{l}\\Delta l \\le n \\Rightarrow O(n);\\qquad O(n^2) \\to O(nw)",
-      "aiConnection": "长文本推理的滑窗注意力把 O(n²) 的全注意力换成窗口 w 的局部注意力，复杂度降到 O(nw)：n=32768、w=1024 时注意力元素数从 1.07×10⁹ 降到 3.4×10⁷，约 32 倍，这是 Longformer、Mistral 滑动窗口层的核心动机。RAG 的文本分块用带重叠的窗口（chunk=512、overlap=64）避免句子被切断导致语义丢失。线上监控用时间滑动窗口统计 QPS 与 P99 延迟，流式推理的输出缓冲也按窗口刷新。",
+      "module": "概率统计",
+      "difficulty": "基础",
+      "estimatedMinutes": 27,
+      "summary": "贝叶斯公式在已知先验与似然的情况下更新对某假设的信任程度，是推断与分类的重要框架。",
+      "intuition": "贝叶斯思考的是\"在得到新证据后，我该多相信原来那个假设\"。先有个先验看法，看到数据后用似然去修正，得到后验看法。比如先觉得某病患病率低，但如果检测阳性（证据），就应上调概率。它是一个把新信息融入判断的朴素而强大的规则。",
+      "formal": "贝叶斯公式 $P(A|B)=\\frac{P(B|A)P(A)}{P(B)}$，其中 $P(A)$ 是先验、$P(B|A)$ 是似然、$P(B)$ 是归一化常数、$P(A|B)$ 是后验。分类器做预测时，选最大后验类：$\\hat{y}=\\arg\\max_c P(c|x)\\propto P(x|c)P(c)$。朴素贝叶斯假设特征在给定类下条件独立，从而将 $P(x|c)$ 分解为各特征概率之积，训练简单、常用于文本分类。",
+      "formula": "P(A|B) = \\frac{P(B|A)P(A)}{P(B)}, \\quad \\hat{y} = \\arg\\max_c P(x|c)P(c) = \\arg\\max_c P(c)\\prod_i P(x_i|c)",
+      "aiConnection": "分类模型（如垃圾邮件判断、医学诊断）本质是在做后验推断。朴素贝叶斯因其简单高效，常被当作文本分类基线；理解\"先验+似然=后验\"也能帮你推理大模型在给定上下文下的输出偏好。",
       "codeExample": {
         "lang": "python",
-        "filename": "two_pointers.py",
-        "code": "def longest_unique_substring(s):\n    last = {}\n    left = best = 0\n    for right, ch in enumerate(s):\n        if ch in last and last[ch] >= left:\n            left = last[ch] + 1\n        last[ch] = right\n        best = max(best, right - left + 1)\n    return best\n\n\ndef three_sum(nums):\n    nums = sorted(nums)\n    res = []\n    for i in range(len(nums) - 2):\n        if i > 0 and nums[i] == nums[i - 1]:\n            continue\n        if nums[i] > 0:\n            break\n        lo, hi = i + 1, len(nums) - 1\n        while lo < hi:\n            total = nums[i] + nums[lo] + nums[hi]\n            if total < 0:\n                lo += 1\n            elif total > 0:\n                hi -= 1\n            else:\n                res.append([nums[i], nums[lo], nums[hi]])\n                lo += 1\n                hi -= 1\n                while lo < hi and nums[lo] == nums[lo - 1]:\n                    lo += 1\n    return res\n\n\nprint('最长无重复子串长度', longest_unique_substring('abcabcbb'))\nprint('最长无重复子串长度', longest_unique_substring('pwwkew'))\nprint('三数之和', three_sum([-1, 0, 1, 2, -1, -4]))"
+        "filename": "bayes.py",
+        "code": "import numpy as np\nfrom collections import Counter\n\n# 简易朴素贝叶斯文本分类：根据单词判断是否\"垃圾邮件\"\ntrain = [\n    ('buy now cheap', 'spam'),\n    ('win free money', 'spam'),\n    ('meeting tomorrow', 'ham'),\n    ('report due friday', 'ham'),\n]\n\ndef tokenize(s):\n    return s.lower().split()\n\n# 统计先验与条件概率\nvocab = set()\nfor text, _ in train:\n    vocab |= set(tokenize(text))\n\ncls_counts = Counter(lbl for _, lbl in train)\nword_counts = Counter()\nfor text, lbl in train:\n    for w in tokenize(text):\n        word_counts[(w, lbl)] += 1\n\nspam_p = cls_counts['spam'] / len(train)\nham_p = cls_counts['ham'] / len(train)\nprint('P(spam) =', spam_p, 'P(ham) =', ham_p)\n\n# 预测 \"cheap\" 的邮件\nnew = tokenize('cheap offer')\nps = np.prod([word_counts.get((w, 'spam'), 0) + 1 for w in new])\nph = np.prod([word_counts.get((w, 'ham'), 0) + 1 for w in new])\nprint('spam score =', ps, 'ham score =', ph)\nprint('predict =', 'spam' if ps > ph else 'ham')"
       },
       "mistakes": [
-        "窗口收缩用 if 而不是 while，遇到连续多个非法元素时只缩一格，窗口仍然不合法",
-        "用 set 记录窗口内字符却在收缩时忘记 remove，窗口状态与实际区间不一致",
-        "三数之和只对外层 i 去重，忘了 lo/hi 命中也去重，结果里出现重复三元组",
-        "用滑动窗口求窗口内最大值，缩窗时无法 O(1) 还原历史最大值，这类问题要用单调队列"
+        "把 P(A|B) 与 P(B|A) 混淆（错误地把条件概率对称化）",
+        "忘记分母 P(B) 是归一化常数，比较时只看分子即可",
+        "朴素贝叶斯里把\"条件独立假设\"当成现实一定成立"
       ],
       "interviewPoints": [
-        "「滑动窗口什么时候能用？」要答到两个条件：窗口合法性关于端点单调（右扩只会更差、左缩只会更好），且窗口状态能增量更新与回滚；不满足时（如窗口最大值、窗口内中位数）要换单调队列或堆。",
-        "「最长无重复子串为什么用 dict 记最近位置而不是 set？」要答到 dict 能让 left 直接跳到 last[ch]+1，一次跨过多格；set 只能逐格收缩，虽然同为 O(n) 但常数更大，而且还要额外判断该字符是否在当前窗口内。",
-        "「三数之和怎么去重？」要答到先排序；外层固定 i 时若 nums[i]==nums[i-1] 就跳过；找到一组解后 lo 与 hi 同时收缩，并各自跳过与刚用过的值相同的元素。",
-        "「滑窗注意力相对全注意力的复杂度收益？」要答到全注意力时间 O(n²d)、显存 O(n²)；窗口 w 的局部注意力是 O(nwd)、显存 O(nw)，n=32768、w=1024 时降低约 32 倍，代价是丢失超过 w 的远程依赖。"
+        "「先验、似然、后验分别是什么？」要答到 P(A)、P(B|A)、P(A|B) 的含义与更新逻辑，说明观测越多后验越贴近数据",
+        "「朴素贝叶斯的朴素指什么？」要答到给定类别下特征条件独立的假设，说明它在文本分类里为何简单高效",
+        "「P(A|B) 和 P(B|A) 为什么不能混？」要答到条件概率不对称与基率谬误，说明医学检测阳性率与大模型幻觉的类比"
       ],
-      "resources": [
-        {
-          "title": "LeetCode 3. Longest Substring Without Repeating Characters",
-          "url": "https://leetcode.com/problems/longest-substring-without-repeating-characters/"
-        },
-        {
-          "title": "Longformer: The Long-Document Transformer（滑窗注意力）",
-          "url": "https://arxiv.org/abs/2004.05150"
-        },
-        {
-          "title": "LeetCode 239. Sliding Window Maximum（单调队列）",
-          "url": "https://leetcode.com/problems/sliding-window-maximum/"
-        }
-      ],
+      "resources": [],
       "quiz": [
         {
-          "id": "two-pointers-sliding-window-q1",
+          "id": "bayes-q1",
           "type": "choice",
-          "prompt": "滑动窗口算法总时间复杂度为 O(n) 的根本原因是？",
+          "prompt": "贝叶斯公式 P(A|B) = ？",
           "options": [
-            "窗口大小固定不变",
-            "左右指针都只单调移动，每个元素最多被加入和移出窗口各一次",
-            "窗口内状态用哈希表维护，查询是 O(1)",
-            "每轮循环都减少了一半候选"
+            "P(B|A)·P(A)/P(B)",
+            "P(A)·P(B)/P(A|B)",
+            "P(B|A)/P(A)",
+            "P(A|B)=P(A)+P(B)"
           ],
-          "answerIndex": 1,
-          "explanation": "右指针从左到右扫一遍、左指针也只前进不后退，两者总移动次数不超过 2n，因此即使内层有 while 收缩，总代价仍是 O(n)。窗口大小固定只是特例；哈希表保证的是单次状态更新 O(1)，不是总量；减半候选是二分。"
+          "answerIndex": 0,
+          "explanation": "贝叶斯公式为 P(A|B)=P(B|A)·P(A)/P(B)，用似然和先验更新后验。"
         },
         {
-          "id": "two-pointers-sliding-window-q2",
+          "id": "bayes-q2",
           "type": "short",
-          "prompt": "为什么普通滑动窗口不能求窗口内最大值？应该用什么结构？",
-          "answer": "参考回答：滑动窗口要求窗口状态可以增量更新并回滚，而最大值不满足可回滚性——左指针移出当前最大值后，无法 O(1) 恢复次大值，只能重新扫描窗口导致 O(n²)。正确做法是用单调队列：队列存下标并保持对应值单调递减，队首即当前窗口最大值，右端进队时弹出所有更小的元素，左端过期时从队首弹出，均摊 O(1)。",
+          "prompt": "朴素贝叶斯中的\"朴素\"指什么？",
+          "answer": "参考回答：指\"朴素\"地假设各特征在给定类别下条件独立，从而把 P(x|c) 分解为各特征概率之积，简化计算。尽管这个假设现实中常不成立，模型仍常表现良好且训练极快。",
           "keywords": [
-            "最大值不可回滚",
-            "无法 O(1) 恢复次大值",
-            "单调队列",
-            "均摊 O(1)"
+            "独立",
+            "条件",
+            "特征"
           ],
-          "explanation": "必须点出「缩窗后无法还原历史最大值」这个本质原因，并给出单调队列这一正确结构。"
+          "explanation": "\"朴素\"指特征条件独立假设，使似然可分解为乘积。"
         },
         {
-          "id": "two-pointers-sliding-window-q3",
+          "id": "bayes-q3",
           "type": "code",
-          "prompt": "实现 min_window(s, t)：返回 s 中涵盖 t 所有字符（含重复）的最短子串，不存在返回空串。例如 s='ADOBECODEBANC'、t='ABC' 返回 'BANC'。",
-          "starterCode": "def min_window(s, t):\n    pass\n",
-          "solution": "from collections import Counter\n\n\ndef min_window(s, t):\n    need = Counter(t)\n    missing = len(t)\n    left = 0\n    best = (0, float('inf'))\n    for right, ch in enumerate(s):\n        if need[ch] > 0:\n            missing -= 1\n        need[ch] -= 1\n        while missing == 0:\n            if right - left < best[1] - best[0]:\n                best = (left, right + 1)\n            need[s[left]] += 1\n            if need[s[left]] > 0:\n                missing += 1\n            left += 1\n    return s[best[0]:best[1]] if best[1] <= len(s) else ''\n\n\nprint(min_window('ADOBECODEBANC', 'ABC'))\nprint(repr(min_window('a', 'aa')))\n",
+          "prompt": "实现函数，用贝叶斯公式计算 P(A|B)：给定 P(B|A)=0.9, P(A)=0.01, P(B)=0.05。",
+          "starterCode": "def bayes(p_ba, p_a, p_b):\n    pass\n\nprint(bayes(0.9, 0.01, 0.05))\n",
+          "solution": "def bayes(p_ba, p_a, p_b):\n    return p_ba * p_a / p_b\n\nprint(bayes(0.9, 0.01, 0.05))",
           "checks": [
-            "Counter",
-            "missing == 0",
-            "need[s[left]] += 1"
+            "p_ba * p_a",
+            "p_b"
           ],
-          "explanation": "用 missing 计数代替逐字符比较来判断窗口是否覆盖 t；窗口合法后连续收缩左端并记录最短区间，总时间 O(|s|+|t|)。"
-        }
-      ]
-    },
-    {
-      "slug": "recursion-backtracking",
-      "title": "递归与回溯",
-      "order": 12,
-      "module": "算法范式",
-      "difficulty": "进阶",
-      "estimatedMinutes": 45,
-      "summary": "递归把大问题拆成同构的小问题；回溯是「做选择→递归→撤销选择」的枚举框架，剪枝决定它能否在时限内跑完。",
-      "intuition": "递归像俄罗斯套娃：打开一层，里面还是同样的问题，直到最小的那个不能再打开（终止条件）。回溯像走迷宫：在每个岔路口做一次选择，走到底发现不通就退回上一个路口换一条路——「退回」这个动作就是把状态恢复原样。写回溯的模板永远三段式：for 每个候选 → 做选择 → 递归 → 撤销选择。难点不在模板，而在规模：2ⁿ 个子集在 n=20 时约 10⁶ 还能跑，n! 个排列在 n=15 时约 1.3×10¹² 就必须靠剪枝，或者换算法。面试时先报出搜索树的规模，再谈剪枝，比直接写代码更能体现水平。",
-      "formal": "递归函数有三要素：终止条件、当前层的处理、向下一层的递推；递归深度等于调用栈深度，Python 默认上限 1000（sys.setrecursionlimit 可调，但极深的问题应改迭代避免 C 栈溢出）。回溯等于 DFS 加状态恢复，搜索树规模决定复杂度：子集 2ⁿ、排列 n!、组合 C(n,k)、N 皇后剪枝后远小于 n!。常见剪枝手段：可行性剪枝（部分和已超目标就返回）、最优性剪枝（当前代价已超过已知最优）、排序后剪枝（先处理大元素让约束更早触发）、同层去重剪枝（相同元素只取第一个）。记忆化搜索是「递归 + 缓存」，把重叠子问题的结果存进数组或哈希表，可把 O(2ⁿ) 的朴素递归降到 O(状态数 × 转移代价)，它是自顶向下的动态规划，与自底向上递推等价。",
-      "formula": "|\\text{search tree}| = 2^n,\\ n!,\\ \\binom{n}{k};\\qquad T(n) = aT(n/b) + f(n)",
-      "aiConnection": "beam search 就是带剪枝的层序回溯：每层只保留分数最高的 k 条路径，把 bⁿ 的枚举压到 k·b·n（b 是词表、n 是生成长度）。约束解码（强制输出合法 JSON、SQL 或语法树）在每一步过滤掉会导致语法非法的 token，本质是可行性剪枝，工业界用有限状态机把过滤做成 O(1) 查表。超参搜索的网格与随机搜索是搜索树展开，贝叶斯优化用代理模型剪掉表现差的区域。GBDT 每棵树的构造也是递归找最优分裂点，终止条件就是「叶子样本数不足或增益小于阈值」。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "backtracking.py",
-        "code": "def subsets(nums):\n    res, path = [], []\n\n    def backtrack(start):\n        res.append(path[:])\n        for i in range(start, len(nums)):\n            path.append(nums[i])\n            backtrack(i + 1)\n            path.pop()\n\n    backtrack(0)\n    return res\n\n\ndef permutations(nums):\n    res, path, used = [], [], [False] * len(nums)\n\n    def backtrack():\n        if len(path) == len(nums):\n            res.append(path[:])\n            return\n        for i in range(len(nums)):\n            if used[i]:\n                continue\n            used[i] = True\n            path.append(nums[i])\n            backtrack()\n            path.pop()\n            used[i] = False\n\n    backtrack()\n    return res\n\n\nprint('子集', subsets([1, 2, 3]))\nprint('全排列', permutations([1, 2, 3]))"
-      },
-      "mistakes": [
-        "回溯忘记撤销选择（path.pop()、used[i]=False），下一层分支带着脏状态，结果重复或缺失",
-        "res.append(path) 存的是引用，结果会全被清空，必须 append(path[:])",
-        "递归深度超过 1000 会抛 RecursionError，深搜索应改成显式栈迭代",
-        "有重复元素的排列/组合不做同层去重，相同元素被反复枚举导致结果集出现重复"
-      ],
-      "interviewPoints": [
-        "「递归为什么会栈溢出，怎么处理？」要答到每层调用都占栈帧、栈深度等于递归深度，Python 默认上限 1000；可以 sys.setrecursionlimit 调大但仍有 C 栈溢出风险，深图、深链表应改写成显式栈迭代。",
-        "「回溯和 DFS 是什么关系？」要答到回溯是 DFS 在「枚举所有方案」上的应用，多了「撤销选择」这一步来恢复现场，因此全程复用同一份状态数组，额外空间只有 O(递归深度)。",
-        "「N 皇后怎么 O(1) 判断对角线冲突？」要答到用三个标记集合：列 col、主对角线 row-col、副对角线 row+col，主副对角线各有 2n-1 条，可用布尔数组代替集合，判断与回滚都是 O(1)。",
-        "「什么时候用记忆化搜索而不是递推 DP？」要答到状态依赖稀疏或拓扑序难以确定时用自顶向下记忆化（只计算真正用到的状态），状态稠密且遍历顺序明确时用自底向上递推（无递归开销、可滚动数组压缩空间）。"
-      ],
-      "resources": [
-        {
-          "title": "Backtracking（回溯范式与剪枝）",
-          "url": "https://en.wikipedia.org/wiki/Backtracking"
-        },
-        {
-          "title": "LeetCode 46. Permutations",
-          "url": "https://leetcode.com/problems/permutations/"
-        },
-        {
-          "title": "Beam search（束搜索与剪枝）",
-          "url": "https://en.wikipedia.org/wiki/Beam_search"
+          "explanation": "按公式 P(A|B)=P(B|A)*P(A)/P(B) 返回 0.18。"
         }
       ],
-      "quiz": [
-        {
-          "id": "recursion-backtracking-q1",
-          "type": "choice",
-          "prompt": "回溯算法中「撤销选择」这一步的作用是？",
-          "options": [
-            "减少递归深度，避免栈溢出",
-            "把状态恢复到进入本层之前，使同一份状态数组能被兄弟分支正确复用",
-            "把时间复杂度从 O(n!) 降到 O(2^n)",
-            "防止结果列表里出现重复元素"
-          ],
-          "answerIndex": 1,
-          "explanation": "回溯在同一份 path/used 状态上反复探索不同分支，返回上一层时必须还原现场，否则兄弟分支会带着脏状态继续搜索。撤销选择不改变搜索树规模（复杂度由树本身决定），也不负责去重，去重要靠排序加同层跳过。"
-        },
-        {
-          "id": "recursion-backtracking-q2",
-          "type": "short",
-          "prompt": "写出回溯算法的通用模板，并说明各步骤的作用。",
-          "answer": "参考回答：模板为：先判断终止条件，把当前 path 的拷贝加入结果并 return；再 for 枚举本层候选，对每个候选执行「做选择（改 path/used）→ 递归下一层 → 撤销选择」。做选择与撤销选择必须成对出现，保证同一份状态能被兄弟分支复用；剪枝写在 for 内部提前 continue 或 break。",
-          "keywords": [
-            "终止条件",
-            "for 枚举候选",
-            "做选择与撤销选择成对",
-            "递归进入下一层"
-          ],
-          "explanation": "能完整写出三段式并强调「选择与撤销成对」即可，补充剪枝位置与 path 拷贝更完整。"
-        },
-        {
-          "id": "recursion-backtracking-q3",
-          "type": "code",
-          "prompt": "实现 combination_sum(candidates, target)：candidates 中无重复元素，每个数字可以无限次使用，返回所有和为 target 的组合（组合内顺序无关）。例如 candidates=[2,3,6,7]、target=7 返回 [[2,2,3],[7]]。",
-          "starterCode": "def combination_sum(candidates, target):\n    pass\n",
-          "solution": "def combination_sum(candidates, target):\n    candidates = sorted(candidates)\n    res, path = [], []\n\n    def backtrack(start, remain):\n        if remain == 0:\n            res.append(path[:])\n            return\n        for i in range(start, len(candidates)):\n            if candidates[i] > remain:\n                break\n            path.append(candidates[i])\n            backtrack(i, remain - candidates[i])\n            path.pop()\n\n    backtrack(0, target)\n    return res\n\n\nprint(combination_sum([2, 3, 6, 7], 7))\nprint(combination_sum([2, 3, 5], 8))\n",
-          "checks": [
-            "backtrack(i, remain - candidates[i])",
-            "candidates[i] > remain",
-            "path.pop()"
-          ],
-          "explanation": "递归时传 i 而不是 i+1，表示当前元素可重复使用；排序后一旦 candidates[i]>remain 就 break，是最基本的可行性剪枝。"
-        }
-      ]
-    },
-    {
-      "slug": "dynamic-programming",
-      "title": "动态规划",
-      "order": 13,
-      "module": "算法范式",
-      "difficulty": "高阶",
-      "estimatedMinutes": 60,
-      "summary": "DP 用「状态 + 转移」把指数级枚举压成多项式：先定义状态、写出转移方程、确定遍历顺序与初值，再用滚动数组压空间。",
-      "intuition": "递归是「从大往小拆」，DP 是「从小往大填表」。爬楼梯时走到第 n 阶的方法数只取决于第 n-1 与第 n-2 阶，这就是最优子结构；算第 n 阶时不需要知道具体是怎么走到第 n-2 阶的，这就是无后效性。满足这两条就能开一张表，把每个子问题的答案记下来，避免重复计算——朴素递归的 O(2ⁿ) 于是变成 O(n)。判断一道题能不能 DP，先问三句话：状态是什么（dp[i] 到底表示什么）？状态之间怎么转移？按什么顺序遍历才能保证用到的值已经算好？这三句话答得出来，代码只是翻译。",
-      "formal": "DP 的三个前提是最优子结构、无后效性、重叠子问题。解题四步：定义状态、写转移方程、确定初始化与边界、确定遍历顺序。0-1 背包的 dp[j]=max(dp[j], dp[j-w]+v) 必须逆序遍历容量，因为每个物品只能用一次，逆序保证 dp[j-w] 还是「上一轮」的值；完全背包正序遍历，允许同一物品重复使用。编辑距离的三种操作对应三个转移：删除 dp[i-1][j]+1、插入 dp[i][j-1]+1、替换 dp[i-1][j-1]+(s[i]≠t[j])，时间 O(mn)，空间可用两行滚动压到 O(min(m,n))。LIS 的朴素 DP 是 O(n²)，用 tails 数组加二分（tails[k] 表示长度为 k+1 的上升子序列的最小结尾）可降到 O(n log n)。复杂度等于状态数乘以单个状态的转移代价，这是估 DP 能否通过的唯一公式。",
-      "formula": "dp[i][j] = \\min\\big(dp[i-1][j]+1,\\ dp[i][j-1]+1,\\ dp[i-1][j-1] + [s_i \\ne t_j]\\big)",
-      "aiConnection": "序列对齐是 DP 的主场：编辑距离与 Needleman-Wunsch 同源，支撑 git diff（Myers/LCS 思路）、ASR 的 WER 计算、生物序列比对。CRF 序列标注用 Viterbi 解码，复杂度 O(n·L²)（L 为标签数）；CTC 前缀 beam search 在扩展前缀上累积对数概率，也是 DP。强化学习的 Bellman 方程 V(s)=max_a[r+γV(s′)] 与价值迭代就是 DP；beam search 的长度归一化打分同样是状态累积而非独立贪心。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "dynamic_programming.py",
-        "code": "import bisect\n\n\ndef edit_distance(s, t):\n    # 两行滚动数组: 空间 O(min(m, n)), 时间 O(m * n)\n    m, n = len(s), len(t)\n    dp = list(range(n + 1))\n    for i in range(1, m + 1):\n        prev, dp[0] = dp[0], i\n        for j in range(1, n + 1):\n            cur = dp[j]\n            cost = 0 if s[i - 1] == t[j - 1] else 1\n            dp[j] = min(dp[j] + 1, dp[j - 1] + 1, prev + cost)\n            prev = cur\n    return dp[n]\n\n\ndef lis_length(nums):\n    # tails[k] 是长度 k+1 的上升子序列的最小结尾, O(n log n)\n    tails = []\n    for x in nums:\n        i = bisect.bisect_left(tails, x)\n        if i == len(tails):\n            tails.append(x)\n        else:\n            tails[i] = x\n    return len(tails)\n\n\nprint('kitten -> sitting 编辑距离', edit_distance('kitten', 'sitting'))\nprint('horse -> ros 编辑距离', edit_distance('horse', 'ros'))\nprint('空串 -> abc 编辑距离', edit_distance('', 'abc'))\nprint('LIS 长度', lis_length([10, 9, 2, 5, 3, 7, 101, 18]))"
-      },
-      "mistakes": [
-        "0-1 背包正序遍历容量，同一物品被重复放入，把 0-1 背包算成了完全背包，逆序才是正确写法",
-        "dp 数组用 0 表示不可达，取 min 时把非法状态当成合法解，应该用 float('inf') 或 -1 显式标记",
-        "编辑距离忘记处理空串边界（dp[i][0]=i、dp[0][j]=j），空输入直接返回错误结果",
-        "状态定义含糊：dp[i] 究竟是「以 i 结尾」还是「前 i 个」，LIS 必须定义为以 i 结尾，否则转移不成立"
-      ],
-      "interviewPoints": [
-        "「怎么判断一道题能用 DP？」要答到三个前提：最优子结构、无后效性、重叠子问题；实操上先写暴力递归，确认存在重复调用的状态后加记忆化，再改写成自底向上递推。",
-        "「0-1 背包为什么容量要逆序，完全背包为什么正序？」要答到一维写法中 dp[j] 依赖 dp[j-w]：逆序时 dp[j-w] 尚未被本轮更新，代表「不放当前物品」，每个物品只用一次；正序时 dp[j-w] 已被更新，允许同一物品再次放入，正好对应完全背包。",
-        "「编辑距离的三个转移分别对应什么操作？」要答到 dp[i-1][j]+1 是删除 s[i]、dp[i][j-1]+1 是在 s 中插入 t[j]、dp[i-1][j-1]+cost 是替换（字符相同则 cost 为 0，直接继承）。",
-        "「DP 和贪心、记忆化搜索有什么区别？」要答到贪心每步取局部最优且不回退、需要额外证明正确性（如区间调度按结束时间排序）；记忆化搜索是自顶向下加缓存，只算用到的状态；DP 自底向上填满所有状态，因此不依赖递归栈、可做滚动数组优化空间。"
-      ],
-      "resources": [
-        {
-          "title": "Levenshtein distance（编辑距离与 DP 转移）",
-          "url": "https://en.wikipedia.org/wiki/Levenshtein_distance"
-        },
-        {
-          "title": "Needleman–Wunsch algorithm（序列对齐）",
-          "url": "https://en.wikipedia.org/wiki/Needleman%E2%80%93Wunsch_algorithm"
-        },
-        {
-          "title": "Viterbi algorithm（序列标注的 DP 解码）",
-          "url": "https://en.wikipedia.org/wiki/Viterbi_algorithm"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "dynamic-programming-q1",
-          "type": "choice",
-          "prompt": "用一维数组实现 0-1 背包时，容量维度必须如何遍历？",
-          "options": [
-            "正序遍历，从 0 到容量上限",
-            "逆序遍历，从容量上限到 w",
-            "任意顺序都可以，结果相同",
-            "必须先正序再逆序各跑一遍"
-          ],
-          "answerIndex": 1,
-          "explanation": "dp[j] 的更新依赖 dp[j-w]：逆序遍历时 dp[j-w] 还停留在「未放入当前物品」的旧值，保证每个物品只用一次；若正序遍历，dp[j-w] 已被本轮更新，等于允许重复放入，就成了完全背包。"
-        },
-        {
-          "id": "dynamic-programming-q2",
-          "type": "short",
-          "prompt": "设计一个动态规划解法时，需要依次确定哪几件事？",
-          "answer": "参考回答：四步。第一定义状态，用一句话说清 dp[i] 或 dp[i][j] 的含义；第二写转移方程，列出当前状态由哪些更小的状态推导而来；第三确定初始化与边界，不可达状态用 inf 标记；第四确定遍历顺序，保证依赖的状态已经算好，最后再考虑用滚动数组压缩空间。",
-          "keywords": [
-            "定义状态",
-            "转移方程",
-            "初始化与边界",
-            "遍历顺序",
-            "滚动数组"
-          ],
-          "explanation": "能按「状态→转移→初值→顺序」四步作答即为满分，补充复杂度=状态数×转移代价、空间优化更佳。"
-        },
-        {
-          "id": "dynamic-programming-q3",
-          "type": "code",
-          "prompt": "实现 coin_change(coins, amount)：用最少数量的硬币凑出 amount，硬币可重复使用，凑不出返回 -1。例如 coins=[1,2,5]、amount=11 返回 3。",
-          "starterCode": "def coin_change(coins, amount):\n    pass\n",
-          "solution": "def coin_change(coins, amount):\n    INF = float('inf')\n    dp = [0] + [INF] * amount\n    for i in range(1, amount + 1):\n        for c in coins:\n            if c <= i and dp[i - c] + 1 < dp[i]:\n                dp[i] = dp[i - c] + 1\n    return -1 if dp[amount] == INF else dp[amount]\n\n\nprint(coin_change([1, 2, 5], 11))\nprint(coin_change([2], 3))\nprint(coin_change([1], 0))\n",
-          "checks": [
-            "float('inf')",
-            "dp[i - c] + 1",
-            "amount + 1"
-          ],
-          "explanation": "完全背包：外层遍历金额、内层遍历硬币，dp[i] 表示凑出金额 i 的最少硬币数；不可达用 inf 标记，避免用 0 冒充合法解。"
-        }
-      ]
-    },
-    {
-      "slug": "interview-playbook",
-      "title": "高频面试题单与答题策略",
-      "order": 14,
-      "module": "面试冲刺",
-      "difficulty": "进阶",
-      "estimatedMinutes": 55,
-      "summary": "把前面 13 节的能力转成面试得分：一套七步答题流程、一份按考点分类的真实题单，以及 4 周可执行的刷题节奏。",
-      "intuition": "算法面考的不是「你能不能想出答案」，而是「你能不能在有人看着、还有时间压力的情况下稳定产出正确代码」。稳定来自流程而不是灵感：先澄清题意（把输入范围和边界问清楚，避免写完才发现理解错），再举个小例子手推，然后说出暴力解与它的复杂度作为保底，接着提出优化方向，编码时保持命名清晰、边界显式，最后主动用例子走查代码并报出三类测试用例。七步走完，即使没写出最优解，面试官也会认为你「工程上可合作」——这恰恰是招聘方真正在筛的东西。",
-      "formal": "一场 45-55 分钟的算法面建议这样分配：澄清与举例 5 分钟、暴力解与复杂度 5 分钟、优化思路 10 分钟、编码 20 分钟、测试与边界 5 分钟，留 5 分钟回答追问。复杂度必须主动报出时间与空间两项并给出推导，例如「两层循环枚举所有区间是 O(n²)，用哈希表把内层查询降到 O(1)，总时间 O(n)、额外空间 O(n)」；只报结论会被继续追问。编码阶段优先保证变量名可读、边界显式（空输入、单元素、全相同）、不写重复逻辑。测试阶段主动报常规、边界、极端三类用例。刷题节奏建议 4 周：第 1 周数组/字符串/哈希/双指针/滑窗，第 2 周链表/栈/树/堆，第 3 周图/排序/二分/回溯，第 4 周 DP 与限时模拟，每周 20-25 题、每道题限时 25 分钟，做不出来先看题解再当天重写一遍。",
-      "formula": "\\text{clarify} \\to \\text{example} \\to \\text{brute force} \\to \\text{optimize} \\to \\text{complexity} \\to \\text{code} \\to \\text{test}",
-      "aiConnection": "AI 算法岗的面试通常是「一轮 45 分钟手撕代码 + 一到两轮 ML 基础与项目深挖」，部分公司加一轮 ML coding（手写 multi-head attention、KMeans、AUC、softmax 交叉熵、LayerNorm）。算法题用于筛掉代码写不利索的候选人，评分重点在沟通、边界处理与复杂度意识，而不是题目难度。项目环节会追问：batch size 怎么定的、显存峰值多少、指标提升是否显著（几次实验、置信区间）、失败尝试是什么。把「先澄清再动手」迁移到项目讨论同样有效。",
-      "codeExample": {
-        "lang": "python",
-        "filename": "interview_playbook.py",
-        "code": "# 直接运行: 打印答题流程与按考点分类的高频题单(题号, 难度, 标题)\nSTEPS = ['1 澄清题意与边界', '2 举小例子手推', '3 说出暴力解与复杂度',\n         '4 提出优化方向', '5 报出时间与空间复杂度', '6 编码: 命名清晰边界显式',\n         '7 用例子走查并跑边界用例']\n\nPROBLEMS = {\n    '数组与双指针': [(1, '简单', '两数之和'), (11, '中等', '盛最多水的容器'), (15, '中等', '三数之和'), (42, '困难', '接雨水'), (53, '中等', '最大子数组和'), (56, '中等', '合并区间'), (238, '中等', '除自身以外数组的乘积'), (283, '简单', '移动零')],\n    '哈希表': [(49, '中等', '字母异位词分组'), (128, '中等', '最长连续序列'), (146, '中等', 'LRU 缓存'), (560, '中等', '和为 K 的子数组')],\n    '滑动窗口': [(3, '中等', '无重复字符的最长子串'), (76, '困难', '最小覆盖子串'), (239, '困难', '滑动窗口最大值'), (438, '中等', '找到字符串中所有字母异位词')],\n    '链表': [(21, '简单', '合并两个有序链表'), (141, '简单', '环形链表'), (142, '中等', '环形链表 II'), (143, '中等', '重排链表'), (160, '简单', '相交链表'), (206, '简单', '反转链表'), (23, '困难', '合并 K 个升序链表'), (25, '困难', 'K 个一组翻转链表')],\n    '栈与队列': [(20, '简单', '有效的括号'), (84, '困难', '柱状图中最大的矩形'), (155, '中等', '最小栈'), (232, '简单', '用栈实现队列'), (739, '中等', '每日温度')],\n    '二叉树': [(94, '简单', '二叉树的中序遍历'), (102, '中等', '二叉树的层序遍历'), (104, '简单', '二叉树的最大深度'), (105, '中等', '从前序与中序构造二叉树'), (124, '困难', '二叉树中的最大路径和'), (199, '中等', '二叉树的右视图'), (226, '简单', '翻转二叉树'), (236, '中等', '二叉树的最近公共祖先')],\n    'BST 与堆': [(98, '中等', '验证二叉搜索树'), (215, '中等', '数组中的第 K 个最大元素'), (230, '中等', 'BST 中第 K 小的元素'), (295, '困难', '数据流的中位数'), (347, '中等', '前 K 个高频元素')],\n    '图与搜索': [(133, '中等', '克隆图'), (200, '中等', '岛屿数量'), (207, '中等', '课程表'), (210, '中等', '课程表 II'), (547, '中等', '省份数量'), (743, '中等', '网络延迟时间'), (994, '中等', '腐烂的橘子')],\n    '排序与二分': [(4, '困难', '寻找两个正序数组的中位数'), (33, '中等', '搜索旋转排序数组'), (34, '中等', '查找元素的第一个和最后一个位置'), (153, '中等', '旋转排序数组的最小值'), (704, '简单', '二分查找'), (875, '中等', '爱吃香蕉的珂珂'), (912, '中等', '排序数组'), (1011, '中等', '在 D 天内送达包裹的能力')],\n    '回溯': [(17, '中等', '电话号码的字母组合'), (22, '中等', '括号生成'), (39, '中等', '组合总和'), (46, '中等', '全排列'), (51, '困难', 'N 皇后'), (78, '中等', '子集'), (79, '中等', '单词搜索'), (131, '中等', '分割回文串')],\n    '动态规划': [(5, '中等', '最长回文子串'), (62, '中等', '不同路径'), (70, '简单', '爬楼梯'), (72, '中等', '编辑距离'), (121, '简单', '买卖股票的最佳时机'), (139, '中等', '单词拆分'), (152, '中等', '乘积最大子数组'), (198, '中等', '打家劫舍'), (279, '中等', '完全平方数'), (300, '中等', '最长递增子序列'), (322, '中等', '零钱兑换'), (416, '中等', '分割等和子集'), (1143, '中等', '最长公共子序列')],\n}\n\n\ndef two_sum(nums, target):\n    # 步骤 3 的暴力解是 O(n^2), 步骤 4 用哈希表把内层降到 O(1)\n    seen = {}\n    for i, x in enumerate(nums):\n        if target - x in seen:\n            return [seen[target - x], i]\n        seen[x] = i\n    return []\n\n\ntotal = sum(len(v) for v in PROBLEMS.values())\nprint('题单共 %d 题, 建议 4 周完成, 每周 20-25 题' % total)\nfor name, items in PROBLEMS.items():\n    print('%-10s %2d 题  首题: #%d %s %s' % (name, len(items), items[0][0], items[0][1], items[0][2]))\nprint('答题流程: ' + ' -> '.join(STEPS))\nassert two_sum([2, 7, 11, 15], 9) == [0, 1]\nprint('步骤 7 测试通过: two_sum([2,7,11,15], 9) == [0, 1]')"
-      },
-      "mistakes": [
-        "拿到题就闷头写代码，写到一半才发现理解错题意，应先用一分钟澄清输入范围、边界与返回值",
-        "只报「时间复杂度 O(n)」而不说空间复杂度与推导过程，面试官无法判断你是真懂还是背过",
-        "写完不测就交，空数组、单元素、全相同这三类边界最容易挂，应主动报用例并手走一遍代码",
-        "被问住就沉默硬想，正确做法是先给出可运行的暴力解保底，再在提示下逐步优化"
-      ],
-      "interviewPoints": [
-        "「面试官问『这题你有什么思路』，你会怎么组织回答？」要答到先复述题意与约束（n 多大、值域、是否有序、能否修改原数组），再给出暴力解与其复杂度保底，然后提出优化方向（哈希、双指针、二分、DP）并说明为什么可行。",
-        "「为什么面试官在意复杂度而不是『跑得快』？」要答到复杂度反映你对数据规模增长的预判能力：n 从 10⁴ 涨到 10⁷ 时 O(n²) 直接不可用；同时要能补充常数因子、缓存与实现细节对实际耗时的影响。",
-        "「手写代码时有哪些加分细节？」要答到变量命名有意义、边界显式处理（空输入、单元素、全重复）、不写重复逻辑、函数拆分清晰，写完主动跑常规/边界/极端三类用例。",
-        "「AI 算法岗的算法面与后端岗有什么不同？」要答到通常是一轮 45 分钟手撕代码加 ML 基础与项目深挖，部分公司有 ML coding（手写 attention、KMeans、AUC、交叉熵）；算法题用于筛掉代码不熟练的人，评分重点是沟通、边界处理与复杂度意识。"
-      ],
-      "resources": [
-        {
-          "title": "LeetCode Top Interview 150 官方题单",
-          "url": "https://leetcode.com/studyplan/top-interview-150/"
-        },
-        {
-          "title": "NeetCode 150（按考点分类的题单与视频讲解）",
-          "url": "https://neetcode.io/practice"
-        },
-        {
-          "title": "LeetCode 题库（可按数组、动态规划、图论等标签筛选）",
-          "url": "https://leetcode.com/problemset/"
-        }
-      ],
-      "quiz": [
-        {
-          "id": "interview-playbook-q1",
-          "type": "choice",
-          "prompt": "面试中拿到一道陌生的算法题，最合理的第一步是？",
-          "options": [
-            "立刻开始写代码，边写边想",
-            "先澄清题意与边界，并用一个小例子手推一遍",
-            "先向面试官要提示，避免走弯路",
-            "先在纸上写出最优解的时间复杂度"
-          ],
-          "answerIndex": 1,
-          "explanation": "澄清与举例能把「理解错题意」这个最大风险提前排除，也为后续的暴力解、优化与测试提供验证基准。直接写代码容易在错误理解上越走越远；主动要提示会丢掉展示思考过程的机会；复杂度是在明确解法之后才谈的。"
-        },
-        {
-          "id": "interview-playbook-q2",
-          "type": "short",
-          "prompt": "面试官问「你的解法复杂度是多少」，应该怎么回答？",
-          "answer": "参考回答：同时给出时间与空间两项，并说明推导而不是只报结论，例如「外层枚举左端点 O(n)，内层用哈希表把查找降到 O(1)，所以总时间 O(n)、额外空间 O(n)」。随后补充最坏情况与常数因素（哈希冲突、递归栈深度），并对比暴力解的 O(n²)，让面试官看到你有取舍意识。",
-          "keywords": [
-            "时间与空间两项",
-            "说明推导过程",
-            "最坏情况",
-            "对比暴力解"
-          ],
-          "explanation": "得分点是「两项 + 推导」，只报一个 O(n) 会被继续追问，能主动对比暴力解并提到常数与最坏情况更好。"
-        },
-        {
-          "id": "interview-playbook-q3",
-          "type": "code",
-          "prompt": "实现 top_k_frequent(nums, k)：返回出现频率最高的 k 个元素（顺序不限）。例如 nums=[1,1,1,2,2,3]、k=2 返回 [1,2]。要求优于 O(n log n)。",
-          "starterCode": "def top_k_frequent(nums, k):\n    pass\n",
-          "solution": "import heapq\nfrom collections import Counter\n\n\ndef top_k_frequent(nums, k):\n    count = Counter(nums)\n    return [x for x, _ in heapq.nlargest(k, count.items(), key=lambda kv: kv[1])]\n\n\nprint(top_k_frequent([1, 1, 1, 2, 2, 3], 2))\nprint(top_k_frequent([1], 1))\nprint(top_k_frequent([4, 4, 4, 2, 2, 2, 3], 1))\n",
-          "checks": [
-            "Counter",
-            "nlargest",
-            "key="
-          ],
-          "explanation": "哈希表统计频率 O(n)，再用大小为 k 的堆取前 k 个 O(n log k)，优于全排序的 O(n log n)；也可用桶排序做到 O(n)。"
-        }
-      ]
+      "track": "main"
     }
   ]
 }
