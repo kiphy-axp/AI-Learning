@@ -1,11 +1,9 @@
 import {
   BookMarked,
-  BookOpenCheck,
   Brain,
   CalendarCheck,
   Compass,
   GraduationCap,
-  ListChecks,
   MessageSquareCode,
   NotebookPen,
   Route as RouteIcon,
@@ -20,8 +18,6 @@ import { useStore } from '../lib/store';
 const NAV = [
   { to: '/', label: '总览', icon: Compass },
   { to: '/roadmap', label: '学习路线', icon: RouteIcon },
-  { to: '/checklist', label: '知识点清单', icon: ListChecks },
-  { to: '/learn', label: '课程学习', icon: BookOpenCheck },
   { to: '/practice', label: '练习测验', icon: Target },
   { to: '/projects', label: '实战项目', icon: CalendarCheck },
   { to: '/interview', label: '面试考点', icon: Brain },

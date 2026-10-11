@@ -34,8 +34,8 @@ export function LessonPage() {
     return (
       <div className="card p-8 text-center">
         <p className="text-sm text-slate-400">找不到这个知识点。</p>
-        <Link className="btn-ghost mt-4" to="/learn">
-          返回课程列表
+        <Link className="btn-ghost mt-4" to="/roadmap">
+          返回闯关地图
         </Link>
       </div>
     );
@@ -51,11 +51,11 @@ export function LessonPage() {
   return (
     <>
       <div className="mb-4 flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/learn" className="hover:text-slate-300">
-          课程学习
+        <Link to="/roadmap" className="hover:text-slate-300">
+          学习路线
         </Link>
         <span>/</span>
-        <Link to={`/learn?stage=${stage.stageSlug}`} className="hover:text-slate-300">
+        <Link to={`/roadmap?stage=${stage.stageSlug}`} className="hover:text-slate-300">
           {stage.stageEmoji} {stage.stageTitle}
         </Link>
         <span>/</span>

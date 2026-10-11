@@ -1,33 +1,36 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DifficultyChip, PageHeader, StatusChip } from '../components/ui';
+import { DifficultyChip, StatusChip } from './ui';
 import { STAGES, STATUS_LABEL } from '../lib/content';
 import { useStore } from '../lib/store';
 
 const STATUS_OPTIONS = ['not-started', 'learning', 'review', 'mastered'] as const;
 
-export function Checklist() {
+/** 列表视图：沿用原「知识点清单」的批量筛选与状态编辑能力 */
+export function ChecklistTable({ initialStage = 'all' }: { initialStage?: string }) {
   const { progress, setStatus, bookmarks } = useStore();
-  const [stageFilter, setStageFilter] = useState('all');
+  const [stageFilter, setStageFilter] = useState(initialStage);
   const [statusFilter, setStatusFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [onlyBookmarked, setOnlyBookmarked] = useState(false);
 
-  const rows = useMemo(() => {
-    return STAGES.filter((s) => stageFilter === 'all' || s.stageSlug === stageFilter).flatMap((stage) =>
-      stage.lessons.map((lesson) => {
-        const row = progress.get(`${stage.stageSlug}/${lesson.slug}`);
-        return {
-          stage,
-          lesson,
-          status: row?.status ?? 'not-started',
-          accuracy: row?.question_count ? Math.round((row.correct_count / row.question_count) * 100) : null,
-          key: `${stage.stageSlug}/${lesson.slug}`,
-        };
-      }),
-    );
-  }, [progress, stageFilter]);
+  const rows = useMemo(
+    () =>
+      STAGES.filter((s) => stageFilter === 'all' || s.stageSlug === stageFilter).flatMap((stage) =>
+        stage.lessons.map((lesson) => {
+          const row = progress.get(`${stage.stageSlug}/${lesson.slug}`);
+          return {
+            stage,
+            lesson,
+            status: row?.status ?? 'not-started',
+            accuracy: row?.question_count ? Math.round((row.correct_count / row.question_count) * 100) : null,
+            key: `${stage.stageSlug}/${lesson.slug}`,
+          };
+        }),
+      ),
+    [progress, stageFilter],
+  );
 
   const filtered = rows.filter((row) => {
     if (statusFilter !== 'all' && row.status !== statusFilter) return false;
@@ -48,12 +51,6 @@ export function Checklist() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="知识点清单"
-        title="逐个攻克，不留死角"
-        description="这里列出全部知识点及其状态。可以直接在下拉框里改状态：学习中 / 待复习 / 已掌握。状态会立即写入本地数据库。"
-      />
-
       <div className="card mb-4 flex flex-wrap items-center gap-2.5 p-3.5">
         <input
           className="field max-w-[240px]"

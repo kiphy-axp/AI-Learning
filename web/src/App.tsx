@@ -1,11 +1,9 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
-import { Checklist } from './pages/Checklist';
 import { Dashboard } from './pages/Dashboard';
 import { Interview } from './pages/Interview';
 import { LessonPage } from './pages/LessonPage';
-import { Learn } from './pages/Learn';
 import { Notes } from './pages/Notes';
 import { Practice } from './pages/Practice';
 import { PracticePage } from './pages/PracticePage';
@@ -54,8 +52,9 @@ export function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/roadmap" element={<Roadmap />} />
-              <Route path="/checklist" element={<Checklist />} />
-              <Route path="/learn" element={<Learn />} />
+              {/* 知识点清单与课程列表已合并进学习路线，保留旧路径重定向 */}
+              <Route path="/checklist" element={<Navigate to="/roadmap" replace />} />
+              <Route path="/learn" element={<Navigate to="/roadmap" replace />} />
               <Route path="/learn/:stageSlug/:lessonSlug" element={<LessonPage />} />
               <Route path="/practice" element={<Practice />} />
               <Route path="/practice/:stageSlug/:lessonSlug" element={<PracticePage />} />

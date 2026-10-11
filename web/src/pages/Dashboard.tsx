@@ -101,7 +101,7 @@ export function Dashboard() {
             {STAGES.slice(0, 8).map((stage) => {
               const p = stats.stageProgress.get(stage.stageSlug) ?? { done: 0, total: stage.lessons.length, percent: 0 };
               return (
-                <Link key={stage.stageSlug} to={`/learn?stage=${stage.stageSlug}`} className="block group">
+                <Link key={stage.stageSlug} to={`/roadmap?stage=${stage.stageSlug}`} className="block group">
                   <div className="flex items-center justify-between text-xs">
                     <span className="truncate text-slate-400 group-hover:text-slate-200">
                       {stage.stageEmoji} {stage.stageTitle}
@@ -196,7 +196,7 @@ export function Dashboard() {
             {STAGES.filter((s) => s.category === '算法岗核心').map((stage) => (
               <li key={stage.stageSlug}>
                 <Link
-                  to={`/learn?stage=${stage.stageSlug}`}
+                  to={`/roadmap?stage=${stage.stageSlug}`}
                   className="flex items-center gap-2 text-sm text-slate-300 hover:text-brand-300"
                 >
                   <span>{stage.stageEmoji}</span>
