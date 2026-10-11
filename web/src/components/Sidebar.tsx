@@ -4,7 +4,6 @@ import {
   CalendarCheck,
   Compass,
   GraduationCap,
-  MessageSquareCode,
   NotebookPen,
   Route as RouteIcon,
   Settings as SettingsIcon,
@@ -14,6 +13,7 @@ import {
 import { NavLink } from 'react-router-dom';
 import { TOTALS } from '../lib/content';
 import { useStore } from '../lib/store';
+import { useTutorDock } from '../lib/tutor-dock';
 
 const NAV = [
   { to: '/', label: '总览', icon: Compass },
@@ -23,12 +23,12 @@ const NAV = [
   { to: '/interview', label: '面试考点', icon: Brain },
   { to: '/wrong', label: '错题本', icon: BookMarked },
   { to: '/notes', label: '学习笔记', icon: NotebookPen },
-  { to: '/tutor', label: 'AI 导师', icon: MessageSquareCode },
   { to: '/settings', label: '设置', icon: SettingsIcon },
 ];
 
 export function Sidebar() {
   const { stats, tutor } = useStore();
+  const { setOpen, open } = useTutorDock();
 
   return (
     <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col border-r border-white/8 bg-ink-900/60 px-4 py-5 backdrop-blur lg:flex">
@@ -94,14 +94,25 @@ export function Sidebar() {
             连续天数
           </div>
         </div>
-        <div className="border-t border-white/8 pt-2 text-[11px] text-slate-500">
-          AI 导师：
-          {tutor.hasKey ? (
-            <span className="text-emerald-300">已接入 {tutor.model || '自定义模型'}</span>
-          ) : (
-            <span className="text-amber-300">离线模式</span>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="w-full border-t border-white/8 pt-2.5 text-left text-[11px] text-slate-500 transition hover:text-slate-300"
+          title={`AI 导师在右侧面板，点击${open ? '收起' : '展开'}`}
+        >
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-brand-400" />
+            <span className="min-w-0 flex-1 truncate">
+              AI 导师
+              {tutor.hasKey ? (
+                <span className="text-emerald-300"> · {tutor.model || '已接入'}</span>
+              ) : (
+                <span className="text-amber-300"> · 离线模式</span>
+              )}
+            </span>
+            <span className="shrink-0 text-slate-400">{open ? '收起 →' : '展开 →'}</span>
+          </span>
+        </button>
       </div>
     </aside>
   );

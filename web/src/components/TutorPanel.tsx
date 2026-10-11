@@ -32,11 +32,14 @@ export function TutorPanel({
   storageKey = 'tutor-history',
   className = '',
   intro,
+  hideHeader = false,
 }: {
   context: TutorContext;
   storageKey?: string;
   className?: string;
   intro?: string;
+  /** 嵌在右侧抽屉里时，标题栏由抽屉提供，这里只保留清空按钮 */
+  hideHeader?: boolean;
 }) {
   const { tutor, weakLessons } = useStore();
   const [mode, setMode] = useState('deep');
@@ -99,26 +102,36 @@ export function TutorPanel({
 
   return (
     <div className={`card flex min-h-0 flex-col ${className}`}>
-      <div className="flex items-center justify-between gap-2 border-b border-white/8 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-brand-400" />
-          <span className="text-sm font-semibold text-slate-200">AI 导师</span>
-          <span
-            className={`chip ${
-              tutor.hasKey
-                ? 'bg-emerald-500/12 text-emerald-300 ring-emerald-500/30'
-                : 'bg-amber-500/12 text-amber-300 ring-amber-500/30'
-            }`}
-          >
-            {tutor.hasKey ? `已接入 ${tutor.model || '模型'}` : '离线模式'}
-          </span>
+      {hideHeader ? (
+        messages.length ? (
+          <div className="flex justify-end border-b border-white/8 px-3 py-1.5">
+            <button type="button" className="btn-quiet !px-2 !py-1" onClick={() => setMessages([])} title="清空对话">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : null
+      ) : (
+        <div className="flex items-center justify-between gap-2 border-b border-white/8 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-brand-400" />
+            <span className="text-sm font-semibold text-slate-200">AI 导师</span>
+            <span
+              className={`chip ${
+                tutor.hasKey
+                  ? 'bg-emerald-500/12 text-emerald-300 ring-emerald-500/30'
+                  : 'bg-amber-500/12 text-amber-300 ring-amber-500/30'
+              }`}
+            >
+              {tutor.hasKey ? `已接入 ${tutor.model || '模型'}` : '离线模式'}
+            </span>
+          </div>
+          {messages.length ? (
+            <button type="button" className="btn-quiet !px-2 !py-1" onClick={() => setMessages([])} title="清空对话">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
         </div>
-        {messages.length ? (
-          <button type="button" className="btn-quiet !px-2 !py-1" onClick={() => setMessages([])} title="清空对话">
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        ) : null}
-      </div>
+      )}
 
       <div className="flex flex-wrap gap-1.5 border-b border-white/8 px-3 py-2">
         {MODES.map((m) => (

@@ -1,6 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { useTutorDock, TutorDockProvider } from './lib/tutor-dock';
 import { Sidebar } from './components/Sidebar';
+import { TutorDock } from './components/TutorDock';
 import { Dashboard } from './pages/Dashboard';
 import { Interview } from './pages/Interview';
 import { LessonPage } from './pages/LessonPage';
@@ -44,9 +46,20 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
 export function App() {
   return (
+    <TutorDockProvider>
+      <Shell />
+    </TutorDockProvider>
+  );
+}
+
+function Shell() {
+  const { open } = useTutorDock();
+
+  return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="min-w-0 flex-1">
+      {/* 抽屉展开时给内容区让出宽度，避免被盖住 */}
+      <main className={`min-w-0 flex-1 transition-[padding] duration-300 ${open ? 'lg:pr-[392px]' : ''}`}>
         <div className="mx-auto max-w-[1180px] px-6 py-8 lg:px-10">
           <ErrorBoundary>
             <Routes>
@@ -69,6 +82,7 @@ export function App() {
           </ErrorBoundary>
         </div>
       </main>
+      <TutorDock />
     </div>
   );
 }

@@ -13,20 +13,22 @@ import {
   Link2,
   NotebookPen,
   Sigma,
+  Sparkles,
   Target,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Markdown } from '../components/Markdown';
-import { TutorPanel } from '../components/TutorPanel';
 import { DifficultyChip, PageHeader, SectionBlock, StatusChip } from '../components/ui';
 import { findLesson, neighbours } from '../lib/content';
 import { useStore } from '../lib/store';
+import { useTutorDock } from '../lib/tutor-dock';
 
 export function LessonPage() {
   const { stageSlug, lessonSlug } = useParams();
   const ref = findLesson(stageSlug, lessonSlug);
   const { progress, setStatus, bookmarks, toggleBookmark, saveNote } = useStore();
+  const { setOpen } = useTutorDock();
   const [noteText, setNoteText] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
 
@@ -68,6 +70,15 @@ export function LessonPage() {
         description={lesson.summary}
         actions={
           <>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setOpen(true)}
+              title="在右侧展开 AI 导师（会自动带上本节内容）"
+            >
+              <Sparkles className="h-4 w-4 text-brand-400" />
+              问 AI 导师
+            </button>
             <button
               type="button"
               className="btn-ghost"
@@ -117,7 +128,7 @@ export function LessonPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid gap-4">
         <div className="space-y-4">
           <SectionBlock title="直觉解释" icon={<Lightbulb className="h-4 w-4" />} tone="brand">
             <p className="text-sm leading-[1.95] text-slate-300">{lesson.intuition}</p>
@@ -246,24 +257,6 @@ export function LessonPage() {
               <span />
             )}
           </div>
-        </div>
-
-        <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">
-          <TutorPanel
-            className="h-full"
-            storageKey={`tutor-${key}`}
-            context={{
-              title: lesson.title,
-              stageTitle: stage.stageTitle,
-              summary: lesson.summary,
-              intuition: lesson.intuition,
-              formal: lesson.formal,
-              formula: lesson.formula,
-              code: lesson.codeExample?.code,
-              mistakes: lesson.mistakes,
-            }}
-            intro={`正在学习「${lesson.title}」。选个模式提问，导师会结合本节内容回答。`}
-          />
         </div>
       </div>
     </>
