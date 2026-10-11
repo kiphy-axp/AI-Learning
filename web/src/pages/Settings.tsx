@@ -1,10 +1,11 @@
 import { Database, Download, HardDrive, KeyRound, Save, Upload } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PageHeader, SectionBlock } from '../components/ui';
 import { TOTALS } from '../lib/content';
 import { useStore } from '../lib/store';
 
 const PRESETS = [
+  { id: 'opencode-go', label: 'OpenCode Go', baseUrl: 'https://opencode.ai/zen/go/v1', model: 'deepseek-v4-flash' },
   { id: 'deepseek', label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
   { id: 'openai', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
   { id: 'openrouter', label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', model: 'anthropic/claude-3.5-sonnet' },
@@ -14,13 +15,20 @@ const PRESETS = [
 
 export function Settings() {
   const { tutor, saveSettings, stats } = useStore();
-  const [provider, setProvider] = useState(tutor.provider || 'deepseek');
+  const [provider, setProvider] = useState(tutor.provider || 'opencode-go');
   const [baseUrl, setBaseUrl] = useState(tutor.baseUrl || PRESETS[0].baseUrl);
   const [model, setModel] = useState(tutor.model || PRESETS[0].model);
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
   const [importMsg, setImportMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // 配置是异步从本地服务读取的，读到后同步到表单，避免显示成无关的默认值
+  useEffect(() => {
+    if (tutor.baseUrl) setBaseUrl(tutor.baseUrl);
+    if (tutor.model) setModel(tutor.model);
+    if (tutor.provider) setProvider(tutor.provider);
+  }, [tutor.baseUrl, tutor.model, tutor.provider]);
 
   const applyPreset = (id: string) => {
     setProvider(id);
