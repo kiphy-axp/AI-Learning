@@ -22,13 +22,13 @@ import { Markdown } from '../components/Markdown';
 import { DifficultyChip, PageHeader, SectionBlock, StatusChip } from '../components/ui';
 import { findLesson, neighbours } from '../lib/content';
 import { useStore } from '../lib/store';
-import { useTutorDock } from '../lib/tutor-dock';
+import { useSideDock } from '../lib/side-dock';
 
 export function LessonPage() {
   const { stageSlug, lessonSlug } = useParams();
   const ref = findLesson(stageSlug, lessonSlug);
   const { progress, setStatus, bookmarks, toggleBookmark, saveNote } = useStore();
-  const { setOpen } = useTutorDock();
+  const { openTab } = useSideDock();
   const [noteText, setNoteText] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
 
@@ -73,7 +73,7 @@ export function LessonPage() {
             <button
               type="button"
               className="btn-ghost"
-              onClick={() => setOpen(true)}
+              onClick={() => openTab('tutor')}
               title="在右侧展开 AI 导师（会自动带上本节内容）"
             >
               <Sparkles className="h-4 w-4 text-brand-400" />

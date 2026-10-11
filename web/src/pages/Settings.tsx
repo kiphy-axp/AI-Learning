@@ -212,7 +212,8 @@ export function Settings() {
 
           <SectionBlock title="关于这个学习站" icon={<HardDrive className="h-4 w-4" />}>
             <ul className="space-y-2 text-xs leading-relaxed text-slate-400">
-              <li>· 完全离线可用：前端资源与课程内容都打包在本地，不依赖任何在线服务。</li>
+              <li>· 课程与界面都在本机：前端资源、课程内容、学习数据全部打包/保存在本地，不依赖任何在线服务。</li>
+              <li>· 只有你主动使用 AI 导师时，才会向你配置的模型接口发起请求；不配也能用基于课程内容的离线讲解。</li>
               <li>· 数据不出本机：进度、错题、笔记、学习时长全部写入本地 SQLite。</li>
               <li>
                 · 课程规模：{TOTALS.stages} 个阶段 / {TOTALS.lessons} 个知识点 / {TOTALS.quizzes} 道练习题 /{' '}

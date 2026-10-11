@@ -1,12 +1,13 @@
 import { BookMarked, RotateCcw, Target } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { EmptyState, PageHeader, StatTile } from '../components/ui';
+import { EmptyState, StatTile } from './ui';
 import { LESSON_ORDER } from '../lib/content';
 import { useStore } from '../lib/store';
 import type { QuizQuestion } from '../lib/types';
 
-export function WrongBook() {
+/** 错题本面板：已并入「练习测验」页，作为其中一个视图 */
+export function WrongBookPanel() {
   const { wrongQuestions, attempts, stats } = useStore();
 
   const questionMap = useMemo(() => {
@@ -36,12 +37,6 @@ export function WrongBook() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="错题本"
-        title="错过的题，就是该补的洞"
-        description="这里汇总最近一次答错、且还没答对的题目。建议隔天重做一遍：点「重做本节」回到练习页。"
-      />
-
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="未订正错题" value={wrongQuestions.length} tone="amber" />
         <StatTile label="累计答题" value={attempts.length} />

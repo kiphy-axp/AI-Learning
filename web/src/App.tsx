@@ -1,8 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { useTutorDock, TutorDockProvider } from './lib/tutor-dock';
+import { SideDockProvider, useSideDock } from './lib/side-dock';
 import { Sidebar } from './components/Sidebar';
-import { TutorDock } from './components/TutorDock';
+import { SideDock } from './components/SideDock';
 import { Dashboard } from './pages/Dashboard';
 import { Interview } from './pages/Interview';
 import { LessonPage } from './pages/LessonPage';
@@ -13,7 +13,6 @@ import { Projects } from './pages/Projects';
 import { Roadmap } from './pages/Roadmap';
 import { Settings } from './pages/Settings';
 import { Tutor } from './pages/Tutor';
-import { WrongBook } from './pages/WrongBook';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -46,14 +45,14 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
 export function App() {
   return (
-    <TutorDockProvider>
+    <SideDockProvider>
       <Shell />
-    </TutorDockProvider>
+    </SideDockProvider>
   );
 }
 
 function Shell() {
-  const { open } = useTutorDock();
+  const { open } = useSideDock();
 
   return (
     <div className="flex min-h-screen">
@@ -75,14 +74,15 @@ function Shell() {
               <Route path="/notes" element={<Notes />} />
               <Route path="/tutor" element={<Tutor />} />
               <Route path="/interview" element={<Interview />} />
-              <Route path="/wrong" element={<WrongBook />} />
+              {/* 错题本已并入练习测验 */}
+              <Route path="/wrong" element={<Navigate to="/practice?view=wrong" replace />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </ErrorBoundary>
         </div>
       </main>
-      <TutorDock />
+      <SideDock />
     </div>
   );
 }

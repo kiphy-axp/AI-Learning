@@ -1,19 +1,16 @@
 import {
-  BookMarked,
   Brain,
   CalendarCheck,
   Compass,
   GraduationCap,
-  NotebookPen,
   Route as RouteIcon,
   Settings as SettingsIcon,
   Sparkles,
   Target,
 } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { TOTALS } from '../lib/content';
 import { useStore } from '../lib/store';
-import { useTutorDock } from '../lib/tutor-dock';
 
 const NAV = [
   { to: '/', label: '总览', icon: Compass },
@@ -21,26 +18,25 @@ const NAV = [
   { to: '/practice', label: '练习测验', icon: Target },
   { to: '/projects', label: '实战项目', icon: CalendarCheck },
   { to: '/interview', label: '面试考点', icon: Brain },
-  { to: '/wrong', label: '错题本', icon: BookMarked },
-  { to: '/notes', label: '学习笔记', icon: NotebookPen },
-  { to: '/settings', label: '设置', icon: SettingsIcon },
 ];
 
 export function Sidebar() {
-  const { stats, tutor } = useStore();
-  const { setOpen, open } = useTutorDock();
+  const { stats } = useStore();
 
   return (
     <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col border-r border-white/8 bg-ink-900/60 px-4 py-5 backdrop-blur lg:flex">
-      <div className="flex items-center gap-2.5 px-2">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 text-ink-950">
+      {/* 左上角图标即设置入口 */}
+      <Link
+        to="/settings"
+        title="打开设置（模型接口与本地数据）"
+        className="group flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-white/5"
+      >
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 text-ink-950">
           <Sparkles className="h-5 w-5" />
         </div>
-        <div className="leading-tight">
-          <div className="text-sm font-semibold text-slate-100">AI 算法实验室</div>
-          <div className="text-[11px] text-slate-500">本地学习站 · 离线可用</div>
-        </div>
-      </div>
+        <div className="min-w-0 flex-1 text-sm font-semibold leading-tight text-slate-100">AI 算法实验室</div>
+        <SettingsIcon className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:rotate-45 group-hover:text-brand-300" />
+      </Link>
 
       <nav className="mt-5 flex-1 space-y-0.5 overflow-y-auto">
         {NAV.map(({ to, label, icon: Icon }) => (
@@ -94,25 +90,6 @@ export function Sidebar() {
             连续天数
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="w-full border-t border-white/8 pt-2.5 text-left text-[11px] text-slate-500 transition hover:text-slate-300"
-          title={`AI 导师在右侧面板，点击${open ? '收起' : '展开'}`}
-        >
-          <span className="flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 shrink-0 text-brand-400" />
-            <span className="min-w-0 flex-1 truncate">
-              AI 导师
-              {tutor.hasKey ? (
-                <span className="text-emerald-300"> · {tutor.model || '已接入'}</span>
-              ) : (
-                <span className="text-amber-300"> · 离线模式</span>
-              )}
-            </span>
-            <span className="shrink-0 text-slate-400">{open ? '收起 →' : '展开 →'}</span>
-          </span>
-        </button>
       </div>
     </aside>
   );
