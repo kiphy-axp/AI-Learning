@@ -36,9 +36,16 @@ const LEGEND_KINDS = ['start', 'battle', 'elite', 'unknown', 'rest', 'boss'] as 
 export function Roadmap() {
   const { progress, stats } = useStore();
   const [params, setParams] = useSearchParams();
-  const [view, setView] = useState<'map' | 'list'>('map');
   const [query, setQuery] = useState('');
   const stageParam = params.get('stage') ?? '';
+  // 视图同步到 URL，方便分享与刷新后保持
+  const view: 'map' | 'list' = params.get('view') === 'list' ? 'list' : 'map';
+  const setView = (next: 'map' | 'list') => {
+    const nextParams = new URLSearchParams(params);
+    if (next === 'list') nextParams.set('view', 'list');
+    else nextParams.delete('view');
+    setParams(nextParams, { replace: true });
+  };
 
   /** 当前位置：优先取显式标记「学习中」的知识点，否则取第一个还没掌握的 */
   const currentKey = useMemo(() => {
@@ -58,7 +65,6 @@ export function Roadmap() {
   // 从别的页面带 ?stage= 过来时，滚动到对应阶段
   useEffect(() => {
     if (!stageParam) return;
-    setView('map');
     const timer = window.setTimeout(() => {
       document.getElementById(`stage-${stageParam}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 120);
