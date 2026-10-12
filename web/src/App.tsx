@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Interview } from './pages/Interview';
 import { LessonPage } from './pages/LessonPage';
 import { Notes } from './pages/Notes';
+import { Playground } from './pages/Playground';
 import { Practice } from './pages/Practice';
 import { PracticePage } from './pages/PracticePage';
 import { Projects } from './pages/Projects';
@@ -72,6 +73,7 @@ function Shell() {
               <Route path="/practice/:stageSlug/:lessonSlug" element={<PracticePage />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/notes" element={<Notes />} />
+              <Route path="/playground" element={<Playground />} />
               <Route path="/tutor" element={<Tutor />} />
               <Route path="/interview" element={<Interview />} />
               {/* 错题本已并入练习测验 */}

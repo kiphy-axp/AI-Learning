@@ -42,13 +42,14 @@ export function CodeRunner({
   code,
   lang,
   className = '',
-  autoFocusRun = false,
+  runSignal = 0,
   onResult,
 }: {
   code: string;
   lang: string;
   className?: string;
-  autoFocusRun?: boolean;
+  /** 递增这个值即触发一次运行（用于 Ctrl/Cmd+Enter 等外部触发） */
+  runSignal?: number;
   /** 把每次运行结果回传给调用方（练习页用它参与判分） */
   onResult?: (result: RunResult) => void;
 }) {
@@ -92,9 +93,9 @@ export function CodeRunner({
   };
 
   useEffect(() => {
-    if (autoFocusRun && runnable && available) void run();
+    if (runSignal > 0 && runnable && available) void run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoFocusRun, runnable, available]);
+  }, [runSignal]);
 
   if (!runnable) {
     return (

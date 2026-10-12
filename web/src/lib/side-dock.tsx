@@ -11,7 +11,7 @@ import { useLocation } from 'react-router-dom';
 import type { TutorContext } from '../components/TutorPanel';
 import { findLesson } from './content';
 
-export type DockTab = 'tutor' | 'notes';
+export type DockTab = 'tutor' | 'notes' | 'playground';
 
 type DockValue = {
   open: boolean;
@@ -76,7 +76,7 @@ export function SideDockProvider({ children }: { children: ReactNode }) {
       return false;
     }
   });
-  const [tab, setTabState] = useState<DockTab>(() => readStored<DockTab>(TAB_KEY, 'tutor', ['tutor', 'notes']));
+  const [tab, setTabState] = useState<DockTab>(() => readStored<DockTab>(TAB_KEY, 'tutor', ['tutor', 'notes', 'playground']));
 
   const persist = useCallback((key: string, value: string) => {
     try {
@@ -105,10 +105,10 @@ export function SideDockProvider({ children }: { children: ReactNode }) {
 
   const derived = useMemo(() => deriveContext(location.pathname), [location.pathname]);
 
-  /** 支持 ?dock=tutor / ?dock=notes 直接展开对应面板，?dock=0 收起 */
+  /** 支持 ?dock=tutor / ?dock=notes / ?dock=playground 直接展开对应面板，?dock=0 收起 */
   const dockParam = new URLSearchParams(location.search).get('dock');
   useEffect(() => {
-    if (dockParam === 'tutor' || dockParam === 'notes') {
+    if (dockParam === 'tutor' || dockParam === 'notes' || dockParam === 'playground') {
       setTabState(dockParam);
       persist(TAB_KEY, dockParam);
       setOpenState(true);

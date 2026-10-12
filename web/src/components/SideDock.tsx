@@ -1,13 +1,15 @@
-import { Maximize2, NotebookPen, PanelRightClose, Sparkles } from 'lucide-react';
+import { Maximize2, NotebookPen, PanelRightClose, Sparkles, SquareTerminal } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSideDock, type DockTab } from '../lib/side-dock';
 import { useStore } from '../lib/store';
 import { NotesPanel } from './NotesPanel';
+import { PlaygroundPanel } from './PlaygroundPanel';
 import { TutorPanel } from './TutorPanel';
 
 const TABS: { id: DockTab; label: string; icon: typeof Sparkles }[] = [
   { id: 'tutor', label: 'AI 导师', icon: Sparkles },
   { id: 'notes', label: '学习笔记', icon: NotebookPen },
+  { id: 'playground', label: '试验场', icon: SquareTerminal },
 ];
 
 /**
@@ -21,10 +23,12 @@ export function SideDock() {
   const location = useLocation();
 
   // 独立整页 /tutor 与 /notes 已经是一整屏，抽屉不再重复出现
-  if (location.pathname === '/tutor' || location.pathname === '/notes') return null;
+  if (location.pathname === '/tutor' || location.pathname === '/notes' || location.pathname === '/playground') {
+    return null;
+  }
 
-  const fullPageHref = tab === 'tutor' ? '/tutor' : '/notes';
-  const fullPageTitle = tab === 'tutor' ? '展开到整页（可切换知识点）' : '展开到整页';
+  const fullPageHref = tab === 'tutor' ? '/tutor' : tab === 'notes' ? '/notes' : '/playground';
+  const fullPageTitle = tab === 'tutor' ? '展开到整页（可切换知识点）' : '展开到整页写更舒服';
 
   return (
     <>
@@ -49,7 +53,7 @@ export function SideDock() {
                 className={`h-1.5 w-1.5 rounded-full ${tutor.hasKey ? 'bg-emerald-400' : 'bg-amber-400'}`}
                 title={tutor.hasKey ? '已接入模型' : '离线模式'}
               />
-            ) : notes.length ? (
+            ) : id === 'notes' && notes.length ? (
               <span className="font-mono text-[10px] text-slate-500">{notes.length}</span>
             ) : null}
           </button>
@@ -108,9 +112,13 @@ export function SideDock() {
                 上下文：{contextLabel}
               </span>
             </div>
-          ) : (
+          ) : tab === 'notes' ? (
             <div className="mt-1.5 px-1 text-[11px] text-slate-500">
               笔记保存在本地数据库，支持 Markdown 与 $公式$
+            </div>
+          ) : (
+            <div className="mt-1.5 px-1 text-[11px] text-slate-500">
+              随便写、随便跑，代码只存在浏览器本地，⌘/Ctrl + Enter 运行
             </div>
           )}
         </header>
@@ -127,8 +135,10 @@ export function SideDock() {
                 : '当前没有指定知识点。可以自由提问计算机与 AI 算法相关的问题；进入任意讲义或练习页后，导师会自动带上那一节的内容。'
             }
           />
-        ) : (
+        ) : tab === 'notes' ? (
           <NotesPanel compact />
+        ) : (
+          <PlaygroundPanel />
         )}
       </aside>
     </>
