@@ -6,14 +6,17 @@ import { createServer } from 'node:http';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import {
+  DATA_DIR,
   PROJECT_ROOT,
   addStudySeconds,
+  backupDatabase,
   createNote,
   deleteNote,
   encryptSecret,
   exportAll,
   getSetting,
   listAttempts,
+  listBackups,
   listBookmarks,
   listNotes,
   listProgress,
@@ -22,6 +25,7 @@ import {
   recordAttempt,
   setLessonStatus,
   setSetting,
+  startAutoBackup,
   toggleBookmark,
   toggleProjectTask,
   updateNote,
@@ -244,6 +248,15 @@ async function handleApi(req, res, pathname) {
     return sendJson(res, 200, result);
   }
 
+  if (pathname === '/api/backups' && method === 'GET') {
+    return sendJson(res, 200, { dir: DATA_DIR, backups: listBackups() });
+  }
+
+  if (pathname === '/api/backup' && method === 'POST') {
+    const target = backupDatabase();
+    return sendJson(res, 200, { ok: Boolean(target), path: target, backups: listBackups() });
+  }
+
   if (pathname === '/api/export' && method === 'GET') {
     return sendJson(res, 200, exportAll());
   }
@@ -334,11 +347,14 @@ const server = createServer(async (req, res) => {
   }
 });
 
+startAutoBackup();
+
 server.listen(PORT, HOST, () => {
   const url = `http://${HOST}:${PORT}`;
   console.log(`\n  AI 算法实验室 · 本地学习站`);
   console.log(`  ${url}`);
-  console.log(`  数据文件：${join(PROJECT_ROOT, 'data', 'learning.db')}`);
+  console.log(`  数据文件：${join(DATA_DIR, 'learning.db')}`);
+  console.log(`  自动备份：${join(DATA_DIR, 'backups')}（每天一份，保留 14 天）`);
   console.log(`  停止服务：Ctrl+C\n`);
   if (process.env.OPEN_BROWSER === '1') {
     import('node:child_process').then(({ spawn }) => {

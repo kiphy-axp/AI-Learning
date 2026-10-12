@@ -25,7 +25,7 @@ export function Practice() {
         description={
           view === 'wrong'
             ? '汇总最近一次答错、且还没订正的题目，按知识点分组。答对同一道题后会自动移出。'
-            : '每节 3 道题：选择题、简答题、编程题。答完立即给出解析与参考答案，答错的知识点会自动进入错题本和薄弱清单。'
+            : '每节 2-3 道题：选择题 + 简答题；教代码的小节还会多一道能直接在本机运行的编程题。答完立即给出解析与参考答案，答错的知识点会自动进入错题本。'
         }
         actions={
           <div className="flex overflow-hidden rounded-xl border border-white/10">

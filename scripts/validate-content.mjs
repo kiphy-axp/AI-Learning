@@ -93,14 +93,16 @@ function checkLesson(stageFile, stage, lesson, index) {
       else if (!/^https?:\/\//.test(r.url)) fail(where, `resources[${i}].url 不是 http(s) 链接`);
     });
   }
-  if (!Array.isArray(lesson.quiz) || lesson.quiz.length !== 3) {
-    fail(where, `quiz 必须恰好 3 题，实际 ${lesson.quiz?.length ?? 0}`);
+  // 2-3 题：选择 + 简答是必须的，编程题只在"这一节真的教代码"时才加
+  if (!Array.isArray(lesson.quiz) || lesson.quiz.length < 2 || lesson.quiz.length > 3) {
+    fail(where, `quiz 应为 2-3 题，实际 ${lesson.quiz?.length ?? 0}`);
     return;
   }
   stats.quizzes += lesson.quiz.length;
   const types = lesson.quiz.map((q) => q.type);
-  if (types.join(',') !== 'choice,short,code') {
-    fail(where, `quiz 题型顺序应为 choice,short,code，实际 ${types.join(',')}`);
+  const expectedTypes = ['choice', 'short', 'code'].slice(0, types.length);
+  if (types.join(',') !== expectedTypes.join(',')) {
+    fail(where, `quiz 题型顺序应为 ${expectedTypes.join(',')}，实际 ${types.join(',')}`);
   }
   lesson.quiz.forEach((q, qi) => {
     const qw = `${where} › quiz[${qi}]`;

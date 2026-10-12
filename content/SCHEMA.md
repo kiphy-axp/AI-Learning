@@ -49,7 +49,7 @@
 | `mistakes` | string[] | ✅ | 3-4 条常见错误，每条 15-40 字，写"错在哪 + 正确做法" |
 | `interviewPoints` | string[] | ✅ | 2-4 条面试/笔试考点。`算法岗核心` 阶段必须写满 3 条以上 |
 | `resources` | object[] | ✅ | 1-3 条延伸资源 `{"title": "...", "url": "https://..."}`，优先官方文档 / 论文 / 权威教程 |
-| `quiz` | array | ✅ | 恰好 3 题，顺序固定：choice → short → code |
+| `quiz` | array | ✅ | **2-3 题**，顺序固定：choice → short（→ code）。编程题（code）只在**这一节真的教代码**时才加：概念课、工具课、计算机组成课不要硬凑编程题 |
 
 ### codeExample
 

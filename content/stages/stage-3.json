@@ -72,20 +72,6 @@
             "encoding"
           ],
           "explanation": "抓住「字节不变、解读规则不一致」这一点，并说出显式指定 encoding 的做法，就能拿到主要分数。"
-        },
-        {
-          "id": "files-and-folders-q3",
-          "type": "code",
-          "prompt": "写出在终端里依次完成四件事的命令：① 打印当前目录的绝对路径；② 在当前位置新建 ai-lab/data 两级目录；③ 把两行文本（表头「名字,分数」与一行数据「小明,90」）写入 ai-lab/data/scores.csv；④ 打印这个文件的内容。",
-          "starterCode": "#!/bin/bash\n# ① 打印当前目录\n",
-          "solution": "#!/bin/bash\npwd\nmkdir -p ai-lab/data\nprintf '名字,分数\\n小明,90\\n' > ai-lab/data/scores.csv\ncat ai-lab/data/scores.csv",
-          "checks": [
-            "pwd",
-            "mkdir -p",
-            "scores.csv",
-            "cat"
-          ],
-          "explanation": "pwd 确认位置，mkdir -p 一次建多级目录，重定向 > 写入文件，cat 打印内容——四条命令覆盖了「我在哪、建目录、写文件、看文件」。"
         }
       ]
     },
@@ -153,20 +139,6 @@
             "格式信息"
           ],
           "explanation": "答到「富文本会写入格式信息」与「标点被替换成程序不认的字符」两点，就抓住了要害。"
-        },
-        {
-          "id": "text-and-code-editor-q3",
-          "type": "code",
-          "prompt": "写出在终端里完成四步的命令：① 检查 VS Code 的命令行入口并打印版本号；② 新建 ~/ai-lab/hello 目录并进入；③ 用 VS Code 打开这个文件夹（不是单个文件）；④ 打印 VS Code 用户配置文件 settings.json 的内容（macOS 路径）。",
-          "starterCode": "#!/bin/bash\n# ① 检查 VS Code 命令行入口\n",
-          "solution": "#!/bin/bash\ncode --version\nmkdir -p ~/ai-lab/hello\ncd ~/ai-lab/hello\ncode .\ncat ~/Library/Application\\ Support/Code/User/settings.json",
-          "checks": [
-            "code --version",
-            "mkdir -p",
-            "code .",
-            "settings.json"
-          ],
-          "explanation": "code --version 验证命令行入口，code . 打开当前文件夹（点号就是当前目录），设置文件里能看到 autoSave、fontSize、encoding 三项。"
         }
       ]
     },
@@ -238,17 +210,16 @@
         {
           "id": "terminal-first-look-q3",
           "type": "code",
-          "prompt": "依次写出五条命令：① 打印当前目录；② 列出当前目录的全部文件（含隐藏文件与详细信息）；③ 新建 ~/ai-lab/logs 目录；④ 进入该目录；⑤ 打印该目录下一个名为 note.txt 的文件内容。",
-          "starterCode": "#!/bin/bash\n# ① 当前目录\n",
-          "solution": "#!/bin/bash\npwd\nls -la\nmkdir -p ~/ai-lab/logs\ncd ~/ai-lab/logs\ncat note.txt",
+          "prompt": "依次写出完成下面四步的命令：① 用 pwd 确认当前目录；② 用 mkdir -p 一次建出 notes/2026 两级目录；③ 把一行文本「第一条笔记：pwd 看位置」写入 notes/2026/today.txt，并用 cat 打印出来；④ 用 ls -l 列出 notes/2026，确认文件确实在里面。建议先 cd 进一个临时目录（mktemp -d）再动手，练完删掉它，避免动到真实文件。",
+          "starterCode": "#!/bin/bash\n# ① 我在哪：打印当前目录的绝对路径\npwd\n# ② 建一个临时目录当练习场（终端没有回收站，练完整个删掉最安全）\nworkdir=$(mktemp -d)\ncd \"$workdir\"\n# ③ 补一行：一次建出 notes/2026 这两级目录\n# ④ 补一行：把「第一条笔记：pwd 看位置」写进 notes/2026/today.txt\n# ⑤ 补一行：打印 today.txt 的内容\n# ⑥ 补一行：列出 notes/2026 的详细信息，确认文件在里面\n# ⑦ 收尾：回到原来的目录，删掉临时目录\ncd -\nrm -rf \"$workdir\"",
+          "solution": "#!/bin/bash\n# ① 我在哪：打印当前目录的绝对路径\npwd\n# ② 建一个临时目录当练习场\nworkdir=$(mktemp -d)\ncd \"$workdir\"\n# ③ mkdir -p：一次建出 notes/2026 两级目录\nmkdir -p notes/2026\n# ④ 重定向写入一行文本，再用 cat 打印出来\nprintf '第一条笔记：pwd 看位置\\n' > notes/2026/today.txt\ncat notes/2026/today.txt\n# ⑤ ls -l：列出目录详情，确认文件在里面\nls -l notes/2026\n# ⑥ 收尾：回到原来的目录，删掉临时目录\ncd -\nrm -rf \"$workdir\"",
           "checks": [
             "pwd",
-            "ls -la",
             "mkdir -p",
-            "cd ",
-            "cat"
+            "cat ",
+            "ls -l"
           ],
-          "explanation": "pwd 定位、ls -la 看全量细节、mkdir -p 建目录、cd 进入、cat 看文件，这五条是终端里最高频的动作。"
+          "explanation": "pwd 确认位置、mkdir -p 一次建出多级目录、> 重定向写入、cat 打印内容、ls -l 核对文件确实在里面，正好覆盖「我在哪、建目录、写文件、看文件」这套基本动作；练习放在 mktemp -d 的临时目录里、结束再整个删掉，是因为终端没有回收站，先隔离再动手最安全。"
         }
       ]
     },
@@ -262,7 +233,7 @@
       "estimatedMinutes": 20,
       "summary": "这一节是本站的使用说明：闯关地图怎么读、主线与支线怎么选、练习与错题本怎么用，以及右侧面板里的 AI 导师与学习笔记。",
       "intuition": "学不动往往不是因为难，而是因为不知道自己走到哪了。这个学习站把 近 200 个知识点铺成一张闯关地图：每个节点是一节内容，走过一节它就亮起来；模块之间有一处营火，让你停下来把上一模块的题再练一遍；每个阶段的尽头有一个首领，打完它才算通过这个阶段。地图的作用是把「我学到哪了」变成一眼可见的事——看得见进度，人才撑得过中间那段最枯燥的路。",
-      "formal": "地图元素的读法：节点 = 一个知识点（一节讲义），点击进入；营火 = 模块之间的休整点，点进去练上一模块的题；首领 = 阶段通关检验，把这一阶段的知识点全部过一遍才算通过；节点形状代表难度，外圈亮度代表掌握状态（未开始、学习中、复习中、已掌握）；实线表示这段路已经走通，虚线表示还没走到。\n两条路线：主线 125 节，从零基础打地基到能独立训练模型，必修；支线 74 节，面向算法岗面试与工程深化（如 GPU、CUDA、论文复现），按需选修，主线没走完就跳会因缺前置而效率更低。\n练习与错题本：每节 3 道题（选择、简答、编程），答错自动进错题本，正确率低于 70% 的知识点进薄弱清单，练习页支持随机抽题。\n右侧面板：「AI 导师」带着本节内容可直接追问，「学习笔记」支持 Markdown 与公式；左上角图标是设置入口，进度存在本地不会丢。",
+      "formal": "地图元素的读法：节点 = 一个知识点（一节讲义），点击进入；营火 = 模块之间的休整点，点进去练上一模块的题；首领 = 阶段通关检验，把这一阶段的知识点全部过一遍才算通过；节点形状代表难度，外圈亮度代表掌握状态（未开始、学习中、复习中、已掌握）；实线表示这段路已经走通，虚线表示还没走到。\n两条路线：主线 125 节，从零基础打地基到能独立训练模型，必修；支线 74 节，面向算法岗面试与工程深化（如 GPU、CUDA、论文复现），按需选修，主线没走完就跳会因缺前置而效率更低。\n练习与错题本：每节 2-3 道题（选择题 + 简答题，教代码的小节会多一道可运行的编程题），答错自动进错题本，正确率低于 70% 的知识点进薄弱清单，练习页支持随机抽题。\n右侧面板：「AI 导师」带着本节内容可直接追问，「学习笔记」支持 Markdown 与公式；左上角图标是设置入口，进度存在本地不会丢。",
       "formula": "",
       "aiConnection": "把学习站当工作台用，而不是当视频课看：AI 导师适合追问「这个公式为什么成立」「这段代码换个写法行不行」，但不要让它替你写完整作业——面试现场没有人替你解释。真正与工作对齐的用法是：每学完一节，在笔记里留下具体数字与结论（例如 7B 模型用 bf16 存权重约占 14GB），面试前把错题本和薄弱清单当复习提纲过一遍。自己找答案、自己验证，正是算法岗每天在做的事。",
       "codeExample": {
@@ -316,20 +287,6 @@
             "前置知识"
           ],
           "explanation": "答出两条线的定位差异，并说清「支线依赖主线前置知识」这个理由，就完整了。"
-        },
-        {
-          "id": "how-to-use-this-site-q3",
-          "type": "code",
-          "prompt": "用终端把本周要学的三节整理成一个清单文件：① 新建 ~/ai-lab/plan 目录；② 把三行内容（每行一节的名字，例如「1 文件与文件夹」）写入 ~/ai-lab/plan/week1.txt；③ 打印这个文件确认内容；④ 数一下它有几行。写出命令。",
-          "starterCode": "#!/bin/bash\n# ① 建计划目录\n",
-          "solution": "#!/bin/bash\nmkdir -p ~/ai-lab/plan\nprintf '1 文件与文件夹\\n2 文本编辑器与代码编辑器\\n3 终端初识\\n' > ~/ai-lab/plan/week1.txt\ncat ~/ai-lab/plan/week1.txt\nwc -l ~/ai-lab/plan/week1.txt",
-          "checks": [
-            "mkdir -p",
-            "week1.txt",
-            "cat",
-            "wc -l"
-          ],
-          "explanation": "mkdir -p 建目录，重定向写入清单，cat 确认内容，wc -l 数行数——把学习计划也变成可以验证的文件。"
         }
       ]
     },
@@ -397,20 +354,6 @@
             "主动重建"
           ],
           "explanation": "答到「用大白话复述」与「讲不清就是没懂，因为输出比输入要求更高」这两点即可得分。"
-        },
-        {
-          "id": "learning-methods-q3",
-          "type": "code",
-          "prompt": "用终端建立一个学习日志：① 新建 ~/ai-lab/journal 目录；② 写入今天的记录，包含日期、番茄钟个数与一句总结；③ 再用追加的方式写入昨天补记的一条；④ 打印整个日志确认两条都在。写出命令。",
-          "starterCode": "#!/bin/bash\n# ① 建日志目录\n",
-          "solution": "#!/bin/bash\nmkdir -p ~/ai-lab/journal\nprintf '2026-10-11 番茄钟 2 个：搞懂了绝对路径与相对路径\\n' > ~/ai-lab/journal/log.txt\nprintf '2026-10-10 番茄钟 2 个：补记终端五条命令\\n' >> ~/ai-lab/journal/log.txt\ncat ~/ai-lab/journal/log.txt",
-          "checks": [
-            "mkdir -p",
-            "> ~/ai-lab/journal/log.txt",
-            ">>",
-            "cat"
-          ],
-          "explanation": "单箭头 > 覆盖写入，双箭头 >> 追加写入——日志这类需要累积的文件必须用追加，否则会把前面的记录冲掉。"
         }
       ]
     },
@@ -478,20 +421,6 @@
             "前置知识"
           ],
           "explanation": "关键是会算「总小时数 ÷ 每周小时数」，并说清依赖关系决定了顺序不可压缩，只能靠增加每周投入来缩短总时长。"
-        },
-        {
-          "id": "roadmap-to-ai-job-q3",
-          "type": "code",
-          "prompt": "用终端建一份自己的计划：① 新建 ~/ai-lab/plan 目录；② 把七幕的周数写成七行文本存进 roadmap.txt；③ 用 shell 算术算出固定部分总周数（2+6+8+8+6+12）与对应的总小时数（每周 6 小时）并打印；④ 打印这份计划确认内容。写出命令。",
-          "starterCode": "#!/bin/bash\n# ① 建计划目录\n",
-          "solution": "#!/bin/bash\nmkdir -p ~/ai-lab/plan\ncat > ~/ai-lab/plan/roadmap.txt <<'EOF'\n第一幕 起步 2 周\n第二幕 编程入门 6 周\n第三幕 计算机科学基础 8 周\n第四幕 数学 8 周\n第五幕 数据与经典机器学习 6 周\n第六幕 深度学习与大模型 12 周\n第七幕 算法岗进阶 按需 8-12 周\nEOF\nweeks=$((2+6+8+8+6+12))\necho '固定部分周数:' $weeks\necho '总小时数:' $((weeks * 6))\ncat ~/ai-lab/plan/roadmap.txt",
-          "checks": [
-            "mkdir -p",
-            "cat >",
-            "$((2+6+8+8+6+12))",
-            "$((weeks * 6))"
-          ],
-          "explanation": "heredoc 一次写入多行文本，$(( )) 做整数运算：2+6+8+8+6+12 得 42 周，再乘 6 得 252 小时——计划表用命令算出来，比手抄更不容易出错。"
         }
       ]
     }

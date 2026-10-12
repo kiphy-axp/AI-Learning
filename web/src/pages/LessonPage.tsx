@@ -17,7 +17,7 @@ import {
   Target,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Markdown } from '../components/Markdown';
 import { DifficultyChip, PageHeader, SectionBlock, StatusChip } from '../components/ui';
 import { findLesson, neighbours } from '../lib/content';
@@ -29,6 +29,7 @@ export function LessonPage() {
   const ref = findLesson(stageSlug, lessonSlug);
   const { progress, setStatus, bookmarks, toggleBookmark, saveNote } = useStore();
   const { openTab } = useSideDock();
+  const navigate = useNavigate();
   const [noteText, setNoteText] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
 
@@ -49,6 +50,10 @@ export function LessonPage() {
   const status = row?.status ?? 'not-started';
   const isBookmarked = bookmarks.has(key);
   const { prev, next } = neighbours(ref);
+  const mastered = status === 'mastered';
+  const stagePosition = `${stage.lessons.findIndex((l) => l.slug === lesson.slug) + 1} / ${stage.lessons.length}`;
+  const nextHref = next ? `/learn/${next.stage.stageSlug}/${next.lesson.slug}` : null;
+  const nextIsNewStage = Boolean(next && next.stage.stageSlug !== stage.stageSlug);
 
   return (
     <>
@@ -65,7 +70,7 @@ export function LessonPage() {
       </div>
 
       <PageHeader
-        eyebrow={`阶段 ${stage.stage} · 第 ${lesson.order} 节`}
+        eyebrow={`阶段 ${stage.stage} · 本阶段第 ${stagePosition} 节`}
         title={lesson.title}
         description={lesson.summary}
         actions={
@@ -88,10 +93,19 @@ export function LessonPage() {
               {isBookmarked ? <BookmarkCheck className="h-4 w-4 text-brand-400" /> : <Bookmark className="h-4 w-4" />}
               {isBookmarked ? '已收藏' : '收藏'}
             </button>
-            <Link className="btn-primary" to={`/practice/${stage.stageSlug}/${lesson.slug}`}>
+            <Link
+              className={mastered ? 'btn-ghost' : 'btn-primary'}
+              to={`/practice/${stage.stageSlug}/${lesson.slug}`}
+            >
               <Target className="h-4 w-4" />
               做本节练习
             </Link>
+            {nextHref ? (
+              <Link className={mastered ? 'btn-primary' : 'btn-ghost'} to={nextHref}>
+                {nextIsNewStage ? '下一阶段' : '下一课'}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : null}
           </>
         }
       />
@@ -233,29 +247,60 @@ export function LessonPage() {
             </div>
           </SectionBlock>
 
-          <div className="flex items-center justify-between gap-3 pt-1">
-            {prev ? (
-              <Link
-                to={`/learn/${prev.stage.stageSlug}/${prev.lesson.slug}`}
-                className="btn-ghost min-w-0 flex-1 !justify-start"
+          <div className="mt-2 space-y-3 border-t border-white/8 pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {prev ? (
+                <Link
+                  to={`/learn/${prev.stage.stageSlug}/${prev.lesson.slug}`}
+                  className="btn-ghost min-w-0 flex-1 !justify-start !py-2.5"
+                >
+                  <ArrowLeft className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0 text-left">
+                    <span className="block text-[10px] uppercase tracking-wider text-slate-500">上一课</span>
+                    <span className="block truncate">{prev.lesson.title}</span>
+                  </span>
+                </Link>
+              ) : (
+                <span className="flex-1 text-xs text-slate-600">已经很靠前了</span>
+              )}
+              {next ? (
+                <Link
+                  to={nextHref ?? '#'}
+                  className="btn-ghost min-w-0 flex-1 !justify-end !py-2.5"
+                >
+                  <span className="min-w-0 text-right">
+                    <span className="block text-[10px] uppercase tracking-wider text-slate-500">
+                      {nextIsNewStage ? '下一阶段' : '下一课'}
+                    </span>
+                    <span className="block truncate">{next.lesson.title}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0" />
+                </Link>
+              ) : (
+                <span className="flex-1 text-right text-xs text-emerald-300">主线到这里就结束了 🎉</span>
+              )}
+            </div>
+
+            {nextHref && !mastered ? (
+              <button
+                type="button"
+                className="btn-primary w-full"
+                onClick={() => {
+                  void setStatus(lesson.slug, stage.stageSlug, 'mastered');
+                  navigate(nextHref);
+                }}
               >
-                <ArrowLeft className="h-4 w-4 shrink-0" />
-                <span className="truncate">{prev.lesson.title}</span>
+                <CheckCircle2 className="h-4 w-4" />
+                标记已掌握，进入{nextIsNewStage ? '下一阶段' : '下一课'}
+              </button>
+            ) : null}
+
+            {nextHref && next && mastered ? (
+              <Link className="btn-primary w-full" to={nextHref}>
+                继续学{nextIsNewStage ? '下一阶段' : '下一课'}：{next.lesson.title}
+                <ArrowRight className="h-4 w-4" />
               </Link>
-            ) : (
-              <span />
-            )}
-            {next ? (
-              <Link
-                to={`/learn/${next.stage.stageSlug}/${next.lesson.slug}`}
-                className="btn-ghost min-w-0 flex-1 !justify-end"
-              >
-                <span className="truncate">{next.lesson.title}</span>
-                <ArrowRight className="h-4 w-4 shrink-0" />
-              </Link>
-            ) : (
-              <span />
-            )}
+            ) : null}
           </div>
         </div>
       </div>

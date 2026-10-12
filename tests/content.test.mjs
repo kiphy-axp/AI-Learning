@@ -68,7 +68,7 @@ test('每个阶段结构完整且 act / actName 一致', () => {
   }
 });
 
-test('每节课程字段完整，含 track，习题为 choice/short/code 三题', () => {
+test('每节课程字段完整，含 track，习题为 choice/short（教代码的小节再加 code）', () => {
   for (const { file, doc } of docs) {
     const slugs = new Set();
     doc.lessons.forEach((lesson, index) => {
@@ -90,15 +90,21 @@ test('每节课程字段完整，含 track，习题为 choice/short/code 三题'
       assert.equal(lesson.order, index + 1, `${where} order 不连续`);
       assert.ok(!slugs.has(lesson.slug), `${where} slug 重复`);
       slugs.add(lesson.slug);
-      assert.equal(lesson.quiz.length, 3, `${where} 习题数不是 3`);
+      assert.ok(
+        lesson.quiz.length >= 2 && lesson.quiz.length <= 3,
+        `${where} 习题数应为 2-3，实际 ${lesson.quiz.length}`,
+      );
       assert.deepEqual(
         lesson.quiz.map((q) => q.type),
-        ['choice', 'short', 'code'],
+        ['choice', 'short', 'code'].slice(0, lesson.quiz.length),
         `${where} 题型顺序不对`,
       );
       const choice = lesson.quiz[0];
       assert.ok(choice.options.length >= 2 && choice.answerIndex < choice.options.length, `${where} 选择题答案越界`);
-      assert.ok(lesson.quiz[2].solution && lesson.quiz[2].checks.length, `${where} 编程题缺答案或校验点`);
+      const codeQuestion = lesson.quiz[2];
+      if (codeQuestion) {
+        assert.ok(codeQuestion.solution && codeQuestion.checks.length, `${where} 编程题缺答案或校验点`);
+      }
     });
   }
 });
@@ -121,7 +127,7 @@ test('主线/支线规模符合规划', () => {
   assert.ok(lessons >= 195, `知识点总数偏少：${lessons}`);
   assert.ok(main >= 110, `主线知识点偏少：${main}`);
   assert.ok(side >= 70, `支线知识点偏少：${side}`);
-  assert.ok(quizzes >= 580, `习题总数偏少：${quizzes}`);
+  assert.ok(quizzes >= 420, `习题总数偏少：${quizzes}`);
   assert.ok(interviewPoints >= 250, `面试考点偏少：${interviewPoints}`);
 });
 

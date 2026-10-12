@@ -55,26 +55,13 @@
           "id": "cpu-q2",
           "type": "short",
           "prompt": "简述 CPU 取指令-译码-执行的过程，并说明为什么缓存对 CPU 很重要。",
-          "answer": "CPU 先从内存取下一条指令，控制单元对其译码，再由相关部件执行。内存速度远慢于 CPU，若每次都直接访问内存，CPU 会大量空闲。缓存把常用数据提前放到靠近 CPU 的高速小容量存储中，大幅减少等待时间。",
+          "answer": "参考回答：CPU 先从内存取下一条指令，控制单元对其译码，再由相关部件执行。内存速度远慢于 CPU，若每次都直接访问内存，CPU 会大量空闲。缓存把常用数据提前放到靠近 CPU 的高速小容量存储中，大幅减少等待时间。",
           "keywords": [
             "cache",
             "内存",
             "执行"
           ],
           "explanation": "关键在缓存缓解 CPU 与内存的速度差距。"
-        },
-        {
-          "id": "cpu-q3",
-          "type": "code",
-          "prompt": "写一个函数 sum_n(n)，用循环计算 0 到 n-1 的和，模拟 CPU 串行累加。",
-          "starterCode": "def sum_n(n):\n    pass",
-          "solution": "def sum_n(n):\n    total = 0\n    for i in range(n):\n        total += i\n    return total\n\nprint(sum_n(5))",
-          "checks": [
-            "def sum_n",
-            "for i in range",
-            "total"
-          ],
-          "explanation": "用循环逐次累加，就是 CPU 逐条指令串行工作的写照。"
         }
       ],
       "track": "main"
@@ -126,25 +113,13 @@
           "id": "memory-q2",
           "type": "short",
           "prompt": "解释内存中的栈（stack）与堆（heap）有什么区别。",
-          "answer": "栈用于保存函数调用帧和局部变量，由系统自动管理，分配和释放都很快，但容量较小。堆用于动态分配的对象，由程序员或运行时管理，容量大但分配与释放开销更大，可能出现碎片或泄漏。",
+          "answer": "参考回答：栈用于保存函数调用帧和局部变量，由系统自动管理，分配和释放都很快，但容量较小。堆用于动态分配的对象，由程序员或运行时管理，容量大但分配与释放开销更大，可能出现碎片或泄漏。",
           "keywords": [
             "栈",
             "堆",
             "局部变量"
           ],
           "explanation": "栈自动化管理、快而小；堆手动/运行时管理、大而慢。"
-        },
-        {
-          "id": "memory-q3",
-          "type": "code",
-          "prompt": "写一个函数 max_memory_example(n)，创建一个包含 0 到 n-1 的列表并返回其长度，验证创建大数据集时的内存使用。",
-          "starterCode": "def max_memory_example(n):\n    pass",
-          "solution": "def max_memory_example(n):\n    data = list(range(n))\n    return len(data)\n\nprint(max_memory_example(100000))",
-          "checks": [
-            "def max_memory_example",
-            "list(range"
-          ],
-          "explanation": "创建大列表即占用内存，考察对象在内存中的空间开销。"
         }
       ],
       "track": "main"
@@ -196,26 +171,13 @@
           "id": "storage-q2",
           "type": "short",
           "prompt": "比较 HDD 与 SSD 的主要差异。",
-          "answer": "HDD 用旋转磁盘和磁头机械读写，容量大、单位便宜但延迟高、有机械噪音易震损；SSD 用闪存芯片，无机械部件，随机读写快、更耐震、耗电低但单位容量更贵。",
+          "answer": "参考回答：HDD 用旋转磁盘和磁头机械读写，容量大、单位便宜但延迟高、有机械噪音易震损；SSD 用闪存芯片，无机械部件，随机读写快、更耐震、耗电低但单位容量更贵。",
           "keywords": [
             "hdd",
             "ssd",
             "闪存"
           ],
           "explanation": "核心差异在于机械 vs 闪存，导致速度与可靠性不同。"
-        },
-        {
-          "id": "storage-q3",
-          "type": "code",
-          "prompt": "写一个函数 save_and_load(filename, text)，把 text 写入 filename 文件，随后读回并返回。",
-          "starterCode": "def save_and_load(filename, text):\n    pass",
-          "solution": "def save_and_load(filename, text):\n    with open(filename, \"w\", encoding=\"utf-8\") as f:\n        f.write(text)\n    with open(filename, \"r\", encoding=\"utf-8\") as f:\n        return f.read()\n\nprint(save_and_load(\"demo.txt\", \"持久化\"))",
-          "checks": [
-            "def save_and_load",
-            "open(",
-            "read"
-          ],
-          "explanation": "写入再读回即演示了存储的持久化能力。"
         }
       ],
       "track": "main"
@@ -267,25 +229,13 @@
           "id": "os-q2",
           "type": "short",
           "prompt": "简述操作系统如何让多个程序看起来'同时运行'。",
-          "answer": "通过时间片轮转等调度算法，操作系统把 CPU 时间分成极短的时间片，轮流分配给不同进程。由于切换极快，用户感觉像多个程序同时在运行。同时通过虚拟内存和进程隔离，让每个进程拥有独立的内存空间。",
+          "answer": "参考回答：通过时间片轮转等调度算法，操作系统把 CPU 时间分成极短的时间片，轮流分配给不同进程。由于切换极快，用户感觉像多个程序同时在运行。同时通过虚拟内存和进程隔离，让每个进程拥有独立的内存空间。",
           "keywords": [
             "时间片",
             "调度",
             "进程"
           ],
           "explanation": "核心是多任务调度 + 进程隔离的虚拟内存。"
-        },
-        {
-          "id": "os-q3",
-          "type": "code",
-          "prompt": "使用 bash 补全一段命令：先打印系统内核信息，再打印 CPU 核心数。",
-          "starterCode": "#!/bin/bash\n# 查看内核与核心数\n",
-          "solution": "#!/bin/bash\nuname -a\nnproc",
-          "checks": [
-            "uname",
-            "nproc"
-          ],
-          "explanation": "两条命令分别查看内核信息和 CPU 核心数。"
         }
       ],
       "track": "main"
@@ -337,25 +287,13 @@
           "id": "process-q2",
           "type": "short",
           "prompt": "为什么说进程之间是隔离的？这对程序健壮性有什么好处？",
-          "answer": "每个进程拥有独立的虚拟地址空间和资源，一个进程的崩溃或越界不会影响其它进程。因此即使一个程序崩溃，其它进程仍然正常，系统整体更稳定、更安全。",
+          "answer": "参考回答：每个进程拥有独立的虚拟地址空间和资源，一个进程的崩溃或越界不会影响其它进程。因此即使一个程序崩溃，其它进程仍然正常，系统整体更稳定、更安全。",
           "keywords": [
             "隔离",
             "独立",
             "崩溃"
           ],
           "explanation": "独立的地址空间保证了隔离性，提升稳定性与安全性。"
-        },
-        {
-          "id": "process-q3",
-          "type": "code",
-          "prompt": "用 multiprocessing 创建两个子进程，各自打印自己的 PID。",
-          "starterCode": "import multiprocessing\nimport os\n\ndef worker():\n    print(os.getpid())\n",
-          "solution": "import multiprocessing\nimport os\n\ndef worker():\n    print(os.getpid())\n\nif __name__ == \"__main__\":\n    p = multiprocessing.Process(target=worker)\n    p.start()\n    p.join()",
-          "checks": [
-            "multiprocessing.Process",
-            "start"
-          ],
-          "explanation": "用 Process 创建并 start 子进程。"
         }
       ],
       "track": "main"
@@ -407,26 +345,13 @@
           "id": "thread-q2",
           "type": "short",
           "prompt": "什么是竞态条件（race condition）？如何避免？",
-          "answer": "当多个线程同时访问并修改同一共享数据且没有同步时，最终结果取决于执行时序，导致不可预期，这就是竞态条件。通常用锁（mutex）将关键区设为原子操作，或用原子变量来避免。",
+          "answer": "参考回答：当多个线程同时访问并修改同一共享数据且没有同步时，最终结果取决于执行时序，导致不可预期，这就是竞态条件。通常用锁（mutex）将关键区设为原子操作，或用原子变量来避免。",
           "keywords": [
             "race",
             "共享",
             "锁"
           ],
           "explanation": "核心是共享数据无同步导致的不确定性，用锁保证原子性。"
-        },
-        {
-          "id": "thread-q3",
-          "type": "code",
-          "prompt": "使用 threading 创建两个线程，每个线程打印自己的名字，并用 join 等待结束。",
-          "starterCode": "import threading\n\ndef worker(name):\n    print(name)\n",
-          "solution": "import threading\n\ndef worker(name):\n    print(name)\n\nthreads = []\nfor i in range(2):\n    t = threading.Thread(target=worker, args=(f\"T{i}\",))\n    threads.append(t)\n    t.start()\nfor t in threads:\n    t.join()",
-          "checks": [
-            "threading.Thread",
-            "start",
-            "join"
-          ],
-          "explanation": "创建、启动线程并用 join 等待完成。"
         }
       ],
       "track": "main"
@@ -478,26 +403,13 @@
           "id": "file-system-q2",
           "type": "short",
           "prompt": "简述什么是绝对路径和相对路径，并各举一例。",
-          "answer": "绝对路径从根目录开始，如 /home/user/data.txt，任何位置都一致；相对路径从当前工作目录开始，如 data/sample.txt，会随当前目录变化而不同。",
+          "answer": "参考回答：绝对路径从根目录开始，如 /home/user/data.txt，任何位置都一致；相对路径从当前工作目录开始，如 data/sample.txt，会随当前目录变化而不同。",
           "keywords": [
             "绝对",
             "相对",
             "根目录"
           ],
           "explanation": "区分起点：根目录（绝对）vs 当前目录（相对）。"
-        },
-        {
-          "id": "file-system-q3",
-          "type": "code",
-          "prompt": "用 os 模块创建目录 data/raw，并写入一个文件 sample.txt，再检查它是否存在。",
-          "starterCode": "import os\n",
-          "solution": "import os\n\nos.makedirs(\"data/raw\", exist_ok=True)\nwith open(\"data/raw/sample.txt\", \"w\", encoding=\"utf-8\") as f:\n    f.write(\"hello\")\nprint(os.path.exists(\"data/raw/sample.txt\"))",
-          "checks": [
-            "makedirs",
-            "open(",
-            "exists"
-          ],
-          "explanation": "创建目录、写文件、检查存在性即覆盖文件系统基本操作。"
         }
       ],
       "track": "main"
@@ -549,25 +461,13 @@
           "id": "network-q2",
           "type": "short",
           "prompt": "简述 TCP 三次握手的作用。",
-          "answer": "三次握手用于建立可靠的连接：客户端发送 SYN，服务端回复 SYN+ACK，客户端再发 ACK。双方由此确认各自的发送和接收能力正常，并同步初始序号，为后续可靠传输做准备。",
+          "answer": "参考回答：三次握手用于建立可靠的连接：客户端发送 SYN，服务端回复 SYN+ACK，客户端再发 ACK。双方由此确认各自的发送和接收能力正常，并同步初始序号，为后续可靠传输做准备。",
           "keywords": [
             "syn",
             "ack",
             "握手"
           ],
           "explanation": "三次握手确立双向可靠的连接并同步序号。"
-        },
-        {
-          "id": "network-q3",
-          "type": "code",
-          "prompt": "用 socket 写一个函数 resolve_host(host)，将域名解析为 IP 地址并打印。",
-          "starterCode": "import socket\n\ndef resolve_host(host):\n    pass",
-          "solution": "import socket\n\ndef resolve_host(host):\n    ip = socket.gethostbyname(host)\n    print(ip)\n\nresolve_host(\"www.baidu.com\")",
-          "checks": [
-            "socket.gethostbyname",
-            "def resolve_host"
-          ],
-          "explanation": "用 gethostbyname 完成域名到 IP 的解析。"
         }
       ],
       "track": "main"
@@ -619,25 +519,13 @@
           "id": "ip-q2",
           "type": "short",
           "prompt": "IP 地址和端口分别用来干什么？",
-          "answer": "IP 地址在网络层用来定位网络中某一台主机；端口在传输层用来区分同一台主机上的不同应用/服务。两者结合（IP:port）才能精确定位到某个具体的网络服务。",
+          "answer": "参考回答：IP 地址在网络层用来定位网络中某一台主机；端口在传输层用来区分同一台主机上的不同应用/服务。两者结合（IP:port）才能精确定位到某个具体的网络服务。",
           "keywords": [
             "ip",
             "端口",
             "主机"
           ],
           "explanation": "IP 定主机、端口定应用服务。"
-        },
-        {
-          "id": "ip-q3",
-          "type": "code",
-          "prompt": "使用 bash 补全：先查看所有网络接口信息，再 ping 一下 8.8.8.8 测试连通性。",
-          "starterCode": "#!/bin/bash\n# 查看网络接口\n",
-          "solution": "#!/bin/bash\nip a\nping -c 3 8.8.8.8",
-          "checks": [
-            "ip a",
-            "ping"
-          ],
-          "explanation": "ip a 查看接口，ping 测试连通。"
         }
       ],
       "track": "main"
@@ -689,25 +577,13 @@
           "id": "http-q2",
           "type": "short",
           "prompt": "HTTP 是无状态协议，它靠什么维持用户会话？",
-          "answer": "由于 HTTP 无状态，服务器不会记住之前的请求。通常用 Cookie 在客户端保存会话标识，服务端用 Session 保存会话数据，客户端每次请求带上 Cookie，从而在多次请求间维持登录等状态。",
+          "answer": "参考回答：由于 HTTP 无状态，服务器不会记住之前的请求。通常用 Cookie 在客户端保存会话标识，服务端用 Session 保存会话数据，客户端每次请求带上 Cookie，从而在多次请求间维持登录等状态。",
           "keywords": [
             "cookie",
             "session",
             "无状态"
           ],
           "explanation": "用 Cookie/Session 在无状态 HTTP 上模拟出会话状态。"
-        },
-        {
-          "id": "http-q3",
-          "type": "code",
-          "prompt": "写一个函数 http_get(url)，用 urllib 发送 GET 请求并返回状态码和响应体前 100 字符。",
-          "starterCode": "import urllib.request\n\ndef http_get(url):\n    pass",
-          "solution": "import urllib.request\n\ndef http_get(url):\n    req = urllib.request.Request(url, headers={\"User-Agent\": \"Python\"})\n    with urllib.request.urlopen(req) as resp:\n        return resp.status, resp.read().decode(\"utf-8\")[:100]\n\nprint(http_get(\"https://httpbin.org/json\"))",
-          "checks": [
-            "urllib.request.urlopen",
-            "status"
-          ],
-          "explanation": "用 urlopen 发起请求并读取状态码与响应体。"
         }
       ],
       "track": "main"
@@ -759,26 +635,13 @@
           "id": "api-q2",
           "type": "short",
           "prompt": "什么是 API 接口契约？好的 API 应该具备哪些特点？",
-          "answer": "API 接口契约是请求与响应的格式约定，包括 endpoint、方法、参数、返回结构及错误格式。好的 API 应具备一致性、清晰的错误信息、版本化和鉴权机制，让调用方无需了解服务端实现即可稳定调用。",
+          "answer": "参考回答：API 接口契约是请求与响应的格式约定，包括 endpoint、方法、参数、返回结构及错误格式。好的 API 应具备一致性、清晰的错误信息、版本化和鉴权机制，让调用方无需了解服务端实现即可稳定调用。",
           "keywords": [
             "契约",
             "endpoint",
             "参数"
           ],
           "explanation": "契约定义了交互格式；一致性、版本化、鉴权、清晰错误是好 API 的关键。"
-        },
-        {
-          "id": "api-q3",
-          "type": "code",
-          "prompt": "写一个函数 call_api(url, payload)，把 payload 作为 JSON 通过 POST 发送，并返回状态码与响应体。",
-          "starterCode": "import urllib.request\nimport json\n\ndef call_api(url, payload):\n    pass",
-          "solution": "import urllib.request\nimport json\n\ndef call_api(url, payload):\n    data = json.dumps(payload).encode(\"utf-8\")\n    req = urllib.request.Request(url, data=data, headers={\"Content-Type\": \"application/json\"})\n    with urllib.request.urlopen(req) as resp:\n        return resp.status, resp.read().decode(\"utf-8\")\n\nprint(call_api(\"https://httpbin.org/post\", {\"x\": 1}))",
-          "checks": [
-            "json.dumps",
-            "urllib.request.urlopen",
-            "status"
-          ],
-          "explanation": "把 Python 对象序列化为 JSON 后作为请求体发送，读取响应。"
         }
       ],
       "track": "main"
@@ -829,26 +692,14 @@
         {
           "id": "json-q2",
           "type": "short",
-          "prompt": "JSON 支持哪些数据类型？它与 Python 字典有何区别？",
-          "answer": "JSON 支持字符串、数字、布尔值、null、对象和数组。Python 字典是内存中的一个数据结构，而 JSON 是序列化后的文本字符串；两者通过 json.dumps/loads 转换。",
+          "prompt": "JSON 支持哪些数据类型？为什么它适合在不同程序之间传递数据？",
+          "answer": "参考回答：JSON 支持字符串、数字、布尔值、null、对象和数组。它本质是一段纯文本，格式简单，人和机器都容易读写，而且不依赖任何具体编程语言，各种语言都有现成的解析库。因此 JSON 常被用作不同程序、不同服务之间交换数据的通用格式，例如网页向服务器请求数据时拿到的就是 JSON。",
           "keywords": [
-            "字符串",
-            "数组",
-            "对象"
+            "数据类型",
+            "文本",
+            "跨语言"
           ],
-          "explanation": "JSON 类型限定且为文本，Python dict 是内存对象。"
-        },
-        {
-          "id": "json-q3",
-          "type": "code",
-          "prompt": "写一个函数 json_roundtrip(data)，把 data 序列化为 JSON 字符串再反序列化回来并返回。",
-          "starterCode": "import json\n\ndef json_roundtrip(data):\n    pass",
-          "solution": "import json\n\ndef json_roundtrip(data):\n    s = json.dumps(data, ensure_ascii=False)\n    return json.loads(s)\n\nprint(json_roundtrip({\"a\": 1, \"b\": [1, 2]}))",
-          "checks": [
-            "json.dumps",
-            "json.loads"
-          ],
-          "explanation": "dumps 序列化文本，loads 反序列化回对象。"
+          "explanation": "JSON 类型有限、以文本描述数据，所以能跨语言通用。"
         }
       ],
       "track": "main"

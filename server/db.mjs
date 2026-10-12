@@ -1,23 +1,37 @@
 /**
  * 本地数据层：Node 内置 node:sqlite，零原生依赖。
- * 数据库文件：data/learning.db
+ * 数据库文件：data/learning.db（可用 DATA_DIR 环境变量改到别处，测试时不碰真实数据）
  * 密钥文件：  data/.secret（0600，用于加密保存在本地的模型 API Key）
+ * 自动备份：  data/backups/learning-YYYY-MM-DD.db（每天一份，保留 14 天）
  */
+import './env.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const PROJECT_ROOT = resolve(here, '..');
-const DATA_DIR = join(PROJECT_ROOT, 'data');
+/** 真实数据默认在 data/；测试或临时环境用 DATA_DIR 指到别处，避免动到学习记录 */
+export const DATA_DIR = process.env.DATA_DIR ? resolve(process.env.DATA_DIR) : join(PROJECT_ROOT, 'data');
 
 mkdirSync(DATA_DIR, { recursive: true });
 
 /* ---------------------------------------------------------------- 数据库 */
 
-export const db = new DatabaseSync(join(DATA_DIR, 'learning.db'));
+const DB_FILE = join(DATA_DIR, 'learning.db');
+export const db = new DatabaseSync(DB_FILE);
 
 db.exec(`
   PRAGMA journal_mode = WAL;
@@ -82,6 +96,65 @@ db.exec(`
 `);
 
 const now = () => new Date().toISOString();
+
+/* ------------------------------------------------------------ 自动备份 */
+
+const BACKUP_DIR = join(DATA_DIR, 'backups');
+const BACKUP_KEEP_DAYS = 14;
+
+/**
+ * 把当前数据库整体复制一份到 backups/。
+ * WAL 模式下最近的写入可能还在 -wal 文件里，所以先 checkpoint 再拷。
+ */
+export function backupDatabase() {
+  try {
+    if (!existsSync(DB_FILE)) return null;
+    mkdirSync(BACKUP_DIR, { recursive: true });
+    db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+    const stamp = new Date().toISOString().slice(0, 10);
+    const target = join(BACKUP_DIR, `learning-${stamp}.db`);
+    copyFileSync(DB_FILE, target);
+
+    // 清理过期备份
+    const cutoff = Date.now() - BACKUP_KEEP_DAYS * 24 * 3600 * 1000;
+    for (const file of readdirSync(BACKUP_DIR)) {
+      const match = /^learning-(\d{4}-\d{2}-\d{2})\.db$/.exec(file);
+      if (!match) continue;
+      if (new Date(`${match[1]}T00:00:00Z`).getTime() < cutoff) {
+        rmSync(join(BACKUP_DIR, file), { force: true });
+      }
+    }
+    return target;
+  } catch (err) {
+    console.error('[备份失败]', err?.message ?? err);
+    return null;
+  }
+}
+
+export function listBackups() {
+  try {
+    return readdirSync(BACKUP_DIR)
+      .filter((f) => /^learning-\d{4}-\d{2}-\d{2}\.db$/.test(f))
+      .sort()
+      .reverse()
+      .map((file) => {
+        const full = join(BACKUP_DIR, file);
+        const stat = statSync(full);
+        return { file, size: stat.size, mtime: stat.mtime.toISOString() };
+      });
+  } catch {
+    return [];
+  }
+}
+
+/** 服务启动时先备份一次；之后每 30 分钟刷新当天那份，最长丢半小时 */
+export function startAutoBackup() {
+  const created = backupDatabase();
+  if (created) console.log(`  已备份学习数据 → ${created.replace(PROJECT_ROOT, '.')}`);
+  const timer = setInterval(backupDatabase, 30 * 60 * 1000);
+  timer.unref?.();
+  return timer;
+}
 
 /* ------------------------------------------------------------ 密钥与加密 */
 

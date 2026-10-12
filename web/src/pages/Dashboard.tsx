@@ -163,7 +163,7 @@ export function Dashboard() {
             </ul>
           ) : (
             <p className="text-xs leading-relaxed text-slate-500">
-              还没有足够数据。做完每节的 3 道题后，正确率低于 70% 的知识点会自动出现在这里。
+              还没有足够数据。做完每节的练习后，正确率低于 70% 的知识点会自动出现在这里。
             </p>
           )}
         </Card>

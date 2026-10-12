@@ -38,6 +38,15 @@ export const api = {
       body: JSON.stringify({ lessonSlug }),
     }),
 
+  backups: () =>
+    request<{ dir: string; backups: { file: string; size: number; mtime: string }[] }>('/api/backups'),
+  backupNow: () =>
+    request<{
+      ok: boolean;
+      path: string | null;
+      backups: { file: string; size: number; mtime: string }[];
+    }>('/api/backup', { method: 'POST' }),
+
   notes: () => request<{ notes: Note[] }>('/api/notes'),
   createNote: (payload: { title: string; body: string; lessonSlug?: string | null; tags?: string[] }) =>
     request<{ notes: Note[] }>('/api/notes', { method: 'POST', body: JSON.stringify(payload) }),

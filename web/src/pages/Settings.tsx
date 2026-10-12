@@ -1,4 +1,4 @@
-import { Check, Database, Download, HardDrive, KeyRound, Play, Save, Upload, X } from 'lucide-react';
+import { Check, Database, Download, HardDrive, KeyRound, Play, Save, ShieldCheck, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader, SectionBlock } from '../components/ui';
 import { TOTALS } from '../lib/content';
@@ -23,12 +23,18 @@ export function Settings() {
   const [saved, setSaved] = useState(false);
   const [importMsg, setImportMsg] = useState('');
   const [runtimes, setRuntimes] = useState<Record<string, { available: boolean; label: string; version: string }>>({});
+  const [backups, setBackups] = useState<{ file: string; size: number; mtime: string }[]>([]);
+  const [backupMsg, setBackupMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void api
       .runtimes()
       .then((r) => setRuntimes(r.runtimes))
+      .catch(() => undefined);
+    void api
+      .backups()
+      .then((r) => setBackups(r.backups))
       .catch(() => undefined);
   }, []);
 
@@ -182,7 +188,38 @@ export function Settings() {
               </div>
             </dl>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3">
+              <div className="flex items-center gap-2 text-xs text-slate-300">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                自动备份
+                <span className="text-slate-500">每天一份，保留 14 天；服务启动时与每隔 30 分钟刷新</span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="btn-ghost !py-1.5 text-xs"
+                  onClick={() =>
+                    void api.backupNow().then((r) => {
+                      setBackups(r.backups);
+                      setBackupMsg(r.ok ? '已备份' : '备份失败');
+                      window.setTimeout(() => setBackupMsg(''), 2000);
+                    })
+                  }
+                >
+                  立即备份
+                </button>
+                {backups.length ? (
+                  <span className="font-mono text-[11px] text-slate-500">
+                    最近：{backups[0].file}（{Math.round(backups[0].size / 1024)} KB）
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-slate-500">还没有备份</span>
+                )}
+                {backupMsg ? <span className="text-[11px] text-emerald-300">{backupMsg}</span> : null}
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
               <a className="btn-ghost" href="/api/export" download="ai-algo-lab-backup.json">
                 <Download className="h-4 w-4" />
                 导出备份

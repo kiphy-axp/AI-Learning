@@ -5,7 +5,7 @@ import { CodeRunner, inferRunLang, type RunResult } from '../components/CodeRunn
 import { Markdown } from '../components/Markdown';
 import { PageHeader } from '../components/ui';
 import { api } from '../lib/api';
-import { findLesson } from '../lib/content';
+import { findLesson, neighbours } from '../lib/content';
 import { gradeShort } from '../lib/grading';
 import { useStore } from '../lib/store';
 import type { QuizQuestion } from '../lib/types';
@@ -82,6 +82,8 @@ export function PracticePage() {
 
   const { stage, lesson } = ref;
   const key = `${stage.stageSlug}/${lesson.slug}`;
+  const { next } = neighbours(ref);
+  const nextHref = next ? `/learn/${next.stage.stageSlug}/${next.lesson.slug}` : null;
   const answered = Object.keys(verdicts).length;
   const allDone = answered === questions.length && questions.length > 0;
   const correctCount = Object.values(verdicts).filter((v) => v.correct).length;
@@ -215,11 +217,20 @@ export function PracticePage() {
             </button>
             <button
               type="button"
-              className="btn-primary"
+              className="btn-ghost"
               onClick={() => void setStatus(lesson.slug, stage.stageSlug, 'mastered')}
             >
               标记已掌握
             </button>
+            {nextHref && next ? (
+              <Link
+                className="btn-primary"
+                to={nextHref}
+                onClick={() => void setStatus(lesson.slug, stage.stageSlug, 'mastered')}
+              >
+                下一课：{next.lesson.title}
+              </Link>
+            ) : null}
           </div>
         </div>
       ) : null}
