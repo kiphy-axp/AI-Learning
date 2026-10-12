@@ -1,4 +1,5 @@
 import katex from 'katex';
+import { CodeRunner } from './CodeRunner';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 
 /**
@@ -78,6 +79,7 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
       <pre className="code-block">
         <code>{code}</code>
       </pre>
+      {lang ? <CodeRunner code={code} lang={lang} className="mb-4 mt-2" /> : null}
     </div>
   );
 }

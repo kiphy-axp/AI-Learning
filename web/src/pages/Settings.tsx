@@ -1,7 +1,8 @@
-import { Database, Download, HardDrive, KeyRound, Save, Upload } from 'lucide-react';
+import { Check, Database, Download, HardDrive, KeyRound, Play, Save, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader, SectionBlock } from '../components/ui';
 import { TOTALS } from '../lib/content';
+import { api } from '../lib/api';
 import { useStore } from '../lib/store';
 
 const PRESETS = [
@@ -21,7 +22,15 @@ export function Settings() {
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
   const [importMsg, setImportMsg] = useState('');
+  const [runtimes, setRuntimes] = useState<Record<string, { available: boolean; label: string; version: string }>>({});
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    void api
+      .runtimes()
+      .then((r) => setRuntimes(r.runtimes))
+      .catch(() => undefined);
+  }, []);
 
   // 配置是异步从本地服务读取的，读到后同步到表单，避免显示成无关的默认值
   useEffect(() => {
@@ -208,6 +217,33 @@ export function Settings() {
               />
             </div>
             {importMsg ? <p className="mt-2 text-xs text-slate-400">{importMsg}</p> : null}
+          </SectionBlock>
+
+          <SectionBlock title="代码运行环境" icon={<Play className="h-4 w-4" />} tone="brand">
+            <p className="mb-3 text-xs leading-relaxed text-slate-400">
+              练习里的编程题和讲义里的代码块可以直接点「运行代码」，代码会**在你本机**跑一遍并显示真实输出。
+              每次运行使用独立临时目录、8 秒超时、输出截断，不继承你的环境变量。
+            </p>
+            <ul className="space-y-2 text-xs">
+              {Object.entries(runtimes).map(([key, info]) => (
+                <li key={key} className="flex items-center gap-2">
+                  {info.available ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                  ) : (
+                    <X className="h-3.5 w-3.5 shrink-0 text-slate-600" />
+                  )}
+                  <span className={info.available ? 'text-slate-200' : 'text-slate-500'}>{info.label}</span>
+                  <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-500">
+                    {info.version || (info.available ? '' : '未检测到')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {!runtimes.cuda?.available ? (
+              <p className="mt-2.5 text-[11px] leading-relaxed text-slate-500">
+                CUDA 需要 NVIDIA 显卡与 nvcc，本机没有，所以 GPU 阶段的代码只能阅读、不能运行。
+              </p>
+            ) : null}
           </SectionBlock>
 
           <SectionBlock title="关于这个学习站" icon={<HardDrive className="h-4 w-4" />}>

@@ -1,6 +1,7 @@
 import { ArrowLeft, Bot, Check, CheckCircle2, RotateCcw, Target, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { CodeRunner, inferRunLang, type RunResult } from '../components/CodeRunner';
 import { Markdown } from '../components/Markdown';
 import { PageHeader } from '../components/ui';
 import { api } from '../lib/api';
@@ -20,13 +21,35 @@ type Verdict = {
   missed?: string[];
 };
 
-function scoreCode(question: Extract<QuizQuestion, { type: 'code' }>, answer: string): Verdict {
+function scoreCode(
+  question: Extract<QuizQuestion, { type: 'code' }>,
+  answer: string,
+  run?: RunResult,
+): Verdict {
   const text = answer.trim();
   const hits = question.checks.filter((c) => text.includes(c));
-  const correct = text.length > 0 && hits.length === question.checks.length;
+  const allChecks = text.length > 0 && hits.length === question.checks.length;
+  const ran = Boolean(run);
+  const ranOk = run?.ok === true;
+  // 跑过就必须跑通；没跑过时只按关键片段判断，但会提示先运行
+  const correct = allChecks && (!ran || ranOk);
+
+  const parts = [`关键片段 ${hits.length}/${question.checks.length}`];
+  if (ran) {
+    parts.push(
+      ranOk
+        ? `运行通过（${((run?.durationMs ?? 0) / 1000).toFixed(2)}s）`
+        : run?.timedOut
+          ? '运行超时'
+          : `运行未通过（退出码 ${run?.exitCode ?? '?'}）`,
+    );
+  } else {
+    parts.push('还没运行过——先点「运行代码」看它能不能跑通');
+  }
+
   return {
     correct,
-    detail: `关键片段 ${hits.length}/${question.checks.length}：${hits.join('  |  ') || '无'}`,
+    detail: parts.join('｜'),
     reference: question.solution,
     source: 'auto',
   };
@@ -42,6 +65,7 @@ export function PracticePage() {
   const [codeText, setCodeText] = useState('');
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({});
   const [grading, setGrading] = useState<string | null>(null);
+  const [runResults, setRunResults] = useState<Record<string, RunResult>>({});
 
   const questions = useMemo(() => ref?.lesson.quiz ?? [], [ref]);
 
@@ -149,6 +173,7 @@ export function PracticePage() {
                 setVerdicts({});
                 setChoicePick(null);
                 setShortText('');
+                setRunResults({});
                 setCodeText(questions.find((q) => q.type === 'code')?.starterCode ?? '');
               }}
             >
@@ -313,12 +338,22 @@ export function PracticePage() {
                     onChange={(e) => setCodeText(e.target.value)}
                     spellCheck={false}
                   />
+                  <CodeRunner
+                    className="mt-2.5"
+                    code={codeText || question.starterCode}
+                    lang={inferRunLang(codeText || question.starterCode)}
+                    onResult={(res) => setRunResults((prev) => ({ ...prev, [question.id]: res }))}
+                  />
                   {!verdict ? (
                     <button
                       type="button"
                       className="btn-primary mt-2.5"
                       onClick={() =>
-                        record(question, scoreCode(question, codeText || question.starterCode), codeText || question.starterCode)
+                        record(
+                          question,
+                          scoreCode(question, codeText || question.starterCode, runResults[question.id]),
+                          codeText || question.starterCode,
+                        )
                       }
                     >
                       提交代码

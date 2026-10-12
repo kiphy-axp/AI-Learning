@@ -28,6 +28,7 @@ import {
   upsertProgress,
 } from './db.mjs';
 import { gradeAnswer, offlineAnswer, publicTutorConfig, remoteAnswer, TUTOR_MODES } from './tutor.mjs';
+import { runCode, runtimeStatus } from './runner.mjs';
 
 const PORT = Number(process.env.PORT ?? 4173);
 const HOST = process.env.HOST ?? '127.0.0.1';
@@ -81,7 +82,12 @@ async function handleApi(req, res, pathname) {
   const method = req.method ?? 'GET';
 
   if (pathname === '/api/health') {
-    return sendJson(res, 200, { ok: true, service: 'ai-algo-lab', hasDist: existsSync(DIST) });
+    return sendJson(res, 200, {
+      ok: true,
+      service: 'ai-algo-lab',
+      hasDist: existsSync(DIST),
+      runtimes: runtimeStatus(),
+    });
   }
 
   if (pathname === '/api/state' && method === 'GET') {
@@ -207,6 +213,21 @@ async function handleApi(req, res, pathname) {
       reason: remote.reason,
       content: fallback,
     });
+  }
+
+  if (pathname === '/api/runtimes' && method === 'GET') {
+    return sendJson(res, 200, { runtimes: runtimeStatus() });
+  }
+
+  if (pathname === '/api/run' && method === 'POST') {
+    const body = await readBody(req);
+    const result = await runCode({
+      lang: typeof body.lang === 'string' ? body.lang : 'python',
+      code: body.code,
+      stdin: typeof body.stdin === 'string' ? body.stdin : '',
+      timeoutMs: Number(body.timeoutMs) || 8000,
+    });
+    return sendJson(res, 200, result);
   }
 
   if (pathname === '/api/grade' && method === 'POST') {

@@ -65,6 +65,24 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  runtimes: () =>
+    request<{
+      runtimes: Record<string, { available: boolean; label: string; version: string }>;
+    }>('/api/runtimes'),
+
+  run: (payload: { lang: string; code: string; stdin?: string; timeoutMs?: number }) =>
+    request<{
+      ok: boolean;
+      error?: string;
+      exitCode?: number;
+      stdout?: string;
+      stderr?: string;
+      durationMs?: number;
+      timedOut?: boolean;
+      outputTruncated?: boolean;
+      runtimeLabel?: string;
+    }>('/api/run', { method: 'POST', body: JSON.stringify(payload) }),
+
   grade: (payload: { prompt: string; reference: string; keywords: string[]; answer: string }) =>
     request<{
       ok: boolean;
