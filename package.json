@@ -5,7 +5,7 @@
   "type": "module",
   "description": "面向 AI 算法开发岗的本地学习站：16 个阶段、160+ 知识点、本地 SQLite 进度、AI Tutor",
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=22.18.0"
   },
   "scripts": {
     "dev": "vite --config web/vite.config.ts",

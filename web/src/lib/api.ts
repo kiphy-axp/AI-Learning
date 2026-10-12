@@ -65,6 +65,16 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  grade: (payload: { prompt: string; reference: string; keywords: string[]; answer: string }) =>
+    request<{
+      ok: boolean;
+      correct?: boolean;
+      score?: number | null;
+      feedback?: string;
+      reason?: string;
+      model?: string;
+    }>('/api/grade', { method: 'POST', body: JSON.stringify(payload) }),
+
   tutor: (payload: {
     message: string;
     mode: string;

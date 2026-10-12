@@ -18,14 +18,14 @@ bold "  ────────────────────────
 
 # 1. 检查 Node
 if ! command -v node >/dev/null 2>&1; then
-  fail "没有找到 node。请先安装 Node.js 22.5 或更高版本：https://nodejs.org"
+  fail "没有找到 node。请先安装 Node.js 22.18 或更高版本：https://nodejs.org"
   exit 1
 fi
 
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
 NODE_MINOR="$(node -p 'process.versions.node.split(".")[1]')"
-if [ "$NODE_MAJOR" -lt 22 ] || { [ "$NODE_MAJOR" -eq 22 ] && [ "$NODE_MINOR" -lt 5 ]; }; then
-  fail "当前 Node 版本是 $(node -v)，需要 22.5 以上（本项目使用内置 node:sqlite）。"
+if [ "$NODE_MAJOR" -lt 22 ] || { [ "$NODE_MAJOR" -eq 22 ] && [ "$NODE_MINOR" -lt 18 ]; }; then
+  fail "当前 Node 版本是 $(node -v)，需要 22.18 以上（使用内置 node:sqlite，测试直接运行 TypeScript）。"
   exit 1
 fi
 info "Node $(node -v) ✓"

@@ -27,7 +27,7 @@ import {
   updateNote,
   upsertProgress,
 } from './db.mjs';
-import { offlineAnswer, publicTutorConfig, remoteAnswer, TUTOR_MODES } from './tutor.mjs';
+import { gradeAnswer, offlineAnswer, publicTutorConfig, remoteAnswer, TUTOR_MODES } from './tutor.mjs';
 
 const PORT = Number(process.env.PORT ?? 4173);
 const HOST = process.env.HOST ?? '127.0.0.1';
@@ -207,6 +207,20 @@ async function handleApi(req, res, pathname) {
       reason: remote.reason,
       content: fallback,
     });
+  }
+
+  if (pathname === '/api/grade' && method === 'POST') {
+    const body = await readBody(req);
+    if (!body.answer || String(body.answer).trim().length < 2) {
+      return sendJson(res, 400, { error: '回答太短，没法批改' });
+    }
+    const result = await gradeAnswer({
+      prompt: body.prompt,
+      reference: body.reference,
+      keywords: body.keywords,
+      answer: body.answer,
+    });
+    return sendJson(res, 200, result);
   }
 
   if (pathname === '/api/export' && method === 'GET') {

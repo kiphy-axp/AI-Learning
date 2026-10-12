@@ -1,9 +1,11 @@
-import { ArrowLeft, Check, CheckCircle2, RotateCcw, Target, X } from 'lucide-react';
+import { ArrowLeft, Bot, Check, CheckCircle2, RotateCcw, Target, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Markdown } from '../components/Markdown';
 import { PageHeader } from '../components/ui';
+import { api } from '../lib/api';
 import { findLesson } from '../lib/content';
+import { gradeShort } from '../lib/grading';
 import { useStore } from '../lib/store';
 import type { QuizQuestion } from '../lib/types';
 
@@ -11,19 +13,12 @@ type Verdict = {
   correct: boolean;
   detail: string;
   reference?: string;
+  /** auto = 自动判分，self = 自己改判，ai = 模型批改 */
+  source?: 'auto' | 'self' | 'ai';
+  confidence?: 'high' | 'low';
+  hits?: string[];
+  missed?: string[];
 };
-
-function scoreShort(question: Extract<QuizQuestion, { type: 'short' }>, answer: string): Verdict {
-  const text = answer.trim();
-  const hits = question.keywords.filter((k) => text.includes(k));
-  const ratio = question.keywords.length ? hits.length / question.keywords.length : 0;
-  const longEnough = text.length >= 30;
-  const correct = ratio >= 0.5 && longEnough;
-  const detail = longEnough
-    ? `命中关键词 ${hits.length}/${question.keywords.length}：${hits.join('、') || '无'}`
-    : '回答太短，建议至少写 30 字，把机制和原因说清楚';
-  return { correct, detail, reference: question.answer };
-}
 
 function scoreCode(question: Extract<QuizQuestion, { type: 'code' }>, answer: string): Verdict {
   const text = answer.trim();
@@ -33,18 +28,20 @@ function scoreCode(question: Extract<QuizQuestion, { type: 'code' }>, answer: st
     correct,
     detail: `关键片段 ${hits.length}/${question.checks.length}：${hits.join('  |  ') || '无'}`,
     reference: question.solution,
+    source: 'auto',
   };
 }
 
 export function PracticePage() {
   const { stageSlug, lessonSlug } = useParams();
   const ref = findLesson(stageSlug, lessonSlug);
-  const { submitAnswer, setStatus } = useStore();
+  const { submitAnswer, setStatus, tutor } = useStore();
 
   const [choicePick, setChoicePick] = useState<number | null>(null);
   const [shortText, setShortText] = useState('');
   const [codeText, setCodeText] = useState('');
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({});
+  const [grading, setGrading] = useState<string | null>(null);
 
   const questions = useMemo(() => ref?.lesson.quiz ?? [], [ref]);
 
@@ -62,6 +59,8 @@ export function PracticePage() {
   const { stage, lesson } = ref;
   const key = `${stage.stageSlug}/${lesson.slug}`;
   const answered = Object.keys(verdicts).length;
+  const allDone = answered === questions.length && questions.length > 0;
+  const correctCount = Object.values(verdicts).filter((v) => v.correct).length;
 
   const record = (question: QuizQuestion, verdict: Verdict, answerText: string) => {
     setVerdicts((prev) => ({ ...prev, [question.id]: verdict }));
@@ -74,8 +73,52 @@ export function PracticePage() {
     });
   };
 
-  const allDone = answered === questions.length && questions.length > 0;
-  const correctCount = Object.values(verdicts).filter((v) => v.correct).length;
+  /** 自己改判：意思对就算过，不跟关键词较劲 */
+  const override = (question: QuizQuestion, verdict: Verdict, correct: boolean) => {
+    record(
+      question,
+      {
+        ...verdict,
+        correct,
+        source: 'self',
+        detail: correct ? '已按你的判断记为答对' : '已记为没答对，回头再看一遍',
+      },
+      shortText || '(自我改判)',
+    );
+  };
+
+  /** 让模型按「意思对了就算过」批改 */
+  const askAi = async (question: Extract<QuizQuestion, { type: 'short' }>, verdict: Verdict) => {
+    setGrading(question.id);
+    try {
+      const res = await api.grade({
+        prompt: question.prompt,
+        reference: question.answer,
+        keywords: question.keywords,
+        answer: shortText,
+      });
+      if (res.ok) {
+        record(
+          question,
+          {
+            ...verdict,
+            correct: Boolean(res.correct),
+            source: 'ai',
+            confidence: 'high',
+            detail: `${res.correct ? 'AI 判定：意思答到了' : 'AI 判定：还没答到'}${res.score !== null && res.score !== undefined ? `（${res.score} 分）` : ''}${res.feedback ? ` —— ${res.feedback}` : ''}`,
+          },
+          shortText,
+        );
+      } else {
+        setVerdicts((prev) => ({
+          ...prev,
+          [question.id]: { ...verdict, detail: `${verdict.detail}｜AI 批改不可用（${res.reason ?? '未配置模型'}）` },
+        }));
+      }
+    } finally {
+      setGrading(null);
+    }
+  };
 
   return (
     <>
@@ -130,17 +173,19 @@ export function PracticePage() {
             )}
             <div>
               <div className="text-sm font-medium text-slate-100">
-                本轮 {correctCount}/{questions.length} 正确
+                本轮 {correctCount}/{questions.length} 通过
               </div>
               <div className="text-xs text-slate-500">
-                {correctCount === questions.length
-                  ? '全对，可以标记为「已掌握」进入下一节。'
-                  : '错题已进入错题本，建议回看对应小节后重做。'}
+                简答题按「意思到了」判：命中一个要点就算过，判错了可以自己改。
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <button type="button" className="btn-ghost" onClick={() => void setStatus(lesson.slug, stage.stageSlug, 'review')}>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => void setStatus(lesson.slug, stage.stageSlug, 'review')}
+            >
               标记待复习
             </button>
             <button
@@ -178,7 +223,8 @@ export function PracticePage() {
                     }`}
                   >
                     {verdict.correct ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                    {verdict.correct ? '正确' : '需复习'}
+                    {verdict.correct ? '通过' : '需复习'}
+                    {verdict.source === 'ai' ? ' · AI' : verdict.source === 'self' ? ' · 自判' : ''}
                   </span>
                 ) : null}
               </div>
@@ -224,6 +270,7 @@ export function PracticePage() {
                             correct: choicePick === question.answerIndex,
                             detail: choicePick === question.answerIndex ? '选择正确' : '选择错误',
                             reference: question.explanation,
+                            source: 'auto',
                           },
                           String.fromCharCode(65 + (choicePick ?? 0)),
                         )
@@ -239,7 +286,7 @@ export function PracticePage() {
                 <div className="pl-9">
                   <textarea
                     className="field min-h-[110px] resize-y"
-                    placeholder="用自己的话写下来。评分看关键词覆盖，写满 30 字以上。"
+                    placeholder="用自己的话讲一遍就行，不用跟参考答案对词。"
                     value={shortText}
                     disabled={Boolean(verdict)}
                     onChange={(e) => setShortText(e.target.value)}
@@ -249,7 +296,7 @@ export function PracticePage() {
                       type="button"
                       className="btn-primary mt-2.5"
                       disabled={shortText.trim().length < 5}
-                      onClick={() => record(question, scoreShort(question, shortText), shortText)}
+                      onClick={() => record(question, gradeShort(question, shortText), shortText)}
                     >
                       提交答案
                     </button>
@@ -270,7 +317,9 @@ export function PracticePage() {
                     <button
                       type="button"
                       className="btn-primary mt-2.5"
-                      onClick={() => record(question, scoreCode(question, codeText || question.starterCode), codeText || question.starterCode)}
+                      onClick={() =>
+                        record(question, scoreCode(question, codeText || question.starterCode), codeText || question.starterCode)
+                      }
                     >
                       提交代码
                     </button>
@@ -283,6 +332,42 @@ export function PracticePage() {
                   <div className={`text-xs ${verdict.correct ? 'text-emerald-300' : 'text-amber-300'}`}>
                     {verdict.detail}
                   </div>
+
+                  {question.type === 'short' ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        className="btn-ghost !py-1.5 text-xs"
+                        onClick={() => override(question, verdict, true)}
+                      >
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                        我答对了
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-ghost !py-1.5 text-xs"
+                        onClick={() => override(question, verdict, false)}
+                      >
+                        <ThumbsDown className="h-3.5 w-3.5" />
+                        其实没答对
+                      </button>
+                      {tutor.hasKey ? (
+                        <button
+                          type="button"
+                          className="btn-ghost !py-1.5 text-xs"
+                          disabled={grading === question.id}
+                          onClick={() => void askAi(question, verdict)}
+                        >
+                          <Bot className="h-3.5 w-3.5" />
+                          {grading === question.id ? 'AI 批改中…' : '让 AI 判一下'}
+                        </button>
+                      ) : null}
+                      <span className="text-[11px] text-slate-500">
+                        判分只看意思，判错了直接改，不影响你的掌握度统计口径
+                      </span>
+                    </div>
+                  ) : null}
+
                   {verdict.reference ? (
                     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5">
                       <div className="section-title mb-1.5">参考答案</div>

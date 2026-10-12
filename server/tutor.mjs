@@ -212,3 +212,82 @@ export async function remoteAnswer({ message, mode, context, history }) {
     clearTimeout(timer);
   }
 }
+
+
+/* ------------------------------------------------------------ AI 批改简答题 */
+
+const GRADE_PROMPT = `你是判卷老师，负责批改一道简答题。
+
+判定标准（很重要）：**只要意思对就算过**。
+- 不要求用词与参考答案一致，不要求逐字命中要点词
+- 同义表述、换一种说法、举例说明、用大白话讲清楚，都算答对
+- 只有明确答错、答非所问、或明显没理解概念时才算不过
+- 回答比参考答案更简略但抓住了核心，也算过
+
+只输出一行 JSON，不要任何解释、不要代码块：
+{"correct": true 或 false, "score": 0 到 100 的整数, "feedback": "一句话点评，先说答对了什么，再补一句漏了什么"}`;
+
+/** 让模型按「意思对了就算过」批改简答题；未配置模型时返回 not-configured */
+export async function gradeAnswer({ prompt, reference, keywords, answer }) {
+  const cfg = tutorConfig();
+  if (!cfg.hasKey || !cfg.baseUrl || !cfg.model) return { ok: false, reason: 'not-configured' };
+
+  const base = cfg.baseUrl.replace(/\/+$/, '');
+  const url = /\/chat\/completions$/.test(base) ? base : `${base}/chat/completions`;
+  const headers = { 'content-type': 'application/json', authorization: `Bearer ${cfg.apiKey}` };
+  const sessionHeader = sessionHeaderFor(base);
+  if (sessionHeader) headers[sessionHeader] = sessionId();
+
+  const user = [
+    `题目：${prompt ?? ''}`,
+    `参考答案：${reference ?? ''}`,
+    Array.isArray(keywords) && keywords.length ? `要点（仅供你参考，不要求逐字命中）：${keywords.join('、')}` : '',
+    `学生的回答：${String(answer ?? '').slice(0, 2000)}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60_000);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [
+          { role: 'system', content: GRADE_PROMPT },
+          { role: 'user', content: user },
+        ],
+        temperature: 0,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      return { ok: false, reason: `http-${res.status}`, detail: text.slice(0, 300) };
+    }
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content ?? '';
+    const jsonText = content.replace(/```json|```/g, '').trim();
+    const start = jsonText.indexOf('{');
+    const end = jsonText.lastIndexOf('}');
+    if (start < 0 || end <= start) return { ok: false, reason: 'unparsable', detail: content.slice(0, 200) };
+    const parsed = JSON.parse(jsonText.slice(start, end + 1));
+    return {
+      ok: true,
+      correct: Boolean(parsed.correct),
+      score: Number.isFinite(Number(parsed.score)) ? Math.max(0, Math.min(100, Math.round(Number(parsed.score)))) : null,
+      feedback: String(parsed.feedback ?? '').slice(0, 400),
+      model: cfg.model,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      reason: err.name === 'AbortError' ? 'timeout' : 'network-error',
+      detail: String(err.message ?? err),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
